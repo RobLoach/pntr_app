@@ -1,4 +1,5 @@
 #define PNTR_APP_IMPLEMENTATION
+#define PNTR_DISABLE_MATH
 #include "pntr_app.h"
 
 bool Init(void* userData) {
@@ -7,7 +8,7 @@ bool Init(void* userData) {
     return true;
 }
 
-bool UpdateDrawFrame(pntr_image* screen, void* userData) {
+bool Update(pntr_image* screen, void* userData) {
     pntr_clear_background(screen, PNTR_WHITE);
     pntr_draw_circle_fill(screen, screen->width / 2, screen->height / 2, 100, PNTR_BLUE);
 
@@ -24,7 +25,7 @@ pntr_app Main(int argc, char* argv[]) {
         .height = 450,
         .title = "pntr_app",
         .init = Init,
-        .update = UpdateDrawFrame,
+        .update = Update,
         .close = Close,
         .fps = 60,
         .userData = NULL

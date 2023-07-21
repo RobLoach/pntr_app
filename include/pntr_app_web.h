@@ -1,7 +1,7 @@
 /**
  * Render the pixel data onto the canvas.
  */
-EM_JS(void, pntr_render_canvas, (void* data, int size, int width, int height), {
+EM_JS(void, pntr_app_web_render, (void* data, int size, int width, int height), {
     // Make sure the canvas is set up.
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
@@ -24,7 +24,7 @@ bool pntr_app_render(pntr_image* screen) {
         return true;
     }
 
-    pntr_render_canvas(screen->data, screen->pitch * screen->height, screen->width, screen->height);
+    pntr_app_web_render(screen->data, screen->pitch * screen->height, screen->width, screen->height);
     return true;
 }
 
