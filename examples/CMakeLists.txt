@@ -12,16 +12,9 @@ find_package(pntr)
 # SDL
 set(SDL_SHARED FALSE)
 set(SDL2_DISABLE_UNINSTALL TRUE)
-if(${CMAKE_SYSTEM_NAME} MATCHES "Emscripten")
-    set(USE_FLAGS "-s USE_SDL=2")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${USE_FLAGS}")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${USE_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${USE_FLAGS}")
-    set(CMAKE_EXECUTABLE_SUFFIX .html)
-else()
-    find_package(SDL2 REQUIRED)
-    set(SDL2_LIBRARIES SDL2::SDL2 SDL2::SDL2main)
-endif()
+set(SDL2_DISABLE_INSTALL TRUE)
+find_package(SDL2 REQUIRED)
+set(SDL2_LIBRARIES SDL2::SDL2 SDL2::SDL2main)
 add_executable(pntr_app_example_sdl
     pntr_app_example.c
 )
@@ -43,3 +36,15 @@ target_link_libraries(pntr_app_example_raylib PUBLIC
     raylib
 )
 target_compile_definitions(pntr_app_example_raylib PUBLIC PNTR_APP_RAYLIB)
+
+# libretro
+find_package(libretro)
+add_library(pntr_app_example_libretro SHARED
+    pntr_app_example.c
+)
+target_link_libraries(pntr_app_example_libretro PUBLIC
+    pntr
+    pntr_app
+    libretro
+)
+set_target_properties(pntr_app_example_libretro PROPERTIES PREFIX "")

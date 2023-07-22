@@ -41,6 +41,8 @@ extern "C" {
 // pntr configuration
 #ifdef PNTR_APP_SDL
 #define PNTR_PIXELFORMAT_ARGB
+#elif PNTR_APP_LIBRETRO
+#define PNTR_PIXELFORMAT_ARGB
 #endif
 
 #ifndef PNTR_APP_PNTR_H
@@ -63,6 +65,10 @@ typedef struct pntr_app {
     void* userData;
     pntr_image* screen;
 } pntr_app;
+
+bool pntr_app_render(pntr_image* screen);
+bool pntr_app_init(pntr_app* app);
+void pntr_app_close(pntr_app* app);
 
 #ifdef __cplusplus
 }
@@ -108,15 +114,17 @@ typedef struct pntr_app {
 extern "C" {
 #endif
 
-#if !defined(PNTR_APP_NO_ENTRY)
-extern pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
-#endif  // PNTR_APP_NO_ENTRY
-
 #if defined(PNTR_APP_SDL)
 #include "pntr_app_sdl.h"
 #elif defined(PNTR_APP_RAYLIB)
 #include "pntr_app_raylib.h"
+#elif defined(PNTR_APP_LIBRETRO)
+#include "pntr_app_libretro.h"
 #endif
+
+#if !defined(PNTR_APP_NO_ENTRY)
+extern pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
+#endif  // PNTR_APP_NO_ENTRY
 
 #if defined(EMSCRIPTEN)
 #include "pntr_app_web.h"
