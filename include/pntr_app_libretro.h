@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
-#include <math.h>
+//#include <math.h>
 
 #ifndef PNTR_APP_LIBRETRO_H
 #define PNTR_APP_LIBRETRO_H "libretro.h"
@@ -151,8 +151,7 @@ bool pntr_app_render(pntr_image* screen) {
 }
 
 bool pntr_app_init(pntr_app* app) {
-
-     return true;
+    return true;
 }
 
 void pntr_app_close(pntr_app* app) {
@@ -183,28 +182,30 @@ void retro_run(void) {
     }
 }
 
+#include <stdio.h>
+
 bool retro_load_game(const struct retro_game_info *info) {
     int argc = 1;
     char* argv[2] = {
         "pntr_app",
-        info->path
+        info != NULL ? (char*)info->path : NULL
     };
-    if (info->path != NULL) {
+    if (info != NULL && info->path != NULL) {
         argc++;
     }
 
     pntr_app app = PNTR_APP_MAIN(argc, argv);
 
     // Call the init callback.
-    if (app->init != NULL) {
+    if (app.init != NULL) {
         // Check if initialization worked.
-        if (app->init(app.userData) == false) {
+        if (app.init(app.userData) == false) {
             return false;
         }
     }
 
-    app->screen = pntr_gen_image_color(app->width, app->height, PNTR_BLACK);
-    if (app->screen == NULL) {
+    app.screen = pntr_gen_image_color(app.width, app.height, PNTR_BLACK);
+    if (app.screen == NULL) {
         return false;
     }
 
@@ -215,6 +216,8 @@ bool retro_load_game(const struct retro_game_info *info) {
     }
 
     check_variables();
+
+    // Copy the data to the core's app instance.
     pntr_app_libretro = PNTR_MALLOC(sizeof(pntr_app));
     PNTR_MEMCPY(pntr_app_libretro, &app, sizeof(pntr_app));
 
