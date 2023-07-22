@@ -49,7 +49,7 @@ bool pntr_app_render(pntr_image* screen) {
 
 bool pntr_app_init(pntr_app* app) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(app->width, app->height, app->title);
+    InitWindow(app->width * 2, app->height * 2, app->title);
     SetTargetFPS(app->fps);
 
     pntr_app_raylib_image.data = app->screen->data;

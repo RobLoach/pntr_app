@@ -9,6 +9,28 @@ file(COPY ${examples_resources} DESTINATION "resources/")
 
 find_package(pntr)
 
+if (EMSCRIPTEN)
+    add_executable(pntr_app_example_emscripten
+        pntr_app_example.c
+    )
+    target_link_libraries(pntr_app_example_emscripten PUBLIC
+        pntr
+        pntr_app
+    )
+
+    set_target_properties(pntr_app_example_emscripten PROPERTIES PREFIX "")
+    set_target_properties(pntr_app_example_emscripten PROPERTIES SUFFIX ".html")
+    set_target_properties(pntr_app_example_emscripten PROPERTIES OUTPUT_NAME "index")
+
+    #target_link_options(pntr_app_example_emscripten PUBLIC "--preload-file resources@/resources --shell-file pntr_app_example.html")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file resources@/resources --shell-file ${CMAKE_SOURCE_DIR}/example/pntr_app_example.html")
+
+    # Force disable the other examples
+    set(PNTR_BUILD_EXAMPLE_SDL FALSE)
+    set(PNTR_BUILD_EXAMPLE_RAYLIB FALSE)
+    set(PNTR_BUILD_EXAMPLE_LIBRETRO FALSE)
+endif()
+
 # SDL
 if (PNTR_BUILD_EXAMPLE_SDL)
     set(SDL_SHARED FALSE)

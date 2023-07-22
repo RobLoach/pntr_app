@@ -1,10 +1,8 @@
 # pntr_app
 
-Build [pntr](https://github.com/robloach/pntr) applications for a number of different targets, including SDL, raylib, the web, and more. Use the same code across the different platforms.
+Build [pntr](https://github.com/robloach/pntr) applications with the same code for a number of different targets, including SDL, raylib, the web, and more.
 
 ## Example
-
-The following will build and run with SDL, raylib, or on the web.
 
 ``` c
 #define PNTR_APP_IMPLEMENTATION
@@ -12,7 +10,6 @@ The following will build and run with SDL, raylib, or on the web.
 
 bool Init(void* userData) {
     // Initialize the application, return false on failure.
-
     return true;
 }
 
@@ -55,6 +52,8 @@ PNTR_APP_LIBRETRO
 EMSCRIPTEN
 ```
 
+Make sure to link the related library when building.
+
 ## Features
 
 - [x] Target: [raylib](https://www.raylib.com/)
@@ -72,7 +71,7 @@ EMSCRIPTEN
 
 pntr_app is a header-only library, so you can use any build method you would like. Building the examples though, you can use [CMake](https://cmake.org/)...
 
-### Desktop
+### Build
 
 ``` bash
 mkdir build
@@ -81,10 +80,13 @@ cmake ..
 make
 ```
 
-### Web
+### Emscripten
 
 ``` bash
-emcc examples/pntr_app_example.c -o build/index.html --preload-file examples/resources@/resources --shell-file examples/shell.html -Ibuild/_deps/pntr-src -Iinclude
+mkdir build
+cd build
+emcmake cmake ..
+emmake make
 ```
 
 ## License

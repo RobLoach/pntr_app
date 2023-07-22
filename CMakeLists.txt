@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.13)
 project(pntr_app
     DESCRIPTION "pntr_app: Manage a pntr application across a number of different platforms."
     HOMEPAGE_URL "https://github.com/robloach/pntr_app"
@@ -19,7 +19,11 @@ endif()
 option(PNTR_BUILD_EXAMPLE_SDL "Example: SDL" ${PNTR_APP_IS_MAIN})
 option(PNTR_BUILD_EXAMPLE_RAYLIB "Example: raylib" ${PNTR_APP_IS_MAIN})
 option(PNTR_BUILD_EXAMPLE_LIBRETRO "Example: libretro" ${PNTR_APP_IS_MAIN})
+option(PNTR_BUILD_EMSCRIPTEN "Example: Emscripten" ${PNTR_APP_IS_MAIN})
 
-if (PNTR_BUILD_EXAMPLE_SDL OR PNTR_BUILD_EXAMPLE_RAYLIB OR PNTR_BUILD_EXAMPLE_LIBRETRO)
+if (PNTR_BUILD_EXAMPLE_SDL OR 
+    PNTR_BUILD_EXAMPLE_RAYLIB OR 
+    PNTR_BUILD_EXAMPLE_LIBRETRO OR
+    PNTR_BUILD_EMSCRIPTEN)
     add_subdirectory(example)
 endif()

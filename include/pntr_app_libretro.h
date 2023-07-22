@@ -155,7 +155,24 @@ bool pntr_app_init(pntr_app* app) {
 }
 
 void pntr_app_close(pntr_app* app) {
-    // Nothing
+    if (app == NULL) {
+        return;
+    }
+
+    if (app->close != NULL) {
+        app->close(app->userData);
+    }
+
+    if (app->screen != NULL) {
+        pntr_unload_image(app->screen);
+    }
+
+    // Clear up any user data.
+    if (app->userData != NULL) {
+        PNTR_FREE(app->userData);
+    }
+
+    PNTR_FREE(app);
 }
 
 void retro_run(void) {
@@ -181,8 +198,6 @@ void retro_run(void) {
         check_variables();
     }
 }
-
-#include <stdio.h>
 
 bool retro_load_game(const struct retro_game_info *info) {
     int argc = 1;
@@ -226,25 +241,7 @@ bool retro_load_game(const struct retro_game_info *info) {
 }
 
 void retro_unload_game(void) {
-    if (pntr_app_libretro == NULL) {
-        return;
-    }
-
-    if (pntr_app_libretro->close != NULL) {
-        pntr_app_libretro->close(pntr_app_libretro->userData);
-    }
-
-    if (pntr_app_libretro->screen != NULL) {
-        pntr_unload_image(pntr_app_libretro->screen);
-        pntr_app_libretro->screen = NULL;
-    }
-
-    // Clear up any user data.
-    if (pntr_app_libretro->userData != NULL) {
-        PNTR_FREE(pntr_app_libretro->userData);
-    }
-
-    PNTR_FREE(pntr_app_libretro);
+    pntr_app_close(pntr_app_libretro);
     pntr_app_libretro = NULL;
 }
 
