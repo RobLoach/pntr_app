@@ -51,23 +51,26 @@ When compiling, define one of the following to determine which platform you are 
 ```
 PNTR_APP_SDL
 PNTR_APP_RAYLIB
+PNTR_APP_LIBRETRO
 EMSCRIPTEN
 ```
 
 ## Features
 
-- [x] Target: raylib
-- [x] Target: SDL
-- [x] Target: Emscripten
-- [ ] Target: libretro
-- [ ] Target: WASI
-- [ ] Target: GLFW
-- [ ] Target: sokol
+- [x] Target: [raylib](https://www.raylib.com/)
+- [x] Target: [SDL](https://www.libsdl.org/)
+- [x] Target: [Emscripten](https://emscripten.org/)
+- [x] Target: [libretro](https://www.libretro.com/)
+- [ ] Target: [WASI](https://github.com/WebAssembly/wasi-sdk)
+- [ ] Target: [GLFW](https://www.glfw.org/)
+- [ ] Target: [sokol](https://github.com/floooh/sokol)
 - [ ] Target: Command Line Interface?
 - [ ] Input API
 - [ ] Audio?
 
 ## Build
+
+pntr_app is a header-only library, so you can use any build method you would like. Building the examples though, you can use [CMake](https://cmake.org/)...
 
 ### Desktop
 

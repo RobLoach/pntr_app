@@ -1,7 +1,7 @@
 /**
  * Render the pixel data onto the canvas.
  */
-EM_JS(void, pntr_app_web_render, (void* data, int size, int width, int height), {
+EM_JS(void, pntr_app_emscripten_render, (void* data, int size, int width, int height), {
     // Make sure the canvas is set up.
     const canvas = document.getElementById('canvas');
     const context = canvas.getContext('2d');
@@ -24,7 +24,7 @@ bool pntr_app_render(pntr_image* screen) {
         return true;
     }
 
-    pntr_app_web_render(screen->data, screen->pitch * screen->height, screen->width, screen->height);
+    pntr_app_emscripten_render(screen->data, screen->pitch * screen->height, screen->width, screen->height);
     return true;
 }
 
@@ -34,4 +34,21 @@ bool pntr_app_init(pntr_app* app) {
 
 void pntr_app_close(pntr_app* app) {
     // Nothing
+}
+
+/**
+ * The update callback for web.
+ */
+void pntr_app_update(void* app) {
+    pntr_app* application = (pntr_app*)app;
+
+    // Ensure the application exists.
+    if (application == NULL ||
+        application->update == NULL ||
+        application->update(application->screen, application->userData) == false) {
+        emscripten_cancel_main_loop();
+        return;
+    }
+    
+    pntr_app_render(application->screen);
 }

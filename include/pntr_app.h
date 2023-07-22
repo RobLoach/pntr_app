@@ -7,6 +7,12 @@
 *   DEPENDENCIES:
 *       pntr https://github.com/robloach/pntr
 *
+*   CONFIGURATION:
+*       PNTR_APP_RAYLIB
+*       PNTR_APP_SDL
+*       PNTR_APP_LIBRETRO
+*       EMSCRIPTEN
+*
 *   LICENSE: zlib/libpng
 *
 *   pntr_app is licensed under an unmodified zlib/libpng license, which is an OSI-certified,
@@ -41,6 +47,8 @@ extern "C" {
 // pntr configuration
 #ifdef PNTR_APP_SDL
 #define PNTR_PIXELFORMAT_ARGB
+#elif PNTR_APP_LIBRETRO
+#define PNTR_PIXELFORMAT_ARGB
 #endif
 
 #ifndef PNTR_APP_PNTR_H
@@ -63,6 +71,10 @@ typedef struct pntr_app {
     void* userData;
     pntr_image* screen;
 } pntr_app;
+
+bool pntr_app_render(pntr_image* screen);
+bool pntr_app_init(pntr_app* app);
+void pntr_app_close(pntr_app* app);
 
 #ifdef __cplusplus
 }
@@ -96,6 +108,8 @@ typedef struct pntr_app {
 #define PNTR_APP_MAIN Main
 #endif  // PNTR_APP_MAIN
 
+pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
+
 // emscripten.h
 #if defined(EMSCRIPTEN)
 #ifndef PNTR_APP_EMSCRIPTEN_H
@@ -108,35 +122,16 @@ typedef struct pntr_app {
 extern "C" {
 #endif
 
-#if !defined(PNTR_APP_NO_ENTRY)
-extern pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
-#endif  // PNTR_APP_NO_ENTRY
-
 #if defined(PNTR_APP_SDL)
 #include "pntr_app_sdl.h"
 #elif defined(PNTR_APP_RAYLIB)
 #include "pntr_app_raylib.h"
-#endif
-
-#if defined(EMSCRIPTEN)
-#include "pntr_app_web.h"
-
-/**
- * The update callback for web.
- */
-void pntr_app_update(void* app) {
-    pntr_app* application = (pntr_app*)app;
-
-    // Ensure the application exists.
-    if (application == NULL ||
-        application->update == NULL ||
-        application->update(application->screen, application->userData) == false) {
-        emscripten_cancel_main_loop();
-        return;
-    }
-    
-    pntr_app_render(application->screen);
-}
+#elif defined(PNTR_APP_LIBRETRO)
+#include "pntr_app_libretro.h"
+#elif defined(EMSCRIPTEN)
+#include "pntr_app_emscripten.h"
+#else
+#error "[pntr_app] No target found. Set PNTR_APP_SDL, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
 #endif
 
 #if !defined(PNTR_APP_NO_ENTRY)
