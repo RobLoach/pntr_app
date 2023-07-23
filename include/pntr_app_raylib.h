@@ -43,8 +43,8 @@ bool pntr_app_events(pntr_app* app) {
     Vector2 mouseMove = GetMouseDelta();
     if (mouseMove.x != 0.0f || mouseMove.y != 0.0f) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-        event.mouse_x = GetMouseX();
-        event.mouse_y = GetMouseY();
+        event.mouseX = GetMouseX();
+        event.mouseY = GetMouseY();
         app->event(&event, app->userData);
     }
 
@@ -59,9 +59,9 @@ bool pntr_app_events(pntr_app* app) {
         }
 
         if (event.type != PNTR_APP_EVENTTYPE_UNKNOWN) {
-            event.mouse_button = pntr_app_raylib_mouse_button(i);
-            event.mouse_x = GetMouseX();
-            event.mouse_y = GetMouseY();
+            event.mouseButton = pntr_app_raylib_mouse_button(i);
+            event.mouseX = GetMouseX();
+            event.mouseY = GetMouseY();
             app->event(&event, app->userData);
         }
     }

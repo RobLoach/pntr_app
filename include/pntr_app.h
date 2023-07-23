@@ -215,9 +215,9 @@ typedef struct pntr_app_event {
      * With PNTR_APP_EVENTTYPE_KEY_DOWN or PNTR_APP_EVENTTYPE_KEY_UP, will determine the key that was affected.
      */
     pntr_app_key key;
-    pntr_app_mouse_button mouse_button;
-    int mouse_x;
-    int mouse_y;
+    pntr_app_mouse_button mouseButton;
+    int mouseX;
+    int mouseY;
 } pntr_app_event;
 
 typedef struct pntr_app {

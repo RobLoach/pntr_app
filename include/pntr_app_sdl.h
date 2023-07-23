@@ -168,8 +168,8 @@ bool pntr_app_events(pntr_app* app) {
                 return false;
             case SDL_MOUSEMOTION: {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                platform->mouseX = pntrEvent.mouse_x = event.motion.x;
-                platform->mouseX = pntrEvent.mouse_y = event.motion.y;
+                pntrEvent.mouseX = platform->mouseX = event.motion.x;
+                pntrEvent.mouseY = platform->mouseX = event.motion.y;
                 app->event(&pntrEvent, app->userData);
                 break;
             }
@@ -178,9 +178,9 @@ bool pntr_app_events(pntr_app* app) {
                 pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event.button.button);
                 if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
                     pntrEvent.type = (event.type == SDL_MOUSEBUTTONDOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
-                    pntrEvent.mouse_button = button;
-                    pntrEvent.mouse_x = platform->mouseX;
-                    pntrEvent.mouse_y = platform->mouseY;
+                    pntrEvent.mouseButton = button;
+                    pntrEvent.mouseX = platform->mouseX;
+                    pntrEvent.mouseY = platform->mouseY;
                     app->event(&pntrEvent, app->userData);
                 }
                 break;
@@ -227,7 +227,7 @@ bool pntr_app_render(pntr_app* app) {
 }
 
 bool pntr_app_init(pntr_app* app) {
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
     pntr_app_sdl_window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
     pntr_app_sdl_screen = SDL_GetWindowSurface(pntr_app_sdl_window);
     pntr_app_sdl_surface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);

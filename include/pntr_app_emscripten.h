@@ -87,7 +87,7 @@ int pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *
     pntr_app_emscripten_platform* platform = app->platform;
 
     // Mouse Button
-    event.mouse_button = pntr_app_emscripten_mouse_button_from_emscripten(mouseEvent->button);
+    event.mouseButton = pntr_app_emscripten_mouse_button_from_emscripten(mouseEvent->button);
 
     // TODO: Fix mouse position resolution.
     if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE) {
@@ -109,8 +109,8 @@ int pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *
     }
 
     // TODO: Convert to pixel scale of the application screen.
-    event.mouse_x = platform->mouseX;
-    event.mouse_y = platform->mouseY;
+    event.mouseX = platform->mouseX;
+    event.mouseY = platform->mouseY;
 
     // Invoke the event
     app->event(&event, app->userData);
