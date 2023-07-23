@@ -66,6 +66,25 @@ bool pntr_app_events(pntr_app* app) {
         }
     }
 
+    // Gamepads
+    for (event.gamepad = 0; event.gamepad < 4; event.gamepad++) {
+        if (IsGamepadAvailable(event.gamepad)) {
+            for (event.gamepadButton = 1; event.gamepadButton <= PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB; event.gamepadButton++) {
+                if (IsGamepadButtonPressed(event.gamepad, event.gamepadButton)) {
+                    event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN;
+                    app->event(&event, app->userData);
+                }
+                else if (IsGamepadButtonReleased(event.gamepad, event.gamepadButton)) {
+                    event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+                    app->event(&event, app->userData);
+                }
+            }
+        }
+        else {
+            break;
+        }
+    }
+
     return true;
 }
 

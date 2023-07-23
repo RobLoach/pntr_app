@@ -12,7 +12,29 @@ uint64_t pntr_app_sdl_start;
 typedef struct pntr_app_sdl_platform {
     int mouseX;
     int mouseY;
+    SDL_GameController* gameControllers[4];
 } pntr_app_sdl_platform;
+
+pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button) {
+    switch (button) {
+        case SDL_CONTROLLER_BUTTON_A: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_DOWN;
+        case SDL_CONTROLLER_BUTTON_B: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_RIGHT;
+        case SDL_CONTROLLER_BUTTON_X: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_LEFT;
+        case SDL_CONTROLLER_BUTTON_Y: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_UP;
+        case SDL_CONTROLLER_BUTTON_BACK: return PNTR_APP_GAMEPAD_BUTTON_MIDDLE_LEFT;
+        case SDL_CONTROLLER_BUTTON_GUIDE: return PNTR_APP_GAMEPAD_BUTTON_MIDDLE;
+        case SDL_CONTROLLER_BUTTON_START: return PNTR_APP_GAMEPAD_BUTTON_MIDDLE_RIGHT;
+        case SDL_CONTROLLER_BUTTON_LEFTSTICK: return PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB;
+        case SDL_CONTROLLER_BUTTON_RIGHTSTICK: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
+        case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return PNTR_APP_GAMEPAD_BUTTON_LEFT_TRIGGER_1;
+        case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_TRIGGER_1;
+        case SDL_CONTROLLER_BUTTON_DPAD_UP: return PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_UP;
+        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: return PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_DOWN;
+        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: return PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_LEFT;
+        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_RIGHT;
+    }
+    return PNTR_APP_GAMEPAD_BUTTON_UNKNOWN;
+}
 
 pntr_app_mouse_button pntr_app_sdl_mouse_button(int button) {
     switch (button) {
@@ -159,12 +181,13 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-
-    SDL_Event event;
     pntr_app_event pntrEvent;
+    SDL_Event event;
+    
     while (SDL_PollEvent(&event) != 0) {
         switch (event.type) {
             case SDL_QUIT:
+            case SDL_APP_TERMINATING:
                 return false;
             case SDL_MOUSEMOTION: {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
@@ -185,15 +208,24 @@ bool pntr_app_events(pntr_app* app) {
                 }
                 break;
             }
+            case SDL_CONTROLLERBUTTONDOWN:
+            case SDL_CONTROLLERBUTTONUP: {
+                pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event.cbutton.button);
+                if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
+                    pntrEvent.type = (event.cbutton.state == SDL_PRESSED) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+                    pntrEvent.gamepad = event.cbutton.which;
+                    app->event(&pntrEvent, app->userData);
+                }
+                break;
+            }
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     return false;
                 }
 
-                pntr_app_key keyPressed = pntr_app_sdl_key(event.key.keysym.sym);
-                if (keyPressed != PNTR_APP_KEY_INVALID) {
-                    pntrEvent.key = keyPressed;
+                pntrEvent.key = pntr_app_sdl_key(event.key.keysym.sym);
+                if (pntrEvent.key != PNTR_APP_KEY_INVALID) {
                     pntrEvent.type = (event.type == SDL_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
                     app->event(&pntrEvent, app->userData);
                 }
@@ -227,17 +259,42 @@ bool pntr_app_render(pntr_app* app) {
 }
 
 bool pntr_app_init(pntr_app* app) {
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
     pntr_app_sdl_window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
     pntr_app_sdl_screen = SDL_GetWindowSurface(pntr_app_sdl_window);
     pntr_app_sdl_surface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
 
     app->platform = PNTR_MALLOC(sizeof(pntr_app_sdl_platform));
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+
+    // GamePads
+    for (int i = 0; i < 4; i++) {
+        if (SDL_IsGameController(i)) {
+            platform->gameControllers[i] = SDL_GameControllerOpen(i);
+        }
+    }
 
     return true;
 }
 
 void pntr_app_close(pntr_app* app) {
+
+    if (app != NULL) {
+        pntr_app_sdl_platform* platform = app->platform;
+        if (platform) {
+
+            // Close Gamepads
+            for (int i = 0; i < 4; i++) {
+                if (platform->gameControllers[i] != NULL) {
+                    if (SDL_IsGameController(i)) {
+                        SDL_GameControllerClose(platform->gameControllers[i]);
+                        platform->gameControllers[i] = NULL;
+                    }
+                }
+            }
+        }
+    }
+
     SDL_FreeSurface(pntr_app_sdl_surface);
     SDL_FreeSurface(pntr_app_sdl_screen);
     SDL_DestroyWindow(pntr_app_sdl_window);

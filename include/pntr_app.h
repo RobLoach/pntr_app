@@ -189,6 +189,27 @@ typedef enum pntr_app_key {
     PNTR_APP_KEY_LAST             = 349
 } pntr_app_key;
 
+typedef enum pntr_app_gamepad_button {
+    PNTR_APP_GAMEPAD_BUTTON_UNKNOWN = 0,         // Unknown button, just for error checking
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_UP,        // Gamepad left DPAD up button
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_RIGHT,     // Gamepad left DPAD right button
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_DOWN,      // Gamepad left DPAD down button
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_LEFT,      // Gamepad left DPAD left button
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_UP,       // Gamepad right button up (i.e. PS3: Triangle, Xbox: Y)
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_RIGHT,    // Gamepad right button right (i.e. PS3: Square, Xbox: X)
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_DOWN,     // Gamepad right button down (i.e. PS3: Cross, Xbox: A)
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_LEFT,     // Gamepad right button left (i.e. PS3: Circle, Xbox: B)
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_TRIGGER_1,      // Gamepad top/back trigger left (first), it could be a trailing button
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_TRIGGER_2,      // Gamepad top/back trigger left (second), it could be a trailing button
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_TRIGGER_1,     // Gamepad top/back trigger right (one), it could be a trailing button
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_TRIGGER_2,     // Gamepad top/back trigger right (second), it could be a trailing button
+    PNTR_APP_GAMEPAD_BUTTON_MIDDLE_LEFT,         // Gamepad center buttons, left one (i.e. PS3: Select)
+    PNTR_APP_GAMEPAD_BUTTON_MIDDLE,              // Gamepad center buttons, middle one (i.e. PS3: PS, Xbox: XBOX)
+    PNTR_APP_GAMEPAD_BUTTON_MIDDLE_RIGHT,        // Gamepad center buttons, right one (i.e. PS3: Start)
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB,          // Gamepad joystick pressed button left
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB          // Gamepad joystick pressed button right
+} pntr_app_gamepad_button;
+
 typedef enum pntr_app_mouse_button {
     PNTR_APP_MOUSE_BUTTON_LEFT,
     PNTR_APP_MOUSE_BUTTON_RIGHT,
@@ -197,12 +218,14 @@ typedef enum pntr_app_mouse_button {
 } pntr_app_mouse_button;
 
 typedef enum pntr_app_event_type {
-    PNTR_APP_EVENTTYPE_UNKNOWN,
+    PNTR_APP_EVENTTYPE_UNKNOWN = 0,
     PNTR_APP_EVENTTYPE_KEY_DOWN,
     PNTR_APP_EVENTTYPE_KEY_UP,
     PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN,
     PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP,
-    PNTR_APP_EVENTTYPE_MOUSE_MOVE
+    PNTR_APP_EVENTTYPE_MOUSE_MOVE,
+    PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN,
+    PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP
 } pntr_app_event_type;
 
 typedef struct pntr_app_event {
@@ -218,6 +241,9 @@ typedef struct pntr_app_event {
     pntr_app_mouse_button mouseButton;
     int mouseX;
     int mouseY;
+
+    pntr_app_gamepad_button gamepadButton;
+    int gamepad;
 } pntr_app_event;
 
 typedef struct pntr_app {
