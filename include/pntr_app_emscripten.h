@@ -77,7 +77,7 @@ int pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *
     }
 
     // Build the key event.
-    pntr_app_event event; 
+    pntr_app_event event;
     switch (eventType) {
         case EMSCRIPTEN_EVENT_MOUSEDOWN: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN; break;
         case EMSCRIPTEN_EVENT_MOUSEUP: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP; break;
@@ -145,31 +145,53 @@ bool pntr_app_init(pntr_app* app) {
 void pntr_app_close(pntr_app* app) {
     // Nothing
 }
+pntr_app_gamepad_button pntr_app_emscripten_gamepad_button(int button) {
+    return button;
+}
 
 bool pntr_app_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
     }
 
+    pntr_app_event event;
+    pntr_app_emscripten_platform* platform = app->platform;
+
     // Gamepad Buttons
+    // TODO: Is emscripten gamepad working?
     EMSCRIPTEN_RESULT res = emscripten_sample_gamepad_data();
     if (res == EMSCRIPTEN_RESULT_SUCCESS) {
-        for (event.gamepad = 0; event.gamepad < emscripten_get_num_gamepads() && event.gamepad < 4; event.gamepad++) {
+        int numGamepads =  emscripten_get_num_gamepads();
+        for (event.gamepad = 0; event.gamepad < numGamepads && event.gamepad < 4; event.gamepad++) {
             EmscriptenGamepadEvent ge;
-            if (emscripten_get_gamepad_status(i, &ge) != EMSCRIPTEN_RESULT_SUCCESS) {
+            if (emscripten_get_gamepad_status(event.gamepad, &ge) != EMSCRIPTEN_RESULT_SUCCESS) {
                 continue;
             }
 
             for (int j = 0; j < ge.numButtons; ++j) {
-                if (ge.digitalButton[j] != platform->gamepadState[g].digitalButton[j]) {
-
-                    event.gamepadButton = pntr_app_libretro_gamepad_button(j);
+                if (ge.digitalButton[j] != platform->gamepadState[event.gamepad].digitalButton[j]) {
+                    event.gamepadButton = pntr_app_emscripten_gamepad_button(j);
                     if (event.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
                         event.type = ge.digitalButton[j] ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
                         app->event(&event, app->userData);
                     }
-                    
-                    platform->gamepadState[g].digitalButton[j] = ge.digitalButton[j];
+
+                    platform->gamepadState[event.gamepad].digitalButton[j] = ge.digitalButton[j];
+                }
+
+                if (ge.analogButton[j] != platform->gamepadState[event.gamepad].analogButton[j]) {
+                    event.gamepadButton = pntr_app_emscripten_gamepad_button(j);
+                    if (event.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
+                        bool currentPushed = ge.analogButton[j] >= 0.5;
+                        bool lastPushed = platform->gamepadState[event.gamepad].analogButton[j] > 0.5;
+
+                        if (currentPushed != lastPushed) {
+                            event.type = currentPushed ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+                            app->event(&event, app->userData);
+                        }
+                    }
+
+                    platform->gamepadState[event.gamepad].analogButton[j] = ge.analogButton[j];
                 }
             }
         }
@@ -187,7 +209,7 @@ void pntr_app_update_loop(void* app) {
     }
 
     pntr_app* application = (pntr_app*)app;
-    
+
     if (!pntr_app_events(application)) {
         emscripten_cancel_main_loop();
         return;
