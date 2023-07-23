@@ -32,7 +32,6 @@ bool Update(pntr_image* screen, void* userData) {
 
     // Draw the logo
     if (appData->logo) {
-        //pntr_draw_image(screen, appData->logo, screen->width / 2 - appData->logo->width / 2, screen->height / 2 - appData->logo->height / 2);
         pntr_draw_image(screen, appData->logo, appData->x++, screen->height / 2 - appData->logo->height / 2);
     }
 

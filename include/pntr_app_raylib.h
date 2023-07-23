@@ -30,15 +30,6 @@ bool pntr_app_events(pntr_app* app) {
         }
     }
 
-    // event.type = PNTR_APP_EVENTTYPE_KEY_UP;
-    // for (event.key = PNTR_APP_KEY_SPACE; event.key < PNTR_APP_KEY_LAST; event.key++) {
-    //     if (IsKeyReleased(i)) {
-    //         event.key = i;
-    //         app->event(&event);
-    //     }
-    // }
-    
-
     return true;
 }
 

@@ -6,13 +6,11 @@
 //#include <math.h>
 
 #ifndef PNTR_APP_LIBRETRO_H
-#define PNTR_APP_LIBRETRO_H "../build/_deps/libretro-src/include/libretro.h"
-//#define PNTR_APP_LIBRETRO_H "libretro.h"
+#define PNTR_APP_LIBRETRO_H "libretro.h"
 #endif
 #include PNTR_APP_LIBRETRO_H
 
 #define PNTR_APP_NO_ENTRY
-#include "pntr_app.h"
 
 pntr_app* pntr_app_libretro;
 
@@ -214,7 +212,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     }
 
     info->timing = (struct retro_system_timing) {
-        .fps = fps > 0 ? (double)fps : 0.0,
+        .fps = (fps > 0) ? (double)fps : 0.0,
         .sample_rate = 0.0,
     };
     info->geometry = (struct retro_game_geometry) {
