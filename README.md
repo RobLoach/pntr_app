@@ -66,7 +66,7 @@ Make sure to link the related library when building.
 - [ ] Target: Command Line Interface?
 - [x] Mouse
 - [x] Keyboard
-- [ ] Gamepads
+- [x] Gamepads
 - [ ] Audio?
 
 ## Build

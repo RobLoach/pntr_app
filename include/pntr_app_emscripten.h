@@ -145,7 +145,13 @@ bool pntr_app_init(pntr_app* app) {
 void pntr_app_close(pntr_app* app) {
     // Nothing
 }
+
+//#include <stdio.h>
+
 pntr_app_gamepad_button pntr_app_emscripten_gamepad_button(int button) {
+    // TODO: emscripten: Determine the correct gamepad mappings
+    //printf("Emscripten: Button: %d\n", buton);
+
     return button;
 }
 

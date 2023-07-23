@@ -21,9 +21,6 @@ bool Init(void* userData) {
     return true;
 }
 
-
-#include <stdio.h>
-
 bool Update(pntr_image* screen, void* userData) {
     AppData* appData = (AppData*)userData;
 
@@ -79,7 +76,18 @@ void Event(pntr_app_event* event, void* userData) {
         break;
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN:
         {
-            printf("Gamepad: %d. Button: %d\n", event->gamepad, event->gamepadButton);
+            if (event->gamepadButton == PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_DOWN) {
+                appData->spacePressed = true;
+            }
+            //printf("Gamepad: %d. Button: %d\n", event->gamepad, event->gamepadButton);
+            break;
+        }
+        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP:
+        {
+            if (event->gamepadButton == PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_DOWN) {
+                appData->spacePressed = false;
+            }
+            //printf("Gamepad: %d. Button: %d\n", event->gamepad, event->gamepadButton);
             break;
         }
         break;
