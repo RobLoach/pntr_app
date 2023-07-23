@@ -3,6 +3,8 @@
 typedef struct pntr_app_emscripten_platform {
     int mouseX;
     int mouseY;
+
+    EmscriptenGamepadEvent gamepadState[4];
 } pntr_app_emscripten_platform;
 
 /**
@@ -145,7 +147,34 @@ void pntr_app_close(pntr_app* app) {
 }
 
 bool pntr_app_events(pntr_app* app) {
-    // Nothing.
+    if (app == NULL || app->platform == NULL) {
+        return false;
+    }
+
+    // Gamepad Buttons
+    EMSCRIPTEN_RESULT res = emscripten_sample_gamepad_data();
+    if (res == EMSCRIPTEN_RESULT_SUCCESS) {
+        for (event.gamepad = 0; event.gamepad < emscripten_get_num_gamepads() && event.gamepad < 4; event.gamepad++) {
+            EmscriptenGamepadEvent ge;
+            if (emscripten_get_gamepad_status(i, &ge) != EMSCRIPTEN_RESULT_SUCCESS) {
+                continue;
+            }
+
+            for (int j = 0; j < ge.numButtons; ++j) {
+                if (ge.digitalButton[j] != platform->gamepadState[g].digitalButton[j]) {
+
+                    event.gamepadButton = pntr_app_libretro_gamepad_button(j);
+                    if (event.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
+                        event.type = ge.digitalButton[j] ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+                        app->event(&event, app->userData);
+                    }
+                    
+                    platform->gamepadState[g].digitalButton[j] = ge.digitalButton[j];
+                }
+            }
+        }
+    }
+
     return true;
 }
 
