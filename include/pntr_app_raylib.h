@@ -7,13 +7,40 @@
 Image pntr_app_raylib_image;
 Texture pntr_app_raylib_texture;
 
+bool pntr_app_events(pntr_app* app) {
+    if (app == NULL) {
+        return false;
+    }
+
+    if (app->event == NULL) {
+        return true;
+    }
+
+    pntr_app_event event;
+
+    // Keys
+    for (event.key = PNTR_APP_KEY_FIRST; event.key < PNTR_APP_KEY_LAST; event.key++) {
+        if (IsKeyPressed(event.key)) {
+            event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
+            app->event(&event, app->userData);
+        }
+        else if (IsKeyReleased(event.key)) {
+            event.type = PNTR_APP_EVENTTYPE_KEY_UP;
+            app->event(&event, app->userData);
+        }
+    }
+
+    return true;
+}
+
 /**
  * Pushes the given image to the screen.
  */
-bool pntr_app_render(pntr_image* screen) {
-    if (screen == NULL) {
+bool pntr_app_render(pntr_app* app) {
+    if (app == NULL || app->screen == NULL) {
         return false;
     }
+    pntr_image* screen = app->screen;
 
     UpdateTexture(pntr_app_raylib_texture, screen->data);
 
@@ -50,7 +77,10 @@ bool pntr_app_render(pntr_image* screen) {
 bool pntr_app_init(pntr_app* app) {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(app->width * 2, app->height * 2, app->title);
-    SetTargetFPS(app->fps);
+
+    if (app->fps > 0) {
+        SetTargetFPS(app->fps);
+    }
 
     pntr_app_raylib_image.data = app->screen->data;
     pntr_app_raylib_image.width = app->width;

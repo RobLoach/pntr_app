@@ -60,6 +60,152 @@ extern "C" {
     #define PNTR_APP_API PNTR_API
 #endif
 
+/**
+ * Key code.
+ */
+typedef enum pntr_app_key {
+    PNTR_APP_KEY_INVALID          = 0,
+    PNTR_APP_KEY_FIRST            = 32,
+    PNTR_APP_KEY_SPACE            = 32,
+    PNTR_APP_KEY_APOSTROPHE       = 39,  /* ' */
+    PNTR_APP_KEY_COMMA            = 44,  /* , */
+    PNTR_APP_KEY_MINUS            = 45,  /* - */
+    PNTR_APP_KEY_PERIOD           = 46,  /* . */
+    PNTR_APP_KEY_SLASH            = 47,  /* / */
+    PNTR_APP_KEY_0                = 48,
+    PNTR_APP_KEY_1                = 49,
+    PNTR_APP_KEY_2                = 50,
+    PNTR_APP_KEY_3                = 51,
+    PNTR_APP_KEY_4                = 52,
+    PNTR_APP_KEY_5                = 53,
+    PNTR_APP_KEY_6                = 54,
+    PNTR_APP_KEY_7                = 55,
+    PNTR_APP_KEY_8                = 56,
+    PNTR_APP_KEY_9                = 57,
+    PNTR_APP_KEY_SEMICOLON        = 59,  /* ; */
+    PNTR_APP_KEY_EQUAL            = 61,  /* = */
+    PNTR_APP_KEY_A                = 65,
+    PNTR_APP_KEY_B                = 66,
+    PNTR_APP_KEY_C                = 67,
+    PNTR_APP_KEY_D                = 68,
+    PNTR_APP_KEY_E                = 69,
+    PNTR_APP_KEY_F                = 70,
+    PNTR_APP_KEY_G                = 71,
+    PNTR_APP_KEY_H                = 72,
+    PNTR_APP_KEY_I                = 73,
+    PNTR_APP_KEY_J                = 74,
+    PNTR_APP_KEY_K                = 75,
+    PNTR_APP_KEY_L                = 76,
+    PNTR_APP_KEY_M                = 77,
+    PNTR_APP_KEY_N                = 78,
+    PNTR_APP_KEY_O                = 79,
+    PNTR_APP_KEY_P                = 80,
+    PNTR_APP_KEY_Q                = 81,
+    PNTR_APP_KEY_R                = 82,
+    PNTR_APP_KEY_S                = 83,
+    PNTR_APP_KEY_T                = 84,
+    PNTR_APP_KEY_U                = 85,
+    PNTR_APP_KEY_V                = 86,
+    PNTR_APP_KEY_W                = 87,
+    PNTR_APP_KEY_X                = 88,
+    PNTR_APP_KEY_Y                = 89,
+    PNTR_APP_KEY_Z                = 90,
+    PNTR_APP_KEY_LEFT_BRACKET     = 91,  /* [ */
+    PNTR_APP_KEY_BACKSLASH        = 92,  /* \ */
+    PNTR_APP_KEY_RIGHT_BRACKET    = 93,  /* ] */
+    PNTR_APP_KEY_GRAVE_ACCENT     = 96,  /* ` */
+    PNTR_APP_KEY_WORLD_1          = 161, /* non-US #1 */
+    PNTR_APP_KEY_WORLD_2          = 162, /* non-US #2 */
+    PNTR_APP_KEY_ESCAPE           = 256,
+    PNTR_APP_KEY_ENTER            = 257,
+    PNTR_APP_KEY_TAB              = 258,
+    PNTR_APP_KEY_BACKSPACE        = 259,
+    PNTR_APP_KEY_INSERT           = 260,
+    PNTR_APP_KEY_DELETE           = 261,
+    PNTR_APP_KEY_RIGHT            = 262,
+    PNTR_APP_KEY_LEFT             = 263,
+    PNTR_APP_KEY_DOWN             = 264,
+    PNTR_APP_KEY_UP               = 265,
+    PNTR_APP_KEY_PAGE_UP          = 266,
+    PNTR_APP_KEY_PAGE_DOWN        = 267,
+    PNTR_APP_KEY_HOME             = 268,
+    PNTR_APP_KEY_END              = 269,
+    PNTR_APP_KEY_CAPS_LOCK        = 280,
+    PNTR_APP_KEY_SCROLL_LOCK      = 281,
+    PNTR_APP_KEY_NUM_LOCK         = 282,
+    PNTR_APP_KEY_PRINT_SCREEN     = 283,
+    PNTR_APP_KEY_PAUSE            = 284,
+    PNTR_APP_KEY_F1               = 290,
+    PNTR_APP_KEY_F2               = 291,
+    PNTR_APP_KEY_F3               = 292,
+    PNTR_APP_KEY_F4               = 293,
+    PNTR_APP_KEY_F5               = 294,
+    PNTR_APP_KEY_F6               = 295,
+    PNTR_APP_KEY_F7               = 296,
+    PNTR_APP_KEY_F8               = 297,
+    PNTR_APP_KEY_F9               = 298,
+    PNTR_APP_KEY_F10              = 299,
+    PNTR_APP_KEY_F11              = 300,
+    PNTR_APP_KEY_F12              = 301,
+    PNTR_APP_KEY_F13              = 302,
+    PNTR_APP_KEY_F14              = 303,
+    PNTR_APP_KEY_F15              = 304,
+    PNTR_APP_KEY_F16              = 305,
+    PNTR_APP_KEY_F17              = 306,
+    PNTR_APP_KEY_F18              = 307,
+    PNTR_APP_KEY_F19              = 308,
+    PNTR_APP_KEY_F20              = 309,
+    PNTR_APP_KEY_F21              = 310,
+    PNTR_APP_KEY_F22              = 311,
+    PNTR_APP_KEY_F23              = 312,
+    PNTR_APP_KEY_F24              = 313,
+    PNTR_APP_KEY_F25              = 314,
+    PNTR_APP_KEY_KP_0             = 320,
+    PNTR_APP_KEY_KP_1             = 321,
+    PNTR_APP_KEY_KP_2             = 322,
+    PNTR_APP_KEY_KP_3             = 323,
+    PNTR_APP_KEY_KP_4             = 324,
+    PNTR_APP_KEY_KP_5             = 325,
+    PNTR_APP_KEY_KP_6             = 326,
+    PNTR_APP_KEY_KP_7             = 327,
+    PNTR_APP_KEY_KP_8             = 328,
+    PNTR_APP_KEY_KP_9             = 329,
+    PNTR_APP_KEY_KP_DECIMAL       = 330,
+    PNTR_APP_KEY_KP_DIVIDE        = 331,
+    PNTR_APP_KEY_KP_MULTIPLY      = 332,
+    PNTR_APP_KEY_KP_SUBTRACT      = 333,
+    PNTR_APP_KEY_KP_ADD           = 334,
+    PNTR_APP_KEY_KP_ENTER         = 335,
+    PNTR_APP_KEY_KP_EQUAL         = 336,
+    PNTR_APP_KEY_LEFT_SHIFT       = 340,
+    PNTR_APP_KEY_LEFT_CONTROL     = 341,
+    PNTR_APP_KEY_LEFT_ALT         = 342,
+    PNTR_APP_KEY_LEFT_SUPER       = 343,
+    PNTR_APP_KEY_RIGHT_SHIFT      = 344,
+    PNTR_APP_KEY_RIGHT_CONTROL    = 345,
+    PNTR_APP_KEY_RIGHT_ALT        = 346,
+    PNTR_APP_KEY_RIGHT_SUPER      = 347,
+    PNTR_APP_KEY_MENU             = 348,
+    PNTR_APP_KEY_LAST             = 349
+} pntr_app_key;
+
+typedef enum pntr_app_event_type {
+    PNTR_APP_EVENTTYPE_KEY_DOWN,
+    PNTR_APP_EVENTTYPE_KEY_UP
+} pntr_app_event_type;
+
+typedef struct pntr_app_event {
+    /**
+     * The type of the event that has been pushed.
+     */
+    pntr_app_event_type type;
+
+    /**
+     * With PNTR_APP_EVENTTYPE_KEY_DOWN or PNTR_APP_EVENTTYPE_KEY_UP, will determine the key that was affected.
+     */
+    pntr_app_key key;
+} pntr_app_event;
+
 typedef struct pntr_app {
     int width;
     int height;
@@ -67,13 +213,15 @@ typedef struct pntr_app {
     bool (*init)(void* userData);
     bool (*update)(pntr_image* screen, void* userData);
     void (*close)(void* userData);
+    void (*event)(pntr_app_event* event, void* userData);
     int fps;
-    void* userData;
     pntr_image* screen;
+    void* userData;
 } pntr_app;
 
-bool pntr_app_render(pntr_image* screen);
 bool pntr_app_init(pntr_app* app);
+bool pntr_app_events(pntr_app* app);
+bool pntr_app_render(pntr_app* app);
 void pntr_app_close(pntr_app* app);
 
 #ifdef __cplusplus
@@ -171,14 +319,12 @@ int main(int argc, char* argv[]) {
     if (app.update != NULL) {
 #if defined(EMSCRIPTEN)
         // Set up the main loop.
-        emscripten_set_main_loop_arg(pntr_app_update, &app, app.fps, 1);
+        emscripten_set_main_loop_arg(pntr_app_update_loop, &app, app.fps, 1);
 #else
         // Continue running when update returns TRUE.
-        while(app.update(app.screen, app.userData) == true) {
-            if (!pntr_app_render(app.screen)) {
-                break;
-            }
-        };
+        while (pntr_app_events(&app) &&
+            app.update(app.screen, app.userData) &&
+            pntr_app_render(&app));
 #endif
     }
 
@@ -193,12 +339,13 @@ int main(int argc, char* argv[]) {
         app.screen = NULL;
     }
 
+    pntr_app_close(&app);
+
     // Clear up any user data.
     if (app.userData != NULL) {
         PNTR_FREE(app.userData);
+        app.userData = NULL;
     }
-
-    pntr_app_close(&app);
 
     // Return an error state if update was nullified.
     return (app.update == NULL) ? 1 : 0;
