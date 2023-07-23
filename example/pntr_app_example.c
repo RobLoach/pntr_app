@@ -50,22 +50,17 @@ void Close(void* userData) {
     pntr_unload_font(appData->font);
 }
 
-#include <stdio.h>
-
 void Event(pntr_app_event* event, void* userData) {
     AppData* appData = (AppData*)userData;
 
-
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN:
-    printf("OMG1\n");
-            if (event->key == PNTR_APP_KEY_J) {
-    printf("OMG2\n");
+            if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = true;
             }
         break;
         case PNTR_APP_EVENTTYPE_KEY_UP:
-            if (event->key == PNTR_APP_KEY_J) {
+            if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = false;
             }
         break;

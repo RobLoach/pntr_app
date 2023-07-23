@@ -1,3 +1,5 @@
+#include <emscripten/html5.h> // emscripten_set_keydown_callback, emscripten_set_keyup_callback
+
 /**
  * Render the pixel data onto the canvas.
  */
@@ -29,47 +31,27 @@ bool pntr_app_render(pntr_app* app) {
     return pntr_app_emscripten_render(screen->data, screen->pitch * screen->height, screen->width, screen->height);
 }
 
-// TODO: Have app be passed in as a pointer?
-EM_JS(void, pntr_app_emscripten_register_key_events, (pntr_app* app), {
-    const canvas = document.getElementById('canvas');
-    const pntr_app_emscripten_key_event = Module.cwrap('pntr_app_emscripten_key_event',
-        'void',
-        ['number', 'boolean', 'number']
-    );
-
-    canvas.addEventListener("keydown", (event) => {
-        console.log(event);
-        pntr_app_emscripten_key_event(app, true, event.keyCode);
-        return false;
-    });
-
-    canvas.addEventListener("keyup", (event) => {
-        pntr_app_emscripten_key_event(app, false, event.keyCode);
-        return false;
-    });
-});
-
-#include <stdio.h>
-
-// TODO: Have the active app be passed as a pointer?
-void EMSCRIPTEN_KEEPALIVE pntr_app_emscripten_key_event(pntr_app* app, bool down, int keyCode) {
-    if (app == NULL){
-        printf("Nope1");
-        return;
+int pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent *keyEvent, void *userData) {
+    pntr_app* app = (pntr_app*)userData;
+    if (app == NULL || app->event == NULL) {
+        return true;
     }
-    if (app->event == NULL) {
-        printf("Nope2");
-        return;
-    }
-    printf("ASDFFDAS: %d\n", keyCode);
 
-    if (keyCode > 0) {
-    printf("Called event! %d\n", down);
-        pntr_app_event event;
-        event.type = down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
-        event.type = keyCode;
-        app->event(&event, app->userData);
+    // Build the key event.
+    pntr_app_event event; 
+    event.type = (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
+
+    // TODO: keyCode is deprecated, so do some string checkings?
+    event.key = keyEvent->keyCode;
+    if (event.key <= 0) {
+        return true;
     }
+
+    // Invoke the event
+    app->event(&event, app->userData);
+
+    // Return false as we're taking over the event.
+    return false;
 }
 
 bool pntr_app_init(pntr_app* app) {
@@ -77,9 +59,12 @@ bool pntr_app_init(pntr_app* app) {
         return false;
     }
 
+    // Title
     emscripten_set_window_title(app->title);
 
-    pntr_app_emscripten_register_key_events(app);
+    // Keyboard
+    emscripten_set_keydown_callback("#canvas", app, true, pntr_app_emscripten_key);
+    emscripten_set_keyup_callback("#canvas", app, true, pntr_app_emscripten_key);
     return true;
 }
 
