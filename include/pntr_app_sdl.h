@@ -7,21 +7,149 @@
 SDL_Window* pntr_app_sdl_window;
 SDL_Surface* pntr_app_sdl_screen;
 SDL_Surface* pntr_app_sdl_surface;
+uint64_t pntr_app_sdl_start;
 
-/**
- * Pushes the given image to the screen.
- */
-bool pntr_app_render(pntr_image* screen) {
-    if (screen == NULL) {
+pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
+    switch (key) {
+        case SDLK_SPACE: return PNTR_APP_KEY_SPACE;
+        case SDLK_QUOTE: return PNTR_APP_KEY_APOSTROPHE;
+        case SDLK_COMMA: return PNTR_APP_KEY_COMMA;
+        case SDLK_MINUS: return PNTR_APP_KEY_MINUS;
+        case SDLK_PERIOD: return PNTR_APP_KEY_PERIOD;
+        case SDLK_SLASH: return PNTR_APP_KEY_SLASH;
+        case SDLK_0: return PNTR_APP_KEY_0;
+        case SDLK_1: return PNTR_APP_KEY_1;
+        case SDLK_2: return PNTR_APP_KEY_2;
+        case SDLK_3: return PNTR_APP_KEY_3;
+        case SDLK_4: return PNTR_APP_KEY_4;
+        case SDLK_5: return PNTR_APP_KEY_5;
+        case SDLK_6: return PNTR_APP_KEY_6;
+        case SDLK_7: return PNTR_APP_KEY_7;
+        case SDLK_8: return PNTR_APP_KEY_8;
+        case SDLK_9: return PNTR_APP_KEY_9;
+        case SDLK_SEMICOLON: return PNTR_APP_KEY_SEMICOLON;
+        case SDLK_EQUALS: return PNTR_APP_KEY_EQUAL;
+        case SDLK_a: return PNTR_APP_KEY_A;
+        case SDLK_b: return PNTR_APP_KEY_B;
+        case SDLK_c: return PNTR_APP_KEY_C;
+        case SDLK_d: return PNTR_APP_KEY_D;
+        case SDLK_e: return PNTR_APP_KEY_E;
+        case SDLK_f: return PNTR_APP_KEY_F;
+        case SDLK_g: return PNTR_APP_KEY_G;
+        case SDLK_h: return PNTR_APP_KEY_H;
+        case SDLK_i: return PNTR_APP_KEY_I;
+        case SDLK_j: return PNTR_APP_KEY_J;
+        case SDLK_k: return PNTR_APP_KEY_K;
+        case SDLK_l: return PNTR_APP_KEY_L;
+        case SDLK_m: return PNTR_APP_KEY_M;
+        case SDLK_n: return PNTR_APP_KEY_N;
+        case SDLK_o: return PNTR_APP_KEY_O;
+        case SDLK_p: return PNTR_APP_KEY_P;
+        case SDLK_q: return PNTR_APP_KEY_Q;
+        case SDLK_r: return PNTR_APP_KEY_R;
+        case SDLK_s: return PNTR_APP_KEY_S;
+        case SDLK_t: return PNTR_APP_KEY_T;
+        case SDLK_u: return PNTR_APP_KEY_U;
+        case SDLK_v: return PNTR_APP_KEY_V;
+        case SDLK_w: return PNTR_APP_KEY_W;
+        case SDLK_x: return PNTR_APP_KEY_X;
+        case SDLK_y: return PNTR_APP_KEY_Y;
+        case SDLK_z: return PNTR_APP_KEY_Z;
+        case SDLK_LEFTBRACKET: return PNTR_APP_KEY_LEFT_BRACKET;
+        case SDLK_BACKSLASH: return PNTR_APP_KEY_BACKSLASH;
+        case SDLK_RIGHTBRACKET: return PNTR_APP_KEY_RIGHT_BRACKET;
+        case SDLK_UNKNOWN: return PNTR_APP_KEY_GRAVE_ACCENT;
+        case SDLK_ESCAPE: return PNTR_APP_KEY_ESCAPE;
+        case SDLK_RETURN: return PNTR_APP_KEY_ENTER;
+        case SDLK_TAB: return PNTR_APP_KEY_TAB;
+        case SDLK_BACKSPACE: return PNTR_APP_KEY_BACKSPACE;
+        case SDLK_INSERT: return PNTR_APP_KEY_INSERT;
+        case SDLK_DELETE: return PNTR_APP_KEY_DELETE;
+        case SDLK_RIGHT: return PNTR_APP_KEY_RIGHT;
+        case SDLK_LEFT: return PNTR_APP_KEY_LEFT;
+        case SDLK_DOWN: return PNTR_APP_KEY_DOWN;
+        case SDLK_UP: return PNTR_APP_KEY_UP;
+        case SDLK_PAGEUP: return PNTR_APP_KEY_PAGE_UP;
+        case SDLK_PAGEDOWN: return PNTR_APP_KEY_PAGE_DOWN;
+        case SDLK_HOME: return PNTR_APP_KEY_HOME;
+        case SDLK_END: return PNTR_APP_KEY_END;
+        case SDLK_CAPSLOCK: return PNTR_APP_KEY_CAPS_LOCK;
+        case SDLK_SCROLLLOCK: return PNTR_APP_KEY_SCROLL_LOCK;
+        case SDLK_PRINTSCREEN: return PNTR_APP_KEY_PRINT_SCREEN;
+        case SDLK_PAUSE: return PNTR_APP_KEY_PAUSE;
+        case SDLK_F1: return PNTR_APP_KEY_F1;
+        case SDLK_F2: return PNTR_APP_KEY_F2;
+        case SDLK_F3: return PNTR_APP_KEY_F3;
+        case SDLK_F4: return PNTR_APP_KEY_F4;
+        case SDLK_F5: return PNTR_APP_KEY_F5;
+        case SDLK_F6: return PNTR_APP_KEY_F6;
+        case SDLK_F7: return PNTR_APP_KEY_F7;
+        case SDLK_F8: return PNTR_APP_KEY_F8;
+        case SDLK_F9: return PNTR_APP_KEY_F9;
+        case SDLK_F10: return PNTR_APP_KEY_F10;
+        case SDLK_F11: return PNTR_APP_KEY_F11;
+        case SDLK_F12: return PNTR_APP_KEY_F12;
+        case SDLK_F13: return PNTR_APP_KEY_F13;
+        case SDLK_F14: return PNTR_APP_KEY_F14;
+        case SDLK_F15: return PNTR_APP_KEY_F15;
+        case SDLK_F16: return PNTR_APP_KEY_F16;
+        case SDLK_F17: return PNTR_APP_KEY_F17;
+        case SDLK_F18: return PNTR_APP_KEY_F18;
+        case SDLK_F19: return PNTR_APP_KEY_F19;
+        case SDLK_F20: return PNTR_APP_KEY_F20;
+        case SDLK_F21: return PNTR_APP_KEY_F21;
+        case SDLK_F22: return PNTR_APP_KEY_F22;
+        case SDLK_F23: return PNTR_APP_KEY_F23;
+        case SDLK_F24: return PNTR_APP_KEY_F24;
+        case SDLK_KP_0: return PNTR_APP_KEY_KP_0;
+        case SDLK_KP_1: return PNTR_APP_KEY_KP_1;
+        case SDLK_KP_2: return PNTR_APP_KEY_KP_2;
+        case SDLK_KP_3: return PNTR_APP_KEY_KP_3;
+        case SDLK_KP_4: return PNTR_APP_KEY_KP_4;
+        case SDLK_KP_5: return PNTR_APP_KEY_KP_5;
+        case SDLK_KP_6: return PNTR_APP_KEY_KP_6;
+        case SDLK_KP_7: return PNTR_APP_KEY_KP_7;
+        case SDLK_KP_8: return PNTR_APP_KEY_KP_8;
+        case SDLK_KP_9: return PNTR_APP_KEY_KP_9;
+        case SDLK_KP_DECIMAL: return PNTR_APP_KEY_KP_DECIMAL;
+        case SDLK_KP_DIVIDE: return PNTR_APP_KEY_KP_DIVIDE;
+        case SDLK_KP_MULTIPLY: return PNTR_APP_KEY_KP_MULTIPLY;
+        case SDLK_KP_MINUS: return PNTR_APP_KEY_KP_SUBTRACT;
+        case SDLK_KP_PLUS: return PNTR_APP_KEY_KP_ADD;
+        case SDLK_KP_ENTER: return PNTR_APP_KEY_KP_ENTER;
+        case SDLK_KP_EQUALS: return PNTR_APP_KEY_KP_EQUAL;
+        case SDLK_LSHIFT: return PNTR_APP_KEY_LEFT_SHIFT;
+        case SDLK_LCTRL: return PNTR_APP_KEY_LEFT_CONTROL;
+        case SDLK_LALT: return PNTR_APP_KEY_LEFT_ALT;
+        case SDLK_RSHIFT: return PNTR_APP_KEY_RIGHT_SHIFT;
+        case SDLK_RCTRL: return PNTR_APP_KEY_RIGHT_CONTROL;
+        case SDLK_RALT: return PNTR_APP_KEY_RIGHT_ALT;
+        case SDLK_MENU: return PNTR_APP_KEY_MENU;
+    }
+
+    return PNTR_APP_KEY_INVALID;
+}
+
+bool pntr_app_events(pntr_app* app) {
+    if (app == NULL) {
         return false;
     }
 
+    if (app->fps > 0) {
+        pntr_app_sdl_start = SDL_GetPerformanceCounter();
+    }
+
+    if (app->event == NULL) {
+        return true;
+    }
+
     SDL_Event event;
+    pntr_app_event pntrEvent;
     while (SDL_PollEvent(&event) != 0) {
         switch (event.type) {
             case SDL_QUIT:
                 return false;
-            case SDL_MOUSEBUTTONUP:
+            case SDL_MOUSEBUTTONUP: {
                 switch (event.button.button) {
                     case SDL_BUTTON_LEFT:
                         //examples_next();
@@ -31,25 +159,44 @@ bool pntr_app_render(pntr_image* screen) {
                         break;
                 }
                 break;
-            case SDL_KEYUP:
-                switch (event.key.keysym.sym) {
-                    case SDLK_ESCAPE:
-                        return false;
-                    case SDLK_LEFT:
-                        //examples_previous();
-                        break;
-                    case SDLK_RIGHT:
-                    case SDLK_SPACE:
-                    case SDLK_RETURN:
-                        //examples_next();
-                        break;
+            }
+            case SDL_KEYDOWN:
+            case SDL_KEYUP: {
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
+                    return false;
+                }
+
+                pntr_app_key keyPressed = pntr_app_sdl_key(event.key.keysym.sym);
+                if (keyPressed != PNTR_APP_KEY_INVALID) {
+                    pntrEvent.key = keyPressed;
+                    pntrEvent.type = (event.type == SDL_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
+                    app->event(&pntrEvent, app->userData);
                 }
                 break;
+            }
         }
+    }
+
+    return true;
+}
+
+/**
+ * Pushes the given image to the screen.
+ */
+bool pntr_app_render(pntr_app* app) {
+    if (app == NULL || app->screen == NULL) {
+        return false;
     }
 
     SDL_BlitSurface(pntr_app_sdl_surface, NULL, pntr_app_sdl_screen, NULL);
     SDL_UpdateWindowSurface(pntr_app_sdl_window);
+
+    // Limit the FPS
+    if (app->fps > 0) {
+        uint64_t end = SDL_GetPerformanceCounter();
+        float elapsedMS = (end - pntr_app_sdl_start) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
+        SDL_Delay((1.0f / app->fps) * 1000.0f - elapsedMS);
+    }
 
     return true;
 }
