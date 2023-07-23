@@ -9,6 +9,21 @@ SDL_Surface* pntr_app_sdl_screen;
 SDL_Surface* pntr_app_sdl_surface;
 uint64_t pntr_app_sdl_start;
 
+typedef struct pntr_app_sdl_platform {
+    int mouseX;
+    int mouseY;
+} pntr_app_sdl_platform;
+
+pntr_app_mouse_button pntr_app_sdl_mouse_button(int button) {
+    switch (button) {
+        case SDL_BUTTON_LEFT: return PNTR_APP_MOUSE_BUTTON_LEFT;
+        case SDL_BUTTON_MIDDLE: return PNTR_APP_MOUSE_BUTTON_MIDDLE;
+        case SDL_BUTTON_RIGHT: return PNTR_APP_MOUSE_BUTTON_RIGHT;
+        default:
+            return PNTR_APP_MOUSE_BUTTON_UNKNOWN;
+    }
+}
+
 pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
     switch (key) {
         case SDLK_SPACE: return PNTR_APP_KEY_SPACE;
@@ -143,20 +158,30 @@ bool pntr_app_events(pntr_app* app) {
         return true;
     }
 
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+
     SDL_Event event;
     pntr_app_event pntrEvent;
     while (SDL_PollEvent(&event) != 0) {
         switch (event.type) {
             case SDL_QUIT:
                 return false;
+            case SDL_MOUSEMOTION: {
+                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+                pntrEvent.mouseX = platform->mouseX = event.motion.x;
+                pntrEvent.mouseY = platform->mouseX = event.motion.y;
+                app->event(&pntrEvent, app->userData);
+                break;
+            }
+            case SDL_MOUSEBUTTONDOWN: 
             case SDL_MOUSEBUTTONUP: {
-                switch (event.button.button) {
-                    case SDL_BUTTON_LEFT:
-                        //examples_next();
-                        break;
-                    case SDL_BUTTON_RIGHT:
-                        //examples_previous();
-                        break;
+                pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event.button.button);
+                if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
+                    pntrEvent.type = (event.type == SDL_MOUSEBUTTONDOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
+                    pntrEvent.mouseButton = button;
+                    pntrEvent.mouseX = platform->mouseX;
+                    pntrEvent.mouseY = platform->mouseY;
+                    app->event(&pntrEvent, app->userData);
                 }
                 break;
             }
@@ -206,6 +231,8 @@ bool pntr_app_init(pntr_app* app) {
     pntr_app_sdl_window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
     pntr_app_sdl_screen = SDL_GetWindowSurface(pntr_app_sdl_window);
     pntr_app_sdl_surface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
+
+    app->platform = PNTR_MALLOC(sizeof(pntr_app_sdl_platform));
 
     return true;
 }

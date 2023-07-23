@@ -189,9 +189,20 @@ typedef enum pntr_app_key {
     PNTR_APP_KEY_LAST             = 349
 } pntr_app_key;
 
+typedef enum pntr_app_mouse_button {
+    PNTR_APP_MOUSE_BUTTON_LEFT,
+    PNTR_APP_MOUSE_BUTTON_RIGHT,
+    PNTR_APP_MOUSE_BUTTON_MIDDLE,
+    PNTR_APP_MOUSE_BUTTON_UNKNOWN
+} pntr_app_mouse_button;
+
 typedef enum pntr_app_event_type {
+    PNTR_APP_EVENTTYPE_UNKNOWN,
     PNTR_APP_EVENTTYPE_KEY_DOWN,
-    PNTR_APP_EVENTTYPE_KEY_UP
+    PNTR_APP_EVENTTYPE_KEY_UP,
+    PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN,
+    PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP,
+    PNTR_APP_EVENTTYPE_MOUSE_MOVE
 } pntr_app_event_type;
 
 typedef struct pntr_app_event {
@@ -204,6 +215,9 @@ typedef struct pntr_app_event {
      * With PNTR_APP_EVENTTYPE_KEY_DOWN or PNTR_APP_EVENTTYPE_KEY_UP, will determine the key that was affected.
      */
     pntr_app_key key;
+    pntr_app_mouse_button mouseButton;
+    int mouseX;
+    int mouseY;
 } pntr_app_event;
 
 typedef struct pntr_app {
@@ -217,6 +231,7 @@ typedef struct pntr_app {
     int fps;
     pntr_image* screen;
     void* userData;
+    void* platform;
 } pntr_app;
 
 bool pntr_app_init(pntr_app* app);
@@ -345,6 +360,12 @@ int main(int argc, char* argv[]) {
     if (app.userData != NULL) {
         PNTR_FREE(app.userData);
         app.userData = NULL;
+    }
+
+    // Clear up any user data.
+    if (app.platform != NULL) {
+        PNTR_FREE(app.platform);
+        app.platform = NULL;
     }
 
     // Return an error state if update was nullified.

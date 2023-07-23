@@ -66,6 +66,14 @@ void Event(pntr_app_event* event, void* userData) {
                 appData->spacePressed = false;
             }
         break;
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN: {
+            appData->spacePressed = true;
+        }
+        break;
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP: {
+            appData->spacePressed = false;
+        }
+        break;
     }
 }
 
