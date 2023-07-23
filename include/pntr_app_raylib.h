@@ -7,6 +7,15 @@
 Image pntr_app_raylib_image;
 Texture pntr_app_raylib_texture;
 
+pntr_app_mouse_button pntr_app_raylib_mouse_button(int button) {
+    switch (button) {
+        case MOUSE_BUTTON_LEFT: return PNTR_APP_MOUSE_BUTTON_LEFT;
+        case MOUSE_BUTTON_RIGHT: return PNTR_APP_MOUSE_BUTTON_RIGHT;
+        case MOUSE_BUTTON_MIDDLE: return PNTR_APP_MOUSE_BUTTON_MIDDLE;
+        default: return PNTR_APP_MOUSE_BUTTON_UNKNOWN;
+    }
+}
+
 bool pntr_app_events(pntr_app* app) {
     if (app == NULL) {
         return false;
@@ -26,6 +35,33 @@ bool pntr_app_events(pntr_app* app) {
         }
         else if (IsKeyReleased(event.key)) {
             event.type = PNTR_APP_EVENTTYPE_KEY_UP;
+            app->event(&event, app->userData);
+        }
+    }
+
+    // Mouse
+    Vector2 mouseMove = GetMouseDelta();
+    if (mouseMove.x != 0.0f || mouseMove.y != 0.0f) {
+        event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+        event.mouse_x = GetMouseX();
+        event.mouse_y = GetMouseY();
+        app->event(&event, app->userData);
+    }
+
+    // Mouse Buttons
+    for (int i = 0; i < 3; i++) {
+        event.type = PNTR_APP_EVENTTYPE_UNKNOWN;
+        if (IsMouseButtonPressed(i)) {
+            event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
+        }
+        else if (IsMouseButtonReleased(i)) {
+            event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
+        }
+
+        if (event.type != PNTR_APP_EVENTTYPE_UNKNOWN) {
+            event.mouse_button = pntr_app_raylib_mouse_button(i);
+            event.mouse_x = GetMouseX();
+            event.mouse_y = GetMouseY();
             app->event(&event, app->userData);
         }
     }
@@ -75,8 +111,11 @@ bool pntr_app_render(pntr_app* app) {
 }
 
 bool pntr_app_init(pntr_app* app) {
-    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    // TODO: Allow resizing the window
+    //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+
     InitWindow(app->width * 2, app->height * 2, app->title);
+    SetMouseScale(0.5f, 0.5f);
 
     if (app->fps > 0) {
         SetTargetFPS(app->fps);

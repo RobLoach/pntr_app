@@ -17,6 +17,11 @@ pntr_app* pntr_app_libretro;
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
 
+typedef struct pntr_app_libretro_platform {
+    int16_t mouseButtonState[3];
+    int16_t mouseX;
+    int16_t mouseY;
+} pntr_app_libretro_platform;
 
 pntr_app_key pntr_app_libretro_key(int key) {
     switch (key) {
@@ -288,15 +293,72 @@ static void audio_callback(void) {
     audio_cb(0, 0);
 }
 
+int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
+    switch (button) {
+        case PNTR_APP_MOUSE_BUTTON_LEFT: return RETRO_DEVICE_ID_MOUSE_LEFT;
+        case PNTR_APP_MOUSE_BUTTON_RIGHT: return RETRO_DEVICE_ID_MOUSE_RIGHT;
+        case PNTR_APP_MOUSE_BUTTON_MIDDLE: return RETRO_DEVICE_ID_MOUSE_MIDDLE;
+    }
+    return PNTR_APP_MOUSE_BUTTON_UNKNOWN;
+}
+
+/**
+ * Converts a Pointer API coordinates to screen pixel position.
+ *
+ * @see tic80_libretro_update_mouse()
+ * @see RETRO_DEVICE_POINTER
+ */
+int pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margin)
+{
+	float max         = (float)0x7fff;
+	float screenCoord = (((coord + max) / (max * 2.0f) ) * full) - margin;
+
+	// Keep the mouse on the screen.
+	if (margin > 0.0f) {
+		float limit = full - (margin * 2.0f) - 1.0f;
+		screenCoord = (screenCoord < 0.0f)  ? 0.0f  : screenCoord;
+		screenCoord = (screenCoord > limit) ? limit : screenCoord;
+	}
+
+	return (int)(screenCoord + 0.5f);
+}
+
 bool pntr_app_events(pntr_app* app) {
     // Tell the frontend to update its input state.
-    if (input_poll_cb == NULL || input_state_cb == NULL) {
+    if (app == NULL || app->event == NULL || input_poll_cb == NULL || input_state_cb == NULL) {
         return true;
     }
 
     input_poll_cb();
+    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
 
-    // TODO: Check gamepads
+    // Mouse Move
+    int16_t mouseX = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
+    int16_t mouseY = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
+    if (platform->mouseX != mouseX || platform->mouseY != mouseY) {
+        platform->mouseX = mouseX;
+        platform->mouseY = mouseY;
+
+        pntr_app_event event;
+        event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+        event.mouse_x = pntr_app_libretro_mouse_pointer_convert(platform->mouseX, app->width, 0.0f);
+        event.mouse_y = pntr_app_libretro_mouse_pointer_convert(platform->mouseY, app->height, 0.0f);
+        app->event(&event, app->userData);
+    }
+
+    // Mouse Buttons
+    for (int i = PNTR_APP_MOUSE_BUTTON_LEFT; i <= PNTR_APP_MOUSE_BUTTON_MIDDLE; i++) {
+        int16_t currentState = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, pntr_app_libretro_mouse_button_to_retro(i));
+        if (platform->mouseButtonState[i] != currentState) {
+            pntr_app_event event;
+            event.type = (currentState == 0) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
+            event.mouse_button = i;
+            event.mouse_x = pntr_app_libretro_mouse_pointer_convert(platform->mouseX, app->width, 0.0f);
+            event.mouse_y = pntr_app_libretro_mouse_pointer_convert(platform->mouseY, app->height, 0.0f);
+            app->event(&event, app->userData);
+            platform->mouseButtonState[i] = currentState;
+        }
+    }
 
     return true;
 }
@@ -333,6 +395,10 @@ void pntr_app_close(pntr_app* app) {
     // Clear up any user data.
     if (app->userData != NULL) {
         PNTR_FREE(app->userData);
+    }
+
+    if (app->platform != NULL) {
+        PNTR_FREE(app->platform);
     }
 
     PNTR_FREE(app);
@@ -397,6 +463,9 @@ bool retro_load_game(const struct retro_game_info *info) {
             if (app.userData != NULL) {
                 PNTR_FREE(app.userData);
             }
+            if (app.platform != NULL) {
+                PNTR_FREE(app.platform);
+            }
             return false;
         }
     }
@@ -421,6 +490,8 @@ bool retro_load_game(const struct retro_game_info *info) {
         pntr_app_close(&app);
         return false;
     }
+
+    app.platform = PNTR_MALLOC(sizeof(pntr_app_libretro_platform));
 
     // Copy the data to the core's app instance.
     pntr_app_libretro = PNTR_MALLOC(sizeof(pntr_app));

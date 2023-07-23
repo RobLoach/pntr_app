@@ -52,6 +52,7 @@ void Close(void* userData) {
     pntr_unload_font(appData->font);
 }
 
+#include <stdio.h>
 void Event(pntr_app_event* event, void* userData) {
     AppData* appData = (AppData*)userData;
 
@@ -66,6 +67,17 @@ void Event(pntr_app_event* event, void* userData) {
                 appData->spacePressed = false;
             }
         break;
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN: {
+            appData->spacePressed = true;
+        }
+        break;
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP: {
+            appData->spacePressed = false;
+        }
+        break;
+        case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
+            printf("Mouse: %d, %d\n", event->mouse_x, event->mouse_y);
+        }
     }
 }
 

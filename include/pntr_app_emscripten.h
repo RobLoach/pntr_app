@@ -34,7 +34,7 @@ bool pntr_app_render(pntr_app* app) {
 int pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent *keyEvent, void *userData) {
     pntr_app* app = (pntr_app*)userData;
     if (app == NULL || app->event == NULL) {
-        return true;
+        return 0;
     }
 
     // Build the key event.
@@ -44,14 +44,51 @@ int pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent 
     // TODO: keyCode is deprecated, so do some string checkings?
     event.key = keyEvent->keyCode;
     if (event.key <= 0) {
-        return true;
+        return 0;
     }
 
     // Invoke the event
     app->event(&event, app->userData);
 
     // Return false as we're taking over the event.
-    return false;
+    return 1;
+}
+
+int pntr_app_emscripten_mouse_button_from_emscripten(unsigned short button) {
+    switch (button) {
+        case 0: return PNTR_APP_MOUSE_BUTTON_LEFT;
+        case 1: return PNTR_APP_MOUSE_BUTTON_MIDDLE;
+        case 2: return PNTR_APP_MOUSE_BUTTON_RIGHT;
+    }
+    return PNTR_APP_MOUSE_BUTTON_UNKNOWN;
+}
+
+int pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *mouseEvent, void *userData) {
+    pntr_app* app = (pntr_app*)userData;
+    if (app == NULL || app->event == NULL) {
+        return 0;
+    }
+
+    // Build the key event.
+    pntr_app_event event; 
+    switch (eventType) {
+        case EMSCRIPTEN_EVENT_MOUSEDOWN: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN; break;
+        case EMSCRIPTEN_EVENT_MOUSEUP: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP; break;
+    }
+
+    event.mouse_button = pntr_app_emscripten_mouse_button_from_emscripten(mouseEvent->button);
+    if (event.mouse_button == PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
+        return 0;
+    }
+
+    event.mouse_x = mouseEvent->canvasX;
+    event.mouse_y = mouseEvent->canvasY;
+
+    // Invoke the event
+    app->event(&event, app->userData);
+
+    // Return false as we're taking over the event.
+    return 1;
 }
 
 bool pntr_app_init(pntr_app* app) {
@@ -65,6 +102,11 @@ bool pntr_app_init(pntr_app* app) {
     // Keyboard
     emscripten_set_keydown_callback("#canvas", app, true, pntr_app_emscripten_key);
     emscripten_set_keyup_callback("#canvas", app, true, pntr_app_emscripten_key);
+
+    // Mouse
+    emscripten_set_mousedown_callback("#canvas", app, true, pntr_app_emscripten_mouse);
+    emscripten_set_mouseup_callback("#canvas", app, true, pntr_app_emscripten_mouse);
+
     return true;
 }
 
