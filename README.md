@@ -64,7 +64,7 @@ Make sure to link the related library when building.
 - [ ] Target: [GLFW](https://www.glfw.org/)
 - [ ] Target: [sokol](https://github.com/floooh/sokol)
 - [ ] Target: Command Line Interface?
-- [ ] Input API
+- [x] Input API
 - [ ] Audio?
 
 ## Build

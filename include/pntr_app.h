@@ -60,6 +60,9 @@ extern "C" {
     #define PNTR_APP_API PNTR_API
 #endif
 
+/**
+ * Key code.
+ */
 typedef enum pntr_app_key {
     PNTR_APP_KEY_INVALID          = 0,
     PNTR_APP_KEY_FIRST            = 32,
@@ -192,7 +195,14 @@ typedef enum pntr_app_event_type {
 } pntr_app_event_type;
 
 typedef struct pntr_app_event {
+    /**
+     * The type of the event that has been pushed.
+     */
     pntr_app_event_type type;
+
+    /**
+     * With PNTR_APP_EVENTTYPE_KEY_DOWN or PNTR_APP_EVENTTYPE_KEY_UP, will determine the key that was affected.
+     */
     pntr_app_key key;
 } pntr_app_event;
 
@@ -205,13 +215,13 @@ typedef struct pntr_app {
     void (*close)(void* userData);
     void (*event)(pntr_app_event* event, void* userData);
     int fps;
-    void* userData;
     pntr_image* screen;
+    void* userData;
 } pntr_app;
 
-bool pntr_app_render(pntr_app* app);
-bool pntr_app_events(pntr_app* app);
 bool pntr_app_init(pntr_app* app);
+bool pntr_app_events(pntr_app* app);
+bool pntr_app_render(pntr_app* app);
 void pntr_app_close(pntr_app* app);
 
 #ifdef __cplusplus
@@ -329,12 +339,13 @@ int main(int argc, char* argv[]) {
         app.screen = NULL;
     }
 
+    pntr_app_close(&app);
+
     // Clear up any user data.
     if (app.userData != NULL) {
         PNTR_FREE(app.userData);
+        app.userData = NULL;
     }
-
-    pntr_app_close(&app);
 
     // Return an error state if update was nullified.
     return (app.update == NULL) ? 1 : 0;

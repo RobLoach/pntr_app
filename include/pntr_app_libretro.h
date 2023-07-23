@@ -183,7 +183,14 @@ void retro_get_system_info(struct retro_system_info *info) {
     memset(info, 0, sizeof(*info));
 
     if (pntr_app_libretro == NULL) {
-        info->library_name     = "pntr_app";
+        char* argv[1];
+        argv[0] = "pntr_app";
+        pntr_app app = PNTR_APP_MAIN(1, argv);
+        info->library_name = app.title;
+        // Clear up any user data.
+        if (app.userData != NULL) {
+            PNTR_FREE(app.userData);
+        }
     }
     else {
         info->library_name = pntr_app_libretro->title;
@@ -205,7 +212,18 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     int fps = 60;
     int width = 640;
     int height = 480;
-    if (pntr_app_libretro != NULL) {
+    if (pntr_app_libretro == NULL) {
+        char* argv[1];
+        argv[0] = "pntr_app";
+        pntr_app app = PNTR_APP_MAIN(1, argv);
+        fps = app.fps;
+        width = app.width;
+        height = app.height;
+        if (app.userData != NULL) {
+            PNTR_FREE(app.userData);
+        }
+    }
+    else {
         fps = pntr_app_libretro->fps;
         width = pntr_app_libretro->width;
         height = pntr_app_libretro->height;
@@ -348,11 +366,7 @@ void retro_run(void) {
 }
 
 void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers) {
-    if (pntr_app_libretro == NULL) {
-        return;
-    }
-
-    if (pntr_app_libretro->event == NULL) {
+    if (pntr_app_libretro == NULL || pntr_app_libretro->event == NULL) {
         return;
     }
 
@@ -380,18 +394,23 @@ bool retro_load_game(const struct retro_game_info *info) {
     if (app.init != NULL) {
         // Check if initialization worked.
         if (app.init(app.userData) == false) {
+            if (app.userData != NULL) {
+                PNTR_FREE(app.userData);
+            }
             return false;
         }
     }
 
     app.screen = pntr_gen_image_color(app.width, app.height, PNTR_BLACK);
     if (app.screen == NULL) {
+        pntr_app_close(&app);
         return false;
     }
 
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt)) {
         log_cb(RETRO_LOG_INFO, "XRGB8888 is not supported.\n");
+        pntr_app_close(&app);
         return false;
     }
 
@@ -399,16 +418,16 @@ bool retro_load_game(const struct retro_game_info *info) {
     keyboardCallback.callback = pntr_app_libretro_keyboard_callback;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback)) {
         log_cb(RETRO_LOG_INFO, "Failed to set keyboard callback.\n");
+        pntr_app_close(&app);
         return false;
     }
-
-    check_variables();
 
     // Copy the data to the core's app instance.
     pntr_app_libretro = PNTR_MALLOC(sizeof(pntr_app));
     PNTR_MEMCPY(pntr_app_libretro, &app, sizeof(pntr_app));
 
-     (void)info;
+    check_variables();
+
      return true;
 }
 

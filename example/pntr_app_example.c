@@ -1,7 +1,7 @@
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
 #define PNTR_DISABLE_MATH
-#include "../include/pntr_app.h"
+#include "pntr_app.h"
 
 typedef struct AppData {
     pntr_image* logo;
@@ -37,6 +37,9 @@ bool Update(pntr_image* screen, void* userData) {
 
     if (appData->spacePressed) {
         pntr_draw_text(screen, appData->font, "Space is Pressed!", 10, 10, PNTR_BLACK);
+    }
+    else {
+        pntr_draw_text(screen, appData->font, "Space is not pressed", 10, 10, PNTR_BLACK);
     }
 
     return true;
