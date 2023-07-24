@@ -4,6 +4,9 @@
 
 #include PNTR_APP_RAYLIB_H
 
+// pntr configuration
+#define PTNR_NO_STB_IMAGE_RESIZE_IMPLEMENTATION
+
 Image pntr_app_raylib_image;
 Texture pntr_app_raylib_texture;
 
