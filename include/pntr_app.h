@@ -275,8 +275,7 @@ void pntr_app_close(pntr_app* app);
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
 
-#define PNTR_IMPLEMENTATION
-#include PNTR_APP_PNTR_H
+#include <stddef.h>
 
 #ifndef PNTR_APP_MAIN
 /**
@@ -297,19 +296,11 @@ void pntr_app_close(pntr_app* app);
 #define PNTR_APP_MAIN Main
 #endif  // PNTR_APP_MAIN
 
-pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
-
-// emscripten.h
-#if defined(EMSCRIPTEN)
-#ifndef PNTR_APP_EMSCRIPTEN_H
-#define PNTR_APP_EMSCRIPTEN_H "emscripten.h"
-#endif
-#include PNTR_APP_EMSCRIPTEN_H
-#endif  // EMSCRIPTEN
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 
 #if defined(PNTR_APP_SDL)
 #include "pntr_app_sdl.h"
@@ -321,6 +312,17 @@ extern "C" {
 #include "pntr_app_emscripten.h"
 #else
 #error "[pntr_app] No target found. Set PNTR_APP_SDL, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#define PNTR_IMPLEMENTATION
+#include PNTR_APP_PNTR_H
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 #if !defined(PNTR_APP_NO_ENTRY)
@@ -336,11 +338,11 @@ int main(int argc, char* argv[]) {
 
     app.screen = pntr_gen_image_color(app.width, app.height, PNTR_BLACK);
     if (app.screen == NULL) {
+        app.init = NULL;
         app.update = NULL;
         app.close = NULL;
     }
-
-    if (pntr_app_init(&app) == false) {
+    else if (pntr_app_init(&app) == false) {
         pntr_app_close(&app);
         pntr_unload_image(app.screen);
         return 1;
@@ -375,24 +377,15 @@ int main(int argc, char* argv[]) {
     }
 
     // Clear the screen
-    if (app.screen != NULL) {
-        pntr_unload_image(app.screen);
-        app.screen = NULL;
-    }
+    pntr_unload_image(app.screen);
 
     pntr_app_close(&app);
 
     // Clear up any user data.
-    if (app.userData != NULL) {
-        PNTR_FREE(app.userData);
-        app.userData = NULL;
-    }
+    pntr_unload_memory(app.userData);
 
     // Clear up any user data.
-    if (app.platform != NULL) {
-        PNTR_FREE(app.platform);
-        app.platform = NULL;
-    }
+    pntr_unload_memory(app.platform);
 
     // Return an error state if update was nullified.
     return (app.update == NULL) ? 1 : 0;
