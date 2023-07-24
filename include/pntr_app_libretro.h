@@ -220,7 +220,7 @@ void retro_get_system_info(struct retro_system_info *info) {
         info->library_name = app.title;
         // Clear up any user data.
         if (app.userData != NULL) {
-            PNTR_FREE(app.userData);
+            pntr_app_free(app.userData);
         }
     }
     else {
@@ -251,7 +251,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
         width = app.width;
         height = app.height;
         if (app.userData != NULL) {
-            PNTR_FREE(app.userData);
+            pntr_app_free(app.userData);
         }
     }
     else {
@@ -443,14 +443,14 @@ void pntr_app_close(pntr_app* app) {
 
     // Clear up any user data.
     if (app->userData != NULL) {
-        PNTR_FREE(app->userData);
+        pntr_app_free(app->userData);
     }
 
     if (app->platform != NULL) {
-        PNTR_FREE(app->platform);
+        pntr_app_free(app->platform);
     }
 
-    PNTR_FREE(app);
+    pntr_app_free(app);
 }
 
 void retro_run(void) {
@@ -510,10 +510,10 @@ bool retro_load_game(const struct retro_game_info *info) {
         // Check if initialization worked.
         if (app.init(app.userData) == false) {
             if (app.userData != NULL) {
-                PNTR_FREE(app.userData);
+                pntr_app_free(app.userData);
             }
             if (app.platform != NULL) {
-                PNTR_FREE(app.platform);
+                pntr_app_free(app.platform);
             }
             return false;
         }
@@ -540,11 +540,11 @@ bool retro_load_game(const struct retro_game_info *info) {
         return false;
     }
 
-    app.platform = PNTR_MALLOC(sizeof(pntr_app_libretro_platform));
+    app.platform = pntr_app_malloc(sizeof(pntr_app_libretro_platform));
 
     // Copy the data to the core's app instance.
-    pntr_app_libretro = PNTR_MALLOC(sizeof(pntr_app));
-    PNTR_MEMCPY(pntr_app_libretro, &app, sizeof(pntr_app));
+    pntr_app_libretro = pntr_app_malloc(sizeof(pntr_app));
+    pntr_app_memcpy(pntr_app_libretro, &app, sizeof(pntr_app));
 
     check_variables();
 

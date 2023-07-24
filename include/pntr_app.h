@@ -264,6 +264,9 @@ bool pntr_app_init(pntr_app* app);
 bool pntr_app_events(pntr_app* app);
 bool pntr_app_render(pntr_app* app);
 void pntr_app_close(pntr_app* app);
+void* pntr_app_malloc(long unsigned int size);
+void pntr_app_free(void* obj);
+void pntr_app_memcpy(void* dst, void* src, long unsigned int size);
 
 #ifdef __cplusplus
 }
@@ -275,8 +278,7 @@ void pntr_app_close(pntr_app* app);
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
 
-#define PNTR_IMPLEMENTATION
-#include PNTR_APP_PNTR_H
+#include <stddef.h>
 
 #ifndef PNTR_APP_MAIN
 /**
@@ -297,19 +299,11 @@ void pntr_app_close(pntr_app* app);
 #define PNTR_APP_MAIN Main
 #endif  // PNTR_APP_MAIN
 
-pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
-
-// emscripten.h
-#if defined(EMSCRIPTEN)
-#ifndef PNTR_APP_EMSCRIPTEN_H
-#define PNTR_APP_EMSCRIPTEN_H "emscripten.h"
-#endif
-#include PNTR_APP_EMSCRIPTEN_H
-#endif  // EMSCRIPTEN
-
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 
 #if defined(PNTR_APP_SDL)
 #include "pntr_app_sdl.h"
@@ -322,6 +316,28 @@ extern "C" {
 #else
 #error "[pntr_app] No target found. Set PNTR_APP_SDL, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
 #endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#define PNTR_IMPLEMENTATION
+#include PNTR_APP_PNTR_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void* pntr_app_malloc(size_t size) {
+    return PNTR_MALLOC(size);
+}
+
+void pntr_app_free(void* obj) {
+    PNTR_FREE(obj);
+}
+void pntr_app_memcpy(void* dst, void* src, long unsigned int size){
+    PNTR_MEMCPY(dst, src, size);
+}
 
 #if !defined(PNTR_APP_NO_ENTRY)
 /**
@@ -384,13 +400,13 @@ int main(int argc, char* argv[]) {
 
     // Clear up any user data.
     if (app.userData != NULL) {
-        PNTR_FREE(app.userData);
+        pntr_app_free(app.userData);
         app.userData = NULL;
     }
 
     // Clear up any user data.
     if (app.platform != NULL) {
-        PNTR_FREE(app.platform);
+        pntr_app_free(app.platform);
         app.platform = NULL;
     }
 

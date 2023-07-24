@@ -183,7 +183,7 @@ bool pntr_app_events(pntr_app* app) {
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
     pntr_app_event pntrEvent;
     SDL_Event event;
-    
+
     while (SDL_PollEvent(&event) != 0) {
         switch (event.type) {
             case SDL_QUIT:
@@ -196,7 +196,7 @@ bool pntr_app_events(pntr_app* app) {
                 app->event(&pntrEvent, app->userData);
                 break;
             }
-            case SDL_MOUSEBUTTONDOWN: 
+            case SDL_MOUSEBUTTONDOWN:
             case SDL_MOUSEBUTTONUP: {
                 pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event.button.button);
                 if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
@@ -264,7 +264,7 @@ bool pntr_app_init(pntr_app* app) {
     pntr_app_sdl_screen = SDL_GetWindowSurface(pntr_app_sdl_window);
     pntr_app_sdl_surface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
 
-    app->platform = PNTR_MALLOC(sizeof(pntr_app_sdl_platform));
+    app->platform = pntr_app_malloc(sizeof(pntr_app_sdl_platform));
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
 
     // GamePads
