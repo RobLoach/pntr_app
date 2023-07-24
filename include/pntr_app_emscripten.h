@@ -125,7 +125,7 @@ bool pntr_app_init(pntr_app* app) {
         return false;
     }
 
-    app->platform = pntr_app_malloc(sizeof(pntr_app_emscripten_platform));
+    app->platform = pntr_load_memory(sizeof(pntr_app_emscripten_platform));
 
     // Title
     emscripten_set_window_title(app->title);

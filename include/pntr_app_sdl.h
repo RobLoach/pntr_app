@@ -264,7 +264,7 @@ bool pntr_app_init(pntr_app* app) {
     pntr_app_sdl_screen = SDL_GetWindowSurface(pntr_app_sdl_window);
     pntr_app_sdl_surface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
 
-    app->platform = pntr_app_malloc(sizeof(pntr_app_sdl_platform));
+    app->platform = pntr_load_memory(sizeof(pntr_app_sdl_platform));
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
 
     // GamePads

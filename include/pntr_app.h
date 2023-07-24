@@ -264,9 +264,6 @@ bool pntr_app_init(pntr_app* app);
 bool pntr_app_events(pntr_app* app);
 bool pntr_app_render(pntr_app* app);
 void pntr_app_close(pntr_app* app);
-void* pntr_app_malloc(long unsigned int size);
-void pntr_app_free(void* obj);
-void pntr_app_memcpy(void* dst, void* src, long unsigned int size);
 
 #ifdef __cplusplus
 }
@@ -328,17 +325,6 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 extern "C" {
 #endif
 
-void* pntr_app_malloc(size_t size) {
-    return PNTR_MALLOC(size);
-}
-
-void pntr_app_free(void* obj) {
-    PNTR_FREE(obj);
-}
-void pntr_app_memcpy(void* dst, void* src, long unsigned int size){
-    PNTR_MEMCPY(dst, src, size);
-}
-
 #if !defined(PNTR_APP_NO_ENTRY)
 /**
  * The main entry point of the application.
@@ -352,11 +338,11 @@ int main(int argc, char* argv[]) {
 
     app.screen = pntr_gen_image_color(app.width, app.height, PNTR_BLACK);
     if (app.screen == NULL) {
+        app.init = NULL;
         app.update = NULL;
         app.close = NULL;
     }
-
-    if (pntr_app_init(&app) == false) {
+    else if (pntr_app_init(&app) == false) {
         pntr_app_close(&app);
         pntr_unload_image(app.screen);
         return 1;
@@ -391,24 +377,15 @@ int main(int argc, char* argv[]) {
     }
 
     // Clear the screen
-    if (app.screen != NULL) {
-        pntr_unload_image(app.screen);
-        app.screen = NULL;
-    }
+    pntr_unload_image(app.screen);
 
     pntr_app_close(&app);
 
     // Clear up any user data.
-    if (app.userData != NULL) {
-        pntr_app_free(app.userData);
-        app.userData = NULL;
-    }
+    pntr_unload_memory(app.userData);
 
     // Clear up any user data.
-    if (app.platform != NULL) {
-        pntr_app_free(app.platform);
-        app.platform = NULL;
-    }
+    pntr_unload_memory(app.platform);
 
     // Return an error state if update was nullified.
     return (app.update == NULL) ? 1 : 0;

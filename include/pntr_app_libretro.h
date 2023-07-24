@@ -220,7 +220,7 @@ void retro_get_system_info(struct retro_system_info *info) {
         info->library_name = app.title;
         // Clear up any user data.
         if (app.userData != NULL) {
-            pntr_app_free(app.userData);
+            pntr_unload_memory(app.userData);
         }
     }
     else {
@@ -251,7 +251,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
         width = app.width;
         height = app.height;
         if (app.userData != NULL) {
-            pntr_app_free(app.userData);
+            pntr_unload_memory(app.userData);
         }
     }
     else {
@@ -442,15 +442,9 @@ void pntr_app_close(pntr_app* app) {
     }
 
     // Clear up any user data.
-    if (app->userData != NULL) {
-        pntr_app_free(app->userData);
-    }
-
-    if (app->platform != NULL) {
-        pntr_app_free(app->platform);
-    }
-
-    pntr_app_free(app);
+    pntr_unload_memory(app->userData);
+    pntr_unload_memory(app->platform);
+    pntr_unload_memory(app);
 }
 
 void retro_run(void) {
@@ -509,12 +503,8 @@ bool retro_load_game(const struct retro_game_info *info) {
     if (app.init != NULL) {
         // Check if initialization worked.
         if (app.init(app.userData) == false) {
-            if (app.userData != NULL) {
-                pntr_app_free(app.userData);
-            }
-            if (app.platform != NULL) {
-                pntr_app_free(app.platform);
-            }
+            pntr_unload_memory(app.userData);
+            pntr_unload_memory(app.platform);
             return false;
         }
     }
@@ -540,11 +530,11 @@ bool retro_load_game(const struct retro_game_info *info) {
         return false;
     }
 
-    app.platform = pntr_app_malloc(sizeof(pntr_app_libretro_platform));
+    app.platform = pntr_load_memory(sizeof(pntr_app_libretro_platform));
 
     // Copy the data to the core's app instance.
-    pntr_app_libretro = pntr_app_malloc(sizeof(pntr_app));
-    pntr_app_memcpy(pntr_app_libretro, &app, sizeof(pntr_app));
+    pntr_app_libretro = pntr_load_memory(sizeof(pntr_app));
+    pntr_memory_copy(pntr_app_libretro, &app, sizeof(pntr_app));
 
     check_variables();
 
