@@ -21,7 +21,6 @@ typedef struct pntr_app_libretro_platform {
     int16_t mouseButtonState[3];
     int16_t mouseX;
     int16_t mouseY;
-
     int16_t gamepadState[4][16];
 } pntr_app_libretro_platform;
 
@@ -331,7 +330,6 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
 /**
  * Converts a Pointer API coordinates to screen pixel position.
  *
- * @see tic80_libretro_update_mouse()
  * @see RETRO_DEVICE_POINTER
  */
 int pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margin)
@@ -538,7 +536,7 @@ bool retro_load_game(const struct retro_game_info *info) {
 
     check_variables();
 
-     return true;
+    return true;
 }
 
 void retro_unload_game(void) {
@@ -551,44 +549,44 @@ unsigned retro_get_region(void) {
 }
 
 bool retro_load_game_special(unsigned type, const struct retro_game_info *info, size_t num) {
-     (void)type;
-     (void)info;
-     (void)num;
-     return retro_load_game(NULL);
+    (void)type;
+    (void)info;
+    (void)num;
+    return retro_load_game(NULL);
 }
 
 size_t retro_serialize_size(void) {
-     return 0;
+    return 0;
 }
 
 bool retro_serialize(void *data, size_t size) {
-     (void)data;
-     (void)size;
-     return true;
+    (void)data;
+    (void)size;
+    return true;
 }
 
 bool retro_unserialize(const void *data, size_t size) {
-     (void)data;
-     (void)size;
-     return true;
+    (void)data;
+    (void)size;
+    return true;
 }
 
 void *retro_get_memory_data(unsigned id) {
-     (void)id;
-     return NULL;
+    (void)id;
+    return NULL;
 }
 
 size_t retro_get_memory_size(unsigned id) {
-     (void)id;
-     return 0;
+    (void)id;
+    return 0;
 }
 
 void retro_cheat_reset(void) {
-     // Nothing.
+    // Nothing.
 }
 
 void retro_cheat_set(unsigned index, bool enabled, const char *code) {
-     (void)index;
-     (void)enabled;
-     (void)code;
+    (void)index;
+    (void)enabled;
+    (void)code;
 }

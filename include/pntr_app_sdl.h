@@ -1,18 +1,16 @@
 #ifndef PNTR_APP_SDL_H
 #define PNTR_APP_SDL_H <SDL2/SDL.h>
 #endif
-
 #include PNTR_APP_SDL_H
-
-SDL_Window* pntr_app_sdl_window;
-SDL_Surface* pntr_app_sdl_screen;
-SDL_Surface* pntr_app_sdl_surface;
-uint64_t pntr_app_sdl_start;
 
 typedef struct pntr_app_sdl_platform {
     int mouseX;
     int mouseY;
     SDL_GameController* gameControllers[4];
+    SDL_Window* window;
+    SDL_Surface* windowSurface;
+    SDL_Surface* screenSurface;
+    uint64_t pntr_app_sdl_start;
 } pntr_app_sdl_platform;
 
 pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button) {
@@ -168,19 +166,19 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
 }
 
 bool pntr_app_events(pntr_app* app) {
-    if (app == NULL) {
+    if (app == NULL || app->platform == NULL) {
         return false;
     }
 
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
     if (app->fps > 0) {
-        pntr_app_sdl_start = SDL_GetPerformanceCounter();
+        platform->pntr_app_sdl_start = SDL_GetPerformanceCounter();
     }
 
     if (app->event == NULL) {
         return true;
     }
 
-    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
     pntr_app_event pntrEvent;
     SDL_Event event;
 
@@ -241,17 +239,19 @@ bool pntr_app_events(pntr_app* app) {
  * Pushes the given image to the screen.
  */
 bool pntr_app_render(pntr_app* app) {
-    if (app == NULL || app->screen == NULL) {
+    if (app == NULL || app->screen == NULL || app->platform == NULL) {
         return false;
     }
 
-    SDL_BlitSurface(pntr_app_sdl_surface, NULL, pntr_app_sdl_screen, NULL);
-    SDL_UpdateWindowSurface(pntr_app_sdl_window);
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+
+    SDL_BlitSurface(platform->screenSurface, NULL, platform->windowSurface, NULL);
+    SDL_UpdateWindowSurface(platform->window);
 
     // Limit the FPS
     if (app->fps > 0) {
         uint64_t end = SDL_GetPerformanceCounter();
-        float elapsedMS = (end - pntr_app_sdl_start) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
+        float elapsedMS = (end - platform->pntr_app_sdl_start) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
         SDL_Delay((1.0f / app->fps) * 1000.0f - elapsedMS);
     }
 
@@ -259,13 +259,20 @@ bool pntr_app_render(pntr_app* app) {
 }
 
 bool pntr_app_init(pntr_app* app) {
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
-    pntr_app_sdl_window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
-    pntr_app_sdl_screen = SDL_GetWindowSurface(pntr_app_sdl_window);
-    pntr_app_sdl_surface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
+    if (app == NULL) {
+        return false;
+    }
 
     app->platform = pntr_load_memory(sizeof(pntr_app_sdl_platform));
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    if (platform == NULL) {
+        return false;
+    }
+
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+    platform->window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
+    platform->windowSurface = SDL_GetWindowSurface(platform->window);
+    platform->screenSurface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
 
     // GamePads
     for (int i = 0; i < 4; i++) {
@@ -278,24 +285,23 @@ bool pntr_app_init(pntr_app* app) {
 }
 
 void pntr_app_close(pntr_app* app) {
+    if (app == NULL || app->platform == NULL) {
+        return;
+    }
 
-    if (app != NULL) {
-        pntr_app_sdl_platform* platform = app->platform;
-        if (platform) {
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
 
-            // Close Gamepads
-            for (int i = 0; i < 4; i++) {
-                if (platform->gameControllers[i] != NULL) {
-                    if (SDL_IsGameController(i)) {
-                        SDL_GameControllerClose(platform->gameControllers[i]);
-                        platform->gameControllers[i] = NULL;
-                    }
-                }
+    // Close Gamepads
+    for (int i = 0; i < 4; i++) {
+        if (platform->gameControllers[i] != NULL) {
+            if (SDL_IsGameController(i)) {
+                SDL_GameControllerClose(platform->gameControllers[i]);
+                platform->gameControllers[i] = NULL;
             }
         }
     }
 
-    SDL_FreeSurface(pntr_app_sdl_surface);
-    SDL_FreeSurface(pntr_app_sdl_screen);
-    SDL_DestroyWindow(pntr_app_sdl_window);
+    SDL_FreeSurface(platform->screenSurface);
+    SDL_FreeSurface(platform->windowSurface);
+    SDL_DestroyWindow(platform->window);
 }

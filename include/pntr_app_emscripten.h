@@ -161,7 +161,7 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     pntr_app_event event;
-    pntr_app_emscripten_platform* platform = app->platform;
+    pntr_app_emscripten_platform* platform = (pntr_app_emscripten_platform*)app->platform;
 
     // Gamepad Buttons
     // TODO: Is emscripten gamepad working?

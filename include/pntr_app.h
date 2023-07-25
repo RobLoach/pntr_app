@@ -189,6 +189,9 @@ typedef enum pntr_app_key {
     PNTR_APP_KEY_LAST             = 349
 } pntr_app_key;
 
+/**
+ * Gamepad button.
+ */
 typedef enum pntr_app_gamepad_button {
     PNTR_APP_GAMEPAD_BUTTON_UNKNOWN = 0,         // Unknown button, just for error checking
     PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_UP,        // Gamepad left DPAD up button
@@ -210,6 +213,9 @@ typedef enum pntr_app_gamepad_button {
     PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB          // Gamepad joystick pressed button right
 } pntr_app_gamepad_button;
 
+/**
+ * Mouse button.
+ */
 typedef enum pntr_app_mouse_button {
     PNTR_APP_MOUSE_BUTTON_LEFT,
     PNTR_APP_MOUSE_BUTTON_RIGHT,
@@ -217,6 +223,11 @@ typedef enum pntr_app_mouse_button {
     PNTR_APP_MOUSE_BUTTON_UNKNOWN
 } pntr_app_mouse_button;
 
+/**
+ * A list of events that are passed through pntr_app::event.
+ *
+ * @see pntr_app::event
+ */
 typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_UNKNOWN = 0,
     PNTR_APP_EVENTTYPE_KEY_DOWN,
@@ -246,23 +257,47 @@ typedef struct pntr_app_event {
     int gamepad;
 } pntr_app_event;
 
+/**
+ * Application definition.
+ */
 typedef struct pntr_app {
-    int width;
-    int height;
-    const char* title;
+    int width;                      // The pixel width of the application.
+    int height;                     // The pixel height of the application.
+    const char* title;              // The name of the application, which will usually become the window title.
     bool (*init)(void* userData);
     bool (*update)(pntr_image* screen, void* userData);
     void (*close)(void* userData);
     void (*event)(pntr_app_event* event, void* userData);
-    int fps;
+    int fps;                        // The desired framerate. Use 0 for a variable framerate.
+    void* userData;                 // A pointer to a custom state in memory that is passed across all pntr_app callbacks.
     pntr_image* screen;
-    void* userData;
     void* platform;
 } pntr_app;
 
+/**
+ * Platform callback to initialize the platform.
+ *
+ * @return True if initialization was successful, false otherwise.
+ */
 bool pntr_app_init(pntr_app* app);
+
+/**
+ * Platform callback to invoke all events for the platform.
+ *
+ * @return True if the application should continue to run, false if the platform is requested to close.
+ */
 bool pntr_app_events(pntr_app* app);
+
+/**
+ * Platform callback to render to the screen.
+ *
+ * @return True if rendering was successful, false otherwise.
+ */
 bool pntr_app_render(pntr_app* app);
+
+/**
+ * Platform callback to close the application.
+ */
 void pntr_app_close(pntr_app* app);
 
 #ifdef __cplusplus
@@ -319,6 +354,9 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #endif
 
 #define PNTR_IMPLEMENTATION
+#ifndef PNTR_APP_PNTR_H
+#define PNTR_APP_PNTR_H "pntr.h"
+#endif
 #include PNTR_APP_PNTR_H
 
 #ifdef __cplusplus
@@ -379,6 +417,7 @@ int main(int argc, char* argv[]) {
     // Clear the screen
     pntr_unload_image(app.screen);
 
+    // Tell the platform to close.
     pntr_app_close(&app);
 
     // Clear up any user data.

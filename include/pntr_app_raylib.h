@@ -1,15 +1,20 @@
 #ifndef PNTR_APP_RAYLIB_H
 #define PNTR_APP_RAYLIB_H "raylib.h"
 #endif
-
 #include PNTR_APP_RAYLIB_H
 
 // pntr Configuration
 // raylib has its own implementation of stb_image_resize, so use that instead of pntr's.
 #define PTNR_NO_STB_IMAGE_RESIZE_IMPLEMENTATION
+#define PNTR_FREE MemFree
+#define PNTR_MALLOC MemAlloc
+#define PNTR_LOAD_FILE LoadFileData
+#define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
 
-Image pntr_app_raylib_image;
-Texture pntr_app_raylib_texture;
+typedef struct pntr_app_raylib_platform {
+    Image screenImage;
+    Texture screenTexture;
+} pntr_app_raylib_platform;
 
 pntr_app_mouse_button pntr_app_raylib_mouse_button(int button) {
     switch (button) {
@@ -96,20 +101,24 @@ bool pntr_app_events(pntr_app* app) {
  * Pushes the given image to the screen.
  */
 bool pntr_app_render(pntr_app* app) {
-    if (app == NULL || app->screen == NULL) {
+    if (app == NULL || app->screen == NULL || app->platform == NULL) {
         return false;
     }
-    pntr_image* screen = app->screen;
 
-    UpdateTexture(pntr_app_raylib_texture, screen->data);
+    pntr_image* screen = app->screen;
+    pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
+
+    // Update the texture with the latest from the pntr screen.
+    UpdateTexture(platform->screenTexture, screen->data);
 
     BeginDrawing();
         ClearBackground(BLACK);
+
         // Find the aspect ratio.
         // TODO: Fix aspect workings
         float aspect = GetScreenHeight() / GetScreenWidth() ;
         if (aspect <= 0) {
-            aspect = (float)pntr_app_raylib_image.width / (float)pntr_app_raylib_image.height;
+            aspect = (float)platform->screenImage.width / (float)platform->screenImage.height;
         }
 
         // Calculate the optimal width/height to display in the screen size.
@@ -123,17 +132,24 @@ bool pntr_app_render(pntr_app* app) {
         // Draw the texture in the middle of the screen.
         int x = (GetScreenWidth() - width) / 2;
         int y = (GetScreenHeight() - height) / 2;
-        Rectangle destRec = {x, y, width, height};
 
-        Rectangle source = {0, 0, pntr_app_raylib_image.width, pntr_app_raylib_image.height};
+        Rectangle destRec = {x, y, width, height};
+        Rectangle source = {0, 0, platform->screenImage.width, platform->screenImage.height};
         Vector2 origin = {0, 0};
-        DrawTexturePro(pntr_app_raylib_texture, source, destRec, origin, 0, WHITE);
+        DrawTexturePro(platform->screenTexture, source, destRec, origin, 0, WHITE);
     EndDrawing();
 
     return !WindowShouldClose();
 }
 
 bool pntr_app_init(pntr_app* app) {
+    app->platform = pntr_load_memory(sizeof(pntr_app_raylib_platform));
+    if (app->platform == NULL) {
+        return false;
+    }
+
+    pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
+
     // TODO: Allow resizing the window
     //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
@@ -144,17 +160,25 @@ bool pntr_app_init(pntr_app* app) {
         SetTargetFPS(app->fps);
     }
 
-    pntr_app_raylib_image.data = app->screen->data;
-    pntr_app_raylib_image.width = app->width;
-    pntr_app_raylib_image.height = app->height;
-    pntr_app_raylib_image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-    pntr_app_raylib_image.mipmaps = 1;
-    pntr_app_raylib_texture = LoadTextureFromImage(pntr_app_raylib_image);
+    platform->screenImage.data = app->screen->data;
+    platform->screenImage.width = app->width;
+    platform->screenImage.height = app->height;
+    platform->screenImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    platform->screenImage.mipmaps = 1;
+    platform->screenTexture = LoadTextureFromImage(platform->screenImage);
 
     return true;
 }
 
 void pntr_app_close(pntr_app* app) {
-    UnloadTexture(pntr_app_raylib_texture);
+    if (app != NULL) {
+        return;
+    }
+
+    if (app->platform != NULL) {
+        pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
+        UnloadTexture(platform->screenTexture);
+    }
+
     CloseWindow();
 }
