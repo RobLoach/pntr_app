@@ -74,16 +74,14 @@ void Event(pntr_app_event* event, void* userData) {
             appData->spacePressed = false;
         }
         break;
-        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN:
-        {
+        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN: {
             if (event->gamepadButton == PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_DOWN) {
                 appData->spacePressed = true;
             }
             //printf("Gamepad: %d. Button: %d\n", event->gamepad, event->gamepadButton);
             break;
         }
-        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP:
-        {
+        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP: {
             if (event->gamepadButton == PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_DOWN) {
                 appData->spacePressed = false;
             }

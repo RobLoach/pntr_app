@@ -160,11 +160,14 @@ bool pntr_app_init(pntr_app* app) {
         SetTargetFPS(app->fps);
     }
 
+    // Set up the raylib image to match the screen.
     platform->screenImage.data = app->screen->data;
     platform->screenImage.width = app->width;
     platform->screenImage.height = app->height;
     platform->screenImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
     platform->screenImage.mipmaps = 1;
+
+    // Build a Texture off of the screen image.
     platform->screenTexture = LoadTextureFromImage(platform->screenImage);
 
     return true;

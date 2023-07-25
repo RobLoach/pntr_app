@@ -32,7 +32,7 @@ if (EMSCRIPTEN)
 endif()
 
 # SDL
-if (PNTR_BUILD_EXAMPLE_SDL)
+if (PNTR_APP_BUILD_EXAMPLE_SDL)
     set(SDL_SHARED FALSE)
     set(SDL2_DISABLE_UNINSTALL TRUE)
     set(SDL2_DISABLE_INSTALL TRUE)
@@ -47,10 +47,11 @@ if (PNTR_BUILD_EXAMPLE_SDL)
         ${SDL2_LIBRARIES}
     )
     target_compile_definitions(pntr_app_example_sdl PUBLIC PNTR_APP_SDL)
+    set_property(TARGET pntr_app_example_sdl PROPERTY C_STANDARD 99)
 endif()
 
 # raylib
-if (PNTR_BUILD_EXAMPLE_RAYLIB)
+if (PNTR_APP_BUILD_EXAMPLE_RAYLIB)
     find_package(raylib QUIET)
     add_executable(pntr_app_example_raylib
         pntr_app_example.c
@@ -61,10 +62,11 @@ if (PNTR_BUILD_EXAMPLE_RAYLIB)
         raylib
     )
     target_compile_definitions(pntr_app_example_raylib PUBLIC PNTR_APP_RAYLIB)
+    set_property(TARGET pntr_app_example_raylib PROPERTY C_STANDARD 99)
 endif()
 
 # libretro
-if (PNTR_BUILD_EXAMPLE_LIBRETRO)
+if (PNTR_APP_BUILD_EXAMPLE_LIBRETRO)
     find_package(libretro)
     add_library(pntr_app_example_libretro SHARED
         pntr_app_example.c
@@ -76,4 +78,5 @@ if (PNTR_BUILD_EXAMPLE_LIBRETRO)
     )
     set_target_properties(pntr_app_example_libretro PROPERTIES PREFIX "")
     target_compile_definitions(pntr_app_example_libretro PUBLIC PNTR_APP_LIBRETRO)
+    set_property(TARGET pntr_app_example_libretro PROPERTY C_STANDARD 99)
 endif()
