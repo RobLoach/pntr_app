@@ -56,22 +56,35 @@ void Event(pntr_app_event* event, void* userData) {
     AppData* appData = (AppData*)userData;
 
     switch (event->type) {
-        case PNTR_APP_EVENTTYPE_KEY_DOWN:
+        case PNTR_APP_EVENTTYPE_KEY_DOWN: {
             if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = true;
             }
+        }
         break;
-        case PNTR_APP_EVENTTYPE_KEY_UP:
+        case PNTR_APP_EVENTTYPE_KEY_UP: {
             if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = false;
             }
-        break;
-        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN: {
-            appData->spacePressed = true;
         }
         break;
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN:
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP: {
-            appData->spacePressed = false;
+            const char* buttonDown = event->type == PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN ? "Pressed" : "Released";
+
+            const char* button;
+            switch (event->mouseButton) {
+                case PNTR_APP_MOUSE_BUTTON_LEFT: button = "left"; break;
+                case PNTR_APP_MOUSE_BUTTON_RIGHT: button = "right"; break;
+                case PNTR_APP_MOUSE_BUTTON_MIDDLE: button = "middle"; break;
+                case PNTR_APP_MOUSE_BUTTON_UNKNOWN: button = "unknown"; break;
+            }
+
+            printf("Mouse Button %s: %s\n", buttonDown, button);
+        }
+        break;
+        case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
+            printf("Mouse Move: (%d, %d) | (%d, %d)\n", event->mouseX, event->mouseY, event->mouseDeltaX, event->mouseDeltaY);
         }
         break;
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN: {
@@ -87,6 +100,10 @@ void Event(pntr_app_event* event, void* userData) {
             }
             //printf("Gamepad: %d. Button: %d\n", event->gamepad, event->gamepadButton);
             break;
+        }
+        break;
+        default: {
+            printf("Unknown event: %d\n", event->type);
         }
         break;
     }

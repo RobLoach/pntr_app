@@ -72,9 +72,11 @@ int pntr_app_emscripten_mouse_button_from_emscripten(unsigned short button) {
 
 int pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *mouseEvent, void *userData) {
     pntr_app* app = (pntr_app*)userData;
-    if (app == NULL || app->event == NULL) {
+    if (app == NULL || app->event == NULL || app->platform == NULL) {
         return 0;
     }
+
+    pntr_app_emscripten_platform* platform = (pntr_app_emscripten_platform*)app->platform;
 
     // Build the key event.
     pntr_app_event event;
@@ -82,40 +84,54 @@ int pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *
         case EMSCRIPTEN_EVENT_MOUSEDOWN: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN; break;
         case EMSCRIPTEN_EVENT_MOUSEUP: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP; break;
         case EMSCRIPTEN_EVENT_MOUSEMOVE: event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE; break;
-        default:
+        default: {
             return 0;
-    }
-
-    pntr_app_emscripten_platform* platform = app->platform;
-
-    // Mouse Button
-    event.mouseButton = pntr_app_emscripten_mouse_button_from_emscripten(mouseEvent->button);
-
-    // TODO: Fix mouse position resolution.
-    if (eventType == EMSCRIPTEN_EVENT_MOUSEMOVE) {
-        platform->mouseX += mouseEvent->movementX;
-        platform->mouseY += mouseEvent->movementY;
-        if (platform->mouseX < 0) {
-            platform->mouseX = 0;
-        }
-        else if (platform->mouseX > app->width) {
-            platform->mouseX = app->width;
-        }
-
-        if (platform->mouseY < 0) {
-            platform->mouseY = 0;
-        }
-        else if (platform->mouseY > app->height) {
-            platform->mouseY = app->height;
         }
     }
 
-    // TODO: Convert to pixel scale of the application screen.
-    event.mouseX = platform->mouseX;
-    event.mouseY = platform->mouseY;
+    switch (event.type) {
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN:
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP: {
+            event.mouseButton = pntr_app_emscripten_mouse_button_from_emscripten(mouseEvent->button);
+            event.mouseX = platform->mouseX;
+            event.mouseY = platform->mouseY;
+            app->event(&event, app->userData);
+        }
+        break;
+        case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
+            // TODO: Fix pixel mouse position resolution.
+            int targetX = (int)mouseEvent->targetX;
+            int targetY = (int)mouseEvent->targetY;
 
-    // Invoke the event
-    app->event(&event, app->userData);
+            if (targetX < 0) {
+                targetX = 0;
+            }
+            else if (targetX > app->width) {
+                targetX = app->width;
+            }
+
+            if (targetY < 0) {
+                targetY = 0;
+            }
+            else if (targetY > app->height) {
+                targetY = app->height;
+            }
+
+            if (platform->mouseX != targetX || platform->mouseY != targetY) {
+                event.mouseX = targetX;
+                event.mouseY = targetY;
+                event.mouseDeltaX = targetX - platform->mouseX;
+                event.mouseDeltaY = targetY - platform->mouseY;
+                platform->mouseX = targetX;
+                platform->mouseY = targetY;
+                app->event(&event, app->userData);
+            }
+        }
+        break;
+        default: {
+            return 0;
+        }
+    }
 
     return 1;
 }
@@ -135,6 +151,7 @@ bool pntr_app_init(pntr_app* app) {
     emscripten_set_keyup_callback("#canvas", app, true, pntr_app_emscripten_key);
 
     // Mouse
+    //emscripten_request_pointerlock("#canvas", true);
     emscripten_set_mousedown_callback("#canvas", app, true, pntr_app_emscripten_mouse);
     emscripten_set_mouseup_callback("#canvas", app, true, pntr_app_emscripten_mouse);
     emscripten_set_mousemove_callback("#canvas", app, true, pntr_app_emscripten_mouse);
@@ -143,7 +160,8 @@ bool pntr_app_init(pntr_app* app) {
 }
 
 void pntr_app_close(pntr_app* app) {
-    // Nothing
+    // Unlock the mouse pointer.
+    emscripten_request_pointerlock("#canvas", false);
 }
 
 //#include <stdio.h>

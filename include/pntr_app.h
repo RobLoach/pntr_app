@@ -252,6 +252,8 @@ typedef struct pntr_app_event {
     pntr_app_mouse_button mouseButton;
     int mouseX;
     int mouseY;
+    int mouseDeltaX;
+    int mouseDeltaY;
 
     pntr_app_gamepad_button gamepadButton;
     int gamepad;

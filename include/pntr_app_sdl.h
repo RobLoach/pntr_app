@@ -4,8 +4,6 @@
 #include PNTR_APP_SDL_H
 
 typedef struct pntr_app_sdl_platform {
-    int mouseX;
-    int mouseY;
     SDL_GameController* gameControllers[4];
     SDL_Window* window;
     SDL_Surface* windowSurface;
@@ -189,8 +187,10 @@ bool pntr_app_events(pntr_app* app) {
                 return false;
             case SDL_MOUSEMOTION: {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                pntrEvent.mouseX = platform->mouseX = event.motion.x;
-                pntrEvent.mouseY = platform->mouseX = event.motion.y;
+                pntrEvent.mouseDeltaX = event.motion.xrel;
+                pntrEvent.mouseDeltaY = event.motion.yrel;
+                pntrEvent.mouseX = event.motion.x;
+                pntrEvent.mouseY = event.motion.y;
                 app->event(&pntrEvent, app->userData);
                 break;
             }
@@ -200,8 +200,8 @@ bool pntr_app_events(pntr_app* app) {
                 if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
                     pntrEvent.type = (event.type == SDL_MOUSEBUTTONDOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
                     pntrEvent.mouseButton = button;
-                    pntrEvent.mouseX = platform->mouseX;
-                    pntrEvent.mouseY = platform->mouseY;
+                    pntrEvent.mouseX = event.motion.x;
+                    pntrEvent.mouseY = event.motion.y;
                     app->event(&pntrEvent, app->userData);
                 }
                 break;

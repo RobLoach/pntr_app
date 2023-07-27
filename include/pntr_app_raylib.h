@@ -50,10 +50,12 @@ bool pntr_app_events(pntr_app* app) {
 
     // Mouse
     Vector2 mouseMove = GetMouseDelta();
-    if (mouseMove.x != 0.0f || mouseMove.y != 0.0f) {
+    if ((int)mouseMove.x != 0 || (int)mouseMove.y != 0) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
         event.mouseX = GetMouseX();
         event.mouseY = GetMouseY();
+        event.mouseDeltaX = (int)mouseMove.x;
+        event.mouseDeltaY = (int)mouseMove.y;
         app->event(&event, app->userData);
     }
 

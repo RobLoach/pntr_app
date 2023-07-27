@@ -26,9 +26,9 @@ if (EMSCRIPTEN)
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file resources@/resources --shell-file ${CMAKE_SOURCE_DIR}/example/pntr_app_example.html")
 
     # Force disable the other examples
-    set(PNTR_BUILD_EXAMPLE_SDL FALSE)
-    set(PNTR_BUILD_EXAMPLE_RAYLIB FALSE)
-    set(PNTR_BUILD_EXAMPLE_LIBRETRO FALSE)
+    set(PNTR_APP_BUILD_EXAMPLE_SDL FALSE)
+    set(PNTR_APP_BUILD_EXAMPLE_RAYLIB FALSE)
+    set(PNTR_APP_BUILD_EXAMPLE_LIBRETRO FALSE)
 endif()
 
 # SDL
