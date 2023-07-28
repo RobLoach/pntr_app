@@ -21,10 +21,15 @@ option(PNTR_APP_BUILD_EXAMPLE_SDL "Example: SDL" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EXAMPLE_RAYLIB "Example: raylib" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EXAMPLE_LIBRETRO "Example: libretro" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EMSCRIPTEN "Example: Emscripten" ${PNTR_APP_IS_MAIN})
+option(PNTR_APP_BUILD_Test "Example: Test" ${PNTR_APP_IS_MAIN})
 
 if (PNTR_APP_BUILD_EXAMPLE_SDL OR
     PNTR_APP_BUILD_EXAMPLE_RAYLIB OR
     PNTR_APP_BUILD_EXAMPLE_LIBRETRO OR
     PNTR_APP_BUILD_EMSCRIPTEN)
     add_subdirectory(example)
+endif()
+
+if (PNTR_APP_BUILD_Test)
+    add_subdirectory(test)
 endif()

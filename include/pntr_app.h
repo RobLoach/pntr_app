@@ -345,10 +345,12 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #include "pntr_app_raylib.h"
 #elif defined(PNTR_APP_LIBRETRO)
 #include "pntr_app_libretro.h"
+#elif defined(PNTR_APP_CLI)
+#include "pntr_app_cli.h"
 #elif defined(EMSCRIPTEN)
 #include "pntr_app_emscripten.h"
 #else
-#error "[pntr_app] No target found. Set PNTR_APP_SDL, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
+#error "[pntr_app] No target found. Set PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
 #endif
 
 #ifdef __cplusplus
