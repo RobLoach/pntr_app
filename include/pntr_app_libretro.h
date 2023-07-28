@@ -363,6 +363,20 @@ bool pntr_app_events(pntr_app* app) {
     int16_t mouseY = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
     event.mouseX = pntr_app_libretro_mouse_pointer_convert((float)mouseX, app->width, 0.0f);
     event.mouseY = pntr_app_libretro_mouse_pointer_convert((float)mouseY, app->height, 0.0f);
+
+    if (event.mouseX < 0) {
+        event.mouseX = 0;
+    }
+    else if (event.mouseX > app->width) {
+        event.mouseX = app->width;
+    }
+    if (event.mouseY < 0) {
+        event.mouseY = 0;
+    }
+    else if (event.mouseY > app->height) {
+        event.mouseY = app->height;
+    }
+
     if (platform->mouseX != event.mouseX || platform->mouseY != event.mouseY) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
         event.mouseDeltaX = event.mouseX - platform->mouseX;
@@ -383,8 +397,8 @@ bool pntr_app_events(pntr_app* app) {
         int16_t currentState = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, retroButton);
         if (platform->mouseButtonState[event.mouseButton] != currentState) {
             event.type = (currentState == 0) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
-            event.mouseX = pntr_app_libretro_mouse_pointer_convert(platform->mouseX, app->width, 0.0f);
-            event.mouseY = pntr_app_libretro_mouse_pointer_convert(platform->mouseY, app->height, 0.0f);
+            event.mouseX = platform->mouseX;
+            event.mouseY = platform->mouseY;
             platform->mouseButtonState[event.mouseButton] = currentState;
 
             // Invoke the event.
