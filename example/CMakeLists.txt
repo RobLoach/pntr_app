@@ -80,3 +80,9 @@ if (PNTR_APP_BUILD_EXAMPLE_LIBRETRO)
     target_compile_definitions(pntr_app_example_libretro PUBLIC PNTR_APP_LIBRETRO)
     set_property(TARGET pntr_app_example_libretro PROPERTY C_STANDARD 99)
 endif()
+
+# CLI Example
+#add_executable(pntr_app_example_cli pntr_app_example.c)
+#target_link_libraries(pntr_app_example_cli PUBLIC pntr pntr_app)
+# target_compile_definitions(pntr_app_example_cli PUBLIC PNTR_APP_CLI)
+# set_property(TARGET pntr_app_example_cli PROPERTY C_STANDARD 99)

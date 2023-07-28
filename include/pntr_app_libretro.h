@@ -18,10 +18,10 @@ static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
 
 typedef struct pntr_app_libretro_platform {
-    int16_t mouseButtonState[3];
+    int16_t mouseButtonState[PNTR_APP_MOUSE_BUTTON_LAST];
     int16_t mouseX;
     int16_t mouseY;
-    int16_t gamepadState[4][16];
+    int16_t gamepadState[4][PNTR_APP_GAMEPAD_BUTTON_LAST];
 } pntr_app_libretro_platform;
 
 pntr_app_gamepad_button pntr_app_libretro_gamepad_button(int button) {
@@ -324,7 +324,7 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
         case PNTR_APP_MOUSE_BUTTON_RIGHT: return RETRO_DEVICE_ID_MOUSE_RIGHT;
         case PNTR_APP_MOUSE_BUTTON_MIDDLE: return RETRO_DEVICE_ID_MOUSE_MIDDLE;
     }
-    return PNTR_APP_MOUSE_BUTTON_UNKNOWN;
+    return -1;
 }
 
 /**
@@ -375,8 +375,12 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     // Mouse Buttons
-    for (event.mouseButton = PNTR_APP_MOUSE_BUTTON_LEFT; event.mouseButton <= PNTR_APP_MOUSE_BUTTON_MIDDLE; event.mouseButton++) {
-        int16_t currentState = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, pntr_app_libretro_mouse_button_to_retro(event.mouseButton));
+    for (event.mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; event.mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; event.mouseButton++) {
+        int retroButton = pntr_app_libretro_mouse_button_to_retro(event.mouseButton);
+        if (retroButton == -1) {
+            continue;
+        }
+        int16_t currentState = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, retroButton);
         if (platform->mouseButtonState[event.mouseButton] != currentState) {
             event.type = (currentState == 0) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
             event.mouseX = pntr_app_libretro_mouse_pointer_convert(platform->mouseX, app->width, 0.0f);

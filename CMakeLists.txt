@@ -21,10 +21,25 @@ option(PNTR_APP_BUILD_EXAMPLE_SDL "Example: SDL" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EXAMPLE_RAYLIB "Example: raylib" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EXAMPLE_LIBRETRO "Example: libretro" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EMSCRIPTEN "Example: Emscripten" ${PNTR_APP_IS_MAIN})
+option(PNTR_APP_BUILD_TEST "Example: Test" ${PNTR_APP_IS_MAIN})
 
 if (PNTR_APP_BUILD_EXAMPLE_SDL OR
     PNTR_APP_BUILD_EXAMPLE_RAYLIB OR
     PNTR_APP_BUILD_EXAMPLE_LIBRETRO OR
     PNTR_APP_BUILD_EMSCRIPTEN)
     add_subdirectory(example)
+endif()
+
+if (PNTR_APP_BUILD_TEST)
+    # Testing
+    include(CTest)
+    enable_testing()
+    if (BUILD_TESTING)
+        # set(CTEST_CUSTOM_TESTS_IGNORE
+        #     pkg-config--static
+        # )
+        # Always print verbose output when tests fail if run using `make test`.
+        list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+        add_subdirectory(test)
+    endif()
 endif()

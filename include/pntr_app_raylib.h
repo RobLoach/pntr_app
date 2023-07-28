@@ -60,7 +60,7 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     // Mouse Buttons
-    for (int i = 0; i < 3; i++) {
+    for (int i = MOUSE_BUTTON_LEFT; i <= MOUSE_BUTTON_MIDDLE; i++) {
         event.type = PNTR_APP_EVENTTYPE_UNKNOWN;
         if (IsMouseButtonPressed(i)) {
             event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;

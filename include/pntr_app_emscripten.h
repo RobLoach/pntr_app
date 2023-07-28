@@ -62,6 +62,7 @@ int pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent 
 }
 
 int pntr_app_emscripten_mouse_button_from_emscripten(unsigned short button) {
+    // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
     switch (button) {
         case 0: return PNTR_APP_MOUSE_BUTTON_LEFT;
         case 1: return PNTR_APP_MOUSE_BUTTON_MIDDLE;
@@ -93,9 +94,11 @@ int pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN:
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP: {
             event.mouseButton = pntr_app_emscripten_mouse_button_from_emscripten(mouseEvent->button);
-            event.mouseX = platform->mouseX;
-            event.mouseY = platform->mouseY;
-            app->event(&event, app->userData);
+            if (event.mouseButton != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
+                event.mouseX = platform->mouseX;
+                event.mouseY = platform->mouseY;
+                app->event(&event, app->userData);
+            }
         }
         break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
