@@ -14,7 +14,5 @@ target_link_libraries(pntr_app_test PUBLIC
 target_compile_definitions(pntr_app_test PUBLIC PNTR_APP_CLI)
 set_property(TARGET pntr_app_test PROPERTY C_STANDARD 99)
 
-
-# Set up the test
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 add_test(NAME pntr_app_test COMMAND pntr_app_test)

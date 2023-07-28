@@ -1,13 +1,22 @@
+#define tb_malloc  pntr_load_memory
+#include <stdlib.h>
+#define tb_realloc realloc
+#define tb_free    pntr_unload_memory
+
 #define TB_IMPL
 #include "external/termbox2.h"
 #include <stdio.h>
 
 typedef struct pntr_app_cli_platform {
-
-}
+    int mouseX;
+    int mouseY;
+    bool keysEnabled[PNTR_APP_KEY_LAST];
+    bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
+    bool termbox;
+} pntr_app_cli_platform;
 
 bool pntr_app_events(pntr_app* app) {
-    if (app == NULL) {
+    if (app == NULL || app->platform == NULL) {
         return false;
     }
 
@@ -15,6 +24,26 @@ bool pntr_app_events(pntr_app* app) {
         return true;
     }
 
+    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    pntr_app_event event;
+
+    // Key Up
+    event.type = PNTR_APP_EVENTTYPE_KEY_UP;
+    for (event.key = PNTR_APP_KEY_FIRST; event.key < PNTR_APP_KEY_LAST; event.key++) {
+        if (platform->keysEnabled[event.key]) {
+            platform->keysEnabled[event.key] = false;
+            app->event(&event, app->userData);
+        }
+    }
+
+    // Mouse Button Up
+    event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
+    for (event.mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; event.mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; event.mouseButton++) {
+        if (platform->mouseButtonsPressed[event.mouseButton]) {
+            platform->mouseButtonsPressed[event.mouseButton] = false;
+            app->event(&event, app->userData);
+        }
+    }
 
     struct tb_event ev;
     if (app->fps <= 0) {
@@ -27,9 +56,8 @@ bool pntr_app_events(pntr_app* app) {
         }
     }
 
-    pntr_app_event event;
     switch (ev.type) {
-        case TB_EVENT_KEY:
+        case TB_EVENT_KEY: {
             event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
             event.key = PNTR_APP_KEY_INVALID;
             if (ev.key == TB_KEY_CTRL_C) return false;
@@ -59,8 +87,8 @@ bool pntr_app_events(pntr_app* app) {
             // else if (ev.key == TB_KEY_CTRL_6)
             // else if (ev.key == TB_KEY_CTRL_7)
             // else if (ev.key == TB_KEY_CTRL_SLASH)
-            // else if (ev.key == TB_KEY_CTRL_UNDERSCORE)
-            // else if (ev.key == TB_KEY_SPACE)
+            else if (ev.key == TB_KEY_CTRL_UNDERSCORE) event.key = PNTR_APP_KEY_MINUS;
+            else if (ev.key == TB_KEY_SPACE) event.key = PNTR_APP_KEY_SPACE;
             // else if (ev.key == TB_KEY_BACKSPACE2)
             // else if (ev.key == TB_KEY_CTRL_8)
             else if (ev.key == TB_KEY_F1) event.key = PNTR_APP_KEY_F1;
@@ -94,19 +122,26 @@ bool pntr_app_events(pntr_app* app) {
             // else if (ev.key == TB_KEY_MOUSE_WHEEL_DOWN)
 
             if (event.key != PNTR_APP_KEY_INVALID) {
+                platform->keysEnabled[event.key] = true;
                 app->event(&event, app->userData);
             }
             else {
+                // Lower vs uppercase
+                if (ev.ch >= 97 && ev.ch <= 122) {
+                    ev.ch -= 32;
+                }
                 event.key = ev.ch;
+                platform->keysEnabled[event.key] = true;
                 app->event(&event, app->userData);
             }
-
-            // TODO: Handle PNTR_APP_EVENTTYPE_KEY_UP?
-
+        }
         break;
+
         case TB_EVENT_MOUSE: {
-            event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
+            event.mouseX = ev.x;
+            event.mouseY = ev.y;
             event.mouseButton = PNTR_APP_MOUSE_BUTTON_UNKNOWN;
+
             if (ev.key == TB_KEY_MOUSE_LEFT) {
                 event.mouseButton = PNTR_APP_MOUSE_BUTTON_LEFT;
             }
@@ -116,13 +151,16 @@ bool pntr_app_events(pntr_app* app) {
             else if (ev.key == TB_KEY_MOUSE_MIDDLE) {
                 event.mouseButton = PNTR_APP_MOUSE_BUTTON_MIDDLE;
             }
+
+            if (event.mouseButton != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
+                event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
+                platform->mouseButtonsPressed[event.mouseButton] = true;
+                app->event(&event, app->userData);
+            }
             else {
                 event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                event.mouseX = ev.x;
-                event.mouseY = ev.y;
+                app->event(&event, app->userData);
             }
-
-            app->event(&event, app->userData);
         }
         break;
     }
@@ -138,6 +176,7 @@ bool pntr_app_render(pntr_app* app) {
         return false;
     }
 
+    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
     pntr_image* screen = app->screen;
 
     #ifdef PNTR_APP_CLI_REVERSE_CHARACTERS
@@ -148,23 +187,39 @@ bool pntr_app_render(pntr_app* app) {
 
     int charactersLen = 70;
 
-    // TODO: Scale the image to the size of the terminal
+    // TODO: Scale the image to the size of the terminal?
 
+    // Get the greyscale representation of the screen
     unsigned char* grayscaleImage = (unsigned char*)pntr_image_to_pixelformat(screen, NULL, PNTR_PIXELFORMAT_GRAYSCALE);
+    if (grayscaleImage == NULL) {
+        return false;
+    }
 
+    // Clear the terminal
+    if (!platform->termbox) {
+        send_clear();
+    }
+
+    // Output the characters to the terminal
     for (int y = 0; y < app->height; y++) {
         for (int x = 0; x < app->width; x++) {
             unsigned char pixelIntensity = grayscaleImage[y * app->width + x];
-
             int char_index = (int)pixelIntensity * (charactersLen - 1) / 255;
 
-
-
-            //tb_printf(x, y, 0,0, "%c", characters[char_index]);
             // TODO: Have it set the background/foreground color
-            tb_set_cell(x, y, characters[char_index], TB_WHITE, TB_BLACK);//TB_BLACK, TB_WHITE);
+            tb_set_cell(x, y, characters[char_index], TB_WHITE, TB_BLACK); //TB_BLACK, TB_WHITE);
+
+            if (!platform->termbox) {
+                printf("%c", characters[char_index]);
+            }
+        }
+
+        if (!platform->termbox) {
+            printf("\n");
         }
     }
+
+    // Present the characters
     tb_present();
 
     pntr_unload_memory(grayscaleImage);
@@ -174,12 +229,13 @@ bool pntr_app_render(pntr_app* app) {
 
 bool pntr_app_init(pntr_app* app) {
     (void)app;
+    app->platform = pntr_load_memory(sizeof(pntr_app_cli_platform));
+    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
 
-    tb_init();
-    //tb_clear();
+    //platform->termbox = tb_init_file("TermTox failure test") == TB_OK;
+    platform->termbox = tb_init() == TB_OK;
 
     tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
-
 
     return true;
 }

@@ -27,7 +27,7 @@ bool Update(pntr_image* screen, void* userData) {
 
     // Draw some text
     pntr_draw_text(screen, app->font, "Hello!", app->x++, 10, PNTR_BLACK);
-    pntr_draw_line(screen, 0, 18, screen->width, 20, PNTR_PURPLE);
+    pntr_draw_line(screen, 0, 17, screen->width, 20, PNTR_PURPLE);
     pntr_draw_circle(screen, app->mouseX, app->mouseY, 3, PNTR_RED);
 
     return app->x < screen->width;

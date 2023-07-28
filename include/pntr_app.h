@@ -47,9 +47,9 @@ extern "C" {
 // pntr configuration
 #ifdef PNTR_APP_SDL
 #define PNTR_PIXELFORMAT_ARGB
-#elif PNTR_APP_LIBRETRO
+#elif defined(PNTR_APP_LIBRETRO)
 #define PNTR_PIXELFORMAT_ARGB
-#endif
+#endif  // PNTR_APP_LIBRETRO
 
 #ifndef PNTR_APP_PNTR_H
 #define PNTR_APP_PNTR_H "pntr.h"
@@ -186,7 +186,7 @@ typedef enum pntr_app_key {
     PNTR_APP_KEY_RIGHT_ALT        = 346,
     PNTR_APP_KEY_RIGHT_SUPER      = 347,
     PNTR_APP_KEY_MENU             = 348,
-    PNTR_APP_KEY_LAST             = 349
+    PNTR_APP_KEY_LAST
 } pntr_app_key;
 
 /**
@@ -194,7 +194,8 @@ typedef enum pntr_app_key {
  */
 typedef enum pntr_app_gamepad_button {
     PNTR_APP_GAMEPAD_BUTTON_UNKNOWN = 0,         // Unknown button, just for error checking
-    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_UP,        // Gamepad left DPAD up button
+    PNTR_APP_GAMEPAD_BUTTON_FIRST = 1,
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_UP = 1,    // Gamepad left DPAD up button
     PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_RIGHT,     // Gamepad left DPAD right button
     PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_DOWN,      // Gamepad left DPAD down button
     PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_LEFT,      // Gamepad left DPAD left button
@@ -210,17 +211,20 @@ typedef enum pntr_app_gamepad_button {
     PNTR_APP_GAMEPAD_BUTTON_MIDDLE,              // Gamepad center buttons, middle one (i.e. PS3: PS, Xbox: XBOX)
     PNTR_APP_GAMEPAD_BUTTON_MIDDLE_RIGHT,        // Gamepad center buttons, right one (i.e. PS3: Start)
     PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB,          // Gamepad joystick pressed button left
-    PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB          // Gamepad joystick pressed button right
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB,         // Gamepad joystick pressed button right
+    PNTR_APP_GAMEPAD_BUTTON_LAST
 } pntr_app_gamepad_button;
 
 /**
  * Mouse button.
  */
 typedef enum pntr_app_mouse_button {
-    PNTR_APP_MOUSE_BUTTON_LEFT,
-    PNTR_APP_MOUSE_BUTTON_RIGHT,
-    PNTR_APP_MOUSE_BUTTON_MIDDLE,
-    PNTR_APP_MOUSE_BUTTON_UNKNOWN
+    PNTR_APP_MOUSE_BUTTON_UNKNOWN = 0,
+    PNTR_APP_MOUSE_BUTTON_FIRST = 1,
+    PNTR_APP_MOUSE_BUTTON_LEFT = 1,
+    PNTR_APP_MOUSE_BUTTON_RIGHT = 2,
+    PNTR_APP_MOUSE_BUTTON_MIDDLE = 3,
+    PNTR_APP_MOUSE_BUTTON_LAST = 4
 } pntr_app_mouse_button;
 
 /**

@@ -60,6 +60,7 @@ When compiling, define one of the following to determine which platform you are 
 PNTR_APP_SDL
 PNTR_APP_RAYLIB
 PNTR_APP_LIBRETRO
+PNTR_APP_CLI
 EMSCRIPTEN
 ```
 
@@ -71,10 +72,10 @@ Make sure to link the related library when building.
 - [x] Target: [SDL](https://www.libsdl.org/)
 - [x] Target: [Emscripten](https://emscripten.org/)
 - [x] Target: [libretro](https://www.libretro.com/)
+- [x] Target: Command Line Interface
 - [ ] Target: [WASI](https://github.com/WebAssembly/wasi-sdk)
 - [ ] Target: [GLFW](https://www.glfw.org/)
 - [ ] Target: [sokol](https://github.com/floooh/sokol)
-- [ ] Target: Command Line Interface?
 - [x] Mouse
 - [x] Keyboard
 - [x] Gamepads
