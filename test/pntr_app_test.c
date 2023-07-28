@@ -4,30 +4,33 @@
 #include "pntr_app.h"
 
 typedef struct AppData {
-    int iterations;
     pntr_font* font;
+    int x;
+    int mouseX;
+    int mouseY;
 } AppData;
 
 bool Init(void* userData) {
     AppData* appData = (AppData*)userData;
 
-    appData->iterations = 0;
     appData->font = pntr_load_font_default();
+    appData->x = 0;
 
     return true;
 }
 
 bool Update(pntr_image* screen, void* userData) {
-    AppData* appData = (AppData*)userData;
+    AppData* app = (AppData*)userData;
 
     // Clear the screen
     pntr_clear_background(screen, PNTR_WHITE);
 
     // Draw some text
-    pntr_draw_text(screen, appData->font, "Hello!", 10, 10, PNTR_BLACK);
+    pntr_draw_text(screen, app->font, "Hello!", app->x++, 10, PNTR_BLACK);
     pntr_draw_line(screen, 0, 18, screen->width, 20, PNTR_PURPLE);
+    pntr_draw_circle(screen, app->mouseX, app->mouseY, 3, PNTR_RED);
 
-    return appData->iterations++ < 1;
+    return app->x < screen->width;
 }
 
 void Close(void* userData) {
@@ -38,14 +41,19 @@ void Close(void* userData) {
 
 void Event(pntr_app_event* event, void* userData) {
     (void)userData;
-    //AppData* appData = (AppData*)userData;
+    AppData* appData = (AppData*)userData;
 
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN: {
             if (event->key == PNTR_APP_KEY_SPACE) {
+                appData->x = 0;
             }
         }
         break;
+        case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
+            appData->mouseX = event->mouseX;
+            appData->mouseY = event->mouseY;
+        }
 
         default:
             // Nothing
@@ -63,7 +71,7 @@ pntr_app Main(int argc, char* argv[]) {
         .update = Update,
         .close = Close,
         .event = Event,
-        .fps = 30,
+        .fps = 10,
         .userData = PNTR_MALLOC(sizeof(AppData)),
     };
 }
