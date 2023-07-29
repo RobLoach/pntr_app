@@ -81,6 +81,7 @@ void Event(pntr_app_event* event, void* userData) {
                 case PNTR_APP_MOUSE_BUTTON_LEFT: button = "left"; break;
                 case PNTR_APP_MOUSE_BUTTON_RIGHT: button = "right"; break;
                 case PNTR_APP_MOUSE_BUTTON_MIDDLE: button = "middle"; break;
+                case PNTR_APP_MOUSE_BUTTON_LAST:
                 case PNTR_APP_MOUSE_BUTTON_UNKNOWN: button = "unknown"; break;
             }
 
