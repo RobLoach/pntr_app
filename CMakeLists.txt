@@ -30,7 +30,7 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL OR
     add_subdirectory(example)
 endif()
 
-if (PNTR_APP_BUILD_TEST)
+if (PNTR_APP_BUILD_TEST AND NOT PNTR_APP_BUILD_EMSCRIPTEN)
     # Testing
     include(CTest)
     enable_testing()
