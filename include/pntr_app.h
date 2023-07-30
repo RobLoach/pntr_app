@@ -45,6 +45,12 @@
 extern "C" {
 #endif
 
+#ifdef __LIBRETRO__
+    #ifndef PNTR_APP_LIBRETRO
+        #define PNTR_APP_LIBRETRO
+    #endif
+#endif
+
 // pntr configuration
 #if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO) //|| defined(EMSCRIPTEN)
 #define PNTR_PIXELFORMAT_ARGB
