@@ -11,6 +11,7 @@
 *       PNTR_APP_RAYLIB
 *       PNTR_APP_SDL
 *       PNTR_APP_LIBRETRO
+*       PNTR_APP_CLI
 *       EMSCRIPTEN
 *
 *   LICENSE: zlib/libpng
@@ -45,11 +46,9 @@ extern "C" {
 #endif
 
 // pntr configuration
-#ifdef PNTR_APP_SDL
+#if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO) //|| defined(EMSCRIPTEN)
 #define PNTR_PIXELFORMAT_ARGB
-#elif defined(PNTR_APP_LIBRETRO)
-#define PNTR_PIXELFORMAT_ARGB
-#endif  // PNTR_APP_LIBRETRO
+#endif
 
 #ifndef PNTR_APP_PNTR_H
 #define PNTR_APP_PNTR_H "pntr.h"
@@ -345,14 +344,12 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 
 #if defined(PNTR_APP_SDL)
 #include "pntr_app_sdl.h"
-#elif defined(PNTR_APP_RAYLIB)
+#elif defined(PNTR_APP_RAYLIB) || defined(EMSCRIPTEN)
 #include "pntr_app_raylib.h"
 #elif defined(PNTR_APP_LIBRETRO)
 #include "pntr_app_libretro.h"
 #elif defined(PNTR_APP_CLI)
 #include "pntr_app_cli.h"
-#elif defined(EMSCRIPTEN)
-#include "pntr_app_emscripten.h"
 #else
 #error "[pntr_app] No target found. Set PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
 #endif
@@ -371,7 +368,40 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 extern "C" {
 #endif
 
-#if !defined(PNTR_APP_NO_ENTRY)
+#ifndef PNTR_APP_NO_ENTRY
+
+#ifdef EMSCRIPTEN
+#include <emscripten/emscripten.h>
+
+/**
+ * The update callback for web.
+ */
+void pntr_app_emscripten_update_loop(void* app) {
+    if (app == NULL) {
+        emscripten_cancel_main_loop();
+        return;
+    }
+
+    pntr_app* application = (pntr_app*)app;
+
+    if (!pntr_app_events(application)) {
+        emscripten_cancel_main_loop();
+        return;
+    }
+
+    // Ensure the application exists.
+    if (application->update == NULL ||
+        application->update(application->screen, application->userData) == false) {
+        emscripten_cancel_main_loop();
+        return;
+    }
+
+    if (!pntr_app_render(application)) {
+        emscripten_cancel_main_loop();
+    }
+}
+#endif
+
 /**
  * The main entry point of the application.
  *
@@ -408,7 +438,7 @@ int main(int argc, char* argv[]) {
     if (app.update != NULL) {
 #if defined(EMSCRIPTEN)
         // Set up the main loop.
-        emscripten_set_main_loop_arg(pntr_app_update_loop, &app, app.fps, 1);
+        emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, app.fps, 1);
 #else
         // Continue running when update returns TRUE.
         while (pntr_app_events(&app) &&

@@ -3,8 +3,17 @@
 #define tb_realloc realloc
 #define tb_free    pntr_unload_memory
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+
 #define TB_IMPL
 #include "external/termbox2.h"
+
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
+
 #include <stdio.h>
 
 typedef struct pntr_app_cli_platform {
@@ -207,7 +216,7 @@ bool pntr_app_render(pntr_app* app) {
             int char_index = (int)pixelIntensity * (charactersLen - 1) / 255;
 
             // TODO: Have it set the background/foreground color
-            tb_set_cell(x, y, characters[char_index], TB_WHITE, TB_BLACK); //TB_BLACK, TB_WHITE);
+            tb_set_cell(x, y, (uint32_t)characters[char_index], TB_WHITE, TB_BLACK); //TB_BLACK, TB_WHITE);
 
             if (!platform->termbox) {
                 printf("%c", characters[char_index]);
@@ -241,5 +250,9 @@ bool pntr_app_init(pntr_app* app) {
 }
 
 void pntr_app_close(pntr_app* app) {
+    if (app != NULL) {
+        pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+        platform->termbox = false;
+    }
     tb_shutdown();
 }

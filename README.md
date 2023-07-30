@@ -88,10 +88,8 @@ pntr_app is a header-only library, so you can use any build method you would lik
 ### Build
 
 ``` bash
-mkdir build
-cd build
-cmake ..
-make
+cmake -B build
+cmake --build build
 ```
 
 ### Emscripten
@@ -99,7 +97,7 @@ make
 ``` bash
 mkdir build
 cd build
-emcmake cmake ..
+emcmake cmake .. -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-s USE_GLFW=3" -DCMAKE_EXECUTABLE_SUFFIX=".html"
 emmake make
 emrun example/index.html
 ```

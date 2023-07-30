@@ -183,7 +183,7 @@ bool pntr_app_events(pntr_app* app) {
     while (SDL_PollEvent(&event) != 0) {
         switch (event.type) {
             case SDL_QUIT:
-            case SDL_APP_TERMINATING:
+            //case SDL_APP_TERMINATING:
                 return false;
             case SDL_MOUSEMOTION: {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
@@ -206,6 +206,7 @@ bool pntr_app_events(pntr_app* app) {
                 }
                 break;
             }
+            #ifndef EMSCRIPTEN
             case SDL_CONTROLLERBUTTONDOWN:
             case SDL_CONTROLLERBUTTONUP: {
                 pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event.cbutton.button);
@@ -216,6 +217,7 @@ bool pntr_app_events(pntr_app* app) {
                 }
                 break;
             }
+            #endif
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
@@ -269,7 +271,11 @@ bool pntr_app_init(pntr_app* app) {
         return false;
     }
 
+    #ifndef EMSCRIPTEN
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+    #else
+    SDL_Init(SDL_INIT_VIDEO);
+    #endif
     platform->window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
     platform->windowSurface = SDL_GetWindowSurface(platform->window);
     platform->screenSurface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
