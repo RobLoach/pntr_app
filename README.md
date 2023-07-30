@@ -95,11 +95,9 @@ cmake --build build
 ### Emscripten
 
 ``` bash
-mkdir build
-cd build
-emcmake cmake .. -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-s USE_GLFW=3" -DCMAKE_EXECUTABLE_SUFFIX=".html"
-emmake make
-emrun example/index.html
+emcmake cmake -B build -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-s USE_GLFW=3" -DCMAKE_EXECUTABLE_SUFFIX=".html"
+emmake make -C build
+emrun build/example/index.html
 ```
 
 ## License
