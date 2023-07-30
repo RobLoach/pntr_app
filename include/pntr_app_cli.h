@@ -12,7 +12,6 @@
 #include "external/termbox2.h"
 
 #pragma GCC diagnostic pop
-#pragma GCC diagnostic pop
 
 #include <stdio.h>
 
