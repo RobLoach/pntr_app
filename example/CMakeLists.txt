@@ -9,45 +9,25 @@ file(COPY ${examples_resources} DESTINATION "resources/")
 
 find_package(pntr)
 
-if (EMSCRIPTEN)
-    add_executable(pntr_app_example_emscripten
+# SDL or Emscripten
+if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
+    add_executable(pntr_app_example_sdl
         pntr_app_example.c
     )
-    target_link_libraries(pntr_app_example_emscripten PUBLIC
-        pntr
-        pntr_app
-    )
 
-    set_target_properties(pntr_app_example_emscripten PROPERTIES PREFIX "")
-    set_target_properties(pntr_app_example_emscripten PROPERTIES SUFFIX ".html")
-    set_target_properties(pntr_app_example_emscripten PROPERTIES OUTPUT_NAME "index")
+    target_compile_definitions(pntr_app_example_sdl PUBLIC PNTR_APP_SDL)
 
-    #target_link_options(pntr_app_example_emscripten PUBLIC "--preload-file resources@/resources --shell-file pntr_app_example.html")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file resources@/resources --shell-file ${CMAKE_SOURCE_DIR}/example/pntr_app_example.html")
-
-    # Force disable the other examples
-    set(PNTR_APP_BUILD_EXAMPLE_SDL FALSE)
-    set(PNTR_APP_BUILD_EXAMPLE_RAYLIB FALSE)
-    set(PNTR_APP_BUILD_EXAMPLE_LIBRETRO FALSE)
-    set(PNTR_APP_BUILD_EXAMPLE_CLI FALSE)
-endif()
-
-# SDL
-if (PNTR_APP_BUILD_EXAMPLE_SDL)
+    # Dependencies
     set(SDL_SHARED FALSE)
     set(SDL2_DISABLE_UNINSTALL TRUE)
     set(SDL2_DISABLE_INSTALL TRUE)
     find_package(SDL2 REQUIRED)
     set(SDL2_LIBRARIES SDL2::SDL2 SDL2::SDL2main)
-    add_executable(pntr_app_example_sdl
-        pntr_app_example.c
-    )
     target_link_libraries(pntr_app_example_sdl PUBLIC
         pntr
         pntr_app
         ${SDL2_LIBRARIES}
     )
-    target_compile_definitions(pntr_app_example_sdl PUBLIC PNTR_APP_SDL)
     set_property(TARGET pntr_app_example_sdl PROPERTY C_STANDARD 99)
 endif()
 
@@ -57,17 +37,32 @@ if (PNTR_APP_BUILD_EXAMPLE_RAYLIB)
     add_executable(pntr_app_example_raylib
         pntr_app_example.c
     )
+    target_compile_definitions(pntr_app_example_raylib PUBLIC PNTR_APP_RAYLIB)
+
+    # Platform Updates
+    if (EMSCRIPTEN)
+        set_target_properties(pntr_app_example_raylib PROPERTIES OUTPUT_NAME "index")
+        set_target_properties(pntr_app_example_raylib PROPERTIES SUFFIX ".html")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY --preload-file resources@/resources --shell-file ${CMAKE_SOURCE_DIR}/example/pntr_app_example.html")
+    else()
+        set_property(TARGET pntr_app_example_raylib PROPERTY C_STANDARD 99)
+    endif()
+
+    if (APPLE AND NOT EMSCRIPTEN)
+        target_link_libraries(pntr_app_example_raylib "-framework IOKit")
+        target_link_libraries(pntr_app_example_raylib "-framework Cocoa")
+        target_link_libraries(pntr_app_example_raylib "-framework OpenGL")
+    endif()
+
     target_link_libraries(pntr_app_example_raylib PUBLIC
         pntr
         pntr_app
         raylib
     )
-    target_compile_definitions(pntr_app_example_raylib PUBLIC PNTR_APP_RAYLIB)
-    set_property(TARGET pntr_app_example_raylib PROPERTY C_STANDARD 99)
 endif()
 
 # libretro
-if (PNTR_APP_BUILD_EXAMPLE_LIBRETRO)
+if (PNTR_APP_BUILD_EXAMPLE_LIBRETRO AND NOT EMSCRIPTEN)
     find_package(libretro)
     add_library(pntr_app_example_libretro SHARED
         pntr_app_example.c

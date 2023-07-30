@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
 #define PNTR_DISABLE_MATH
@@ -60,7 +62,7 @@ void Event(pntr_app_event* event, void* userData) {
             if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = true;
             }
-            printf("Key Pressed: %c\n", event->key);
+            printf("Key Pressed: %c\n", (char)event->key);
         }
         break;
 
@@ -68,7 +70,7 @@ void Event(pntr_app_event* event, void* userData) {
             if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = false;
             }
-            printf("Key Released: %c\n", event->key);
+            printf("Key Released: %c\n", (char)event->key);
         }
         break;
 
