@@ -10,6 +10,7 @@ typedef struct AppData {
     pntr_font* font;
     bool spacePressed;
     int x;
+    pntr_sound* sound;
 } AppData;
 
 bool Init(void* userData) {
@@ -19,6 +20,7 @@ bool Init(void* userData) {
     appData->font = pntr_load_font_default();
     appData->spacePressed = false;
     appData->x = 0;
+    appData->sound = pntr_load_sound("resources/sound.wav");
 
     return true;
 }
@@ -52,6 +54,7 @@ void Close(void* userData) {
 
     pntr_unload_image(appData->logo);
     pntr_unload_font(appData->font);
+    pntr_unload_sound(appData->sound);
 }
 
 void Event(pntr_app_event* event, void* userData) {
@@ -62,6 +65,9 @@ void Event(pntr_app_event* event, void* userData) {
             if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = true;
             }
+
+            pntr_play_sound(appData->sound);
+
             printf("Key Pressed: %c\n", (char)event->key);
         }
         break;
@@ -85,6 +91,10 @@ void Event(pntr_app_event* event, void* userData) {
                 case PNTR_APP_MOUSE_BUTTON_MIDDLE: button = "middle"; break;
                 case PNTR_APP_MOUSE_BUTTON_LAST:
                 case PNTR_APP_MOUSE_BUTTON_UNKNOWN: button = "unknown"; break;
+            }
+
+            if (event->type == PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN) {
+                pntr_play_sound(appData->sound);
             }
 
             printf("Mouse Button %s: %s\n", buttonDown, button);

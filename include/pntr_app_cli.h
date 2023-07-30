@@ -255,3 +255,15 @@ void pntr_app_close(pntr_app* app) {
     }
     tb_shutdown();
 }
+
+pntr_sound* pntr_load_sound(const char* path) {
+    // TODO: Audio
+    return NULL;
+}
+
+void pntr_unload_sound(pntr_sound* sound) {
+}
+
+void pntr_play_sound(pntr_sound* sound) {
+    // TODO: Add volume and panning.
+}

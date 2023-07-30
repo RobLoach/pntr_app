@@ -698,3 +698,15 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
     (void)enabled;
     (void)code;
 }
+
+pntr_sound* pntr_load_sound(const char* path) {
+    // TODO: libretro audio
+    return NULL;
+}
+
+void pntr_unload_sound(pntr_sound* sound) {
+}
+
+void pntr_play_sound(pntr_sound* sound) {
+    // TODO: Add volume and panning.
+}

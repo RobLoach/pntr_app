@@ -7,4 +7,4 @@ FetchContent_Declare(
     GIT_SHALLOW 1
 )
 FetchContent_MakeAvailable(SDL2Source)
-include_directories(${SDL2Source_SOURCE_DIR})
+#include_directories(${SDL2Source_SOURCE_DIR})
