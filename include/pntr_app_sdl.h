@@ -341,39 +341,46 @@ bool pntr_app_init(pntr_app* app) {
 }
 
 void pntr_app_close(pntr_app* app) {
-    if (app == NULL || app->platform == NULL) {
-        return;
-    }
-
-    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-
-    // Close Gamepads
-    for (int i = 0; i < 4; i++) {
-        if (platform->gameControllers[i] != NULL) {
-            if (SDL_IsGameController(i)) {
-                SDL_GameControllerClose(platform->gameControllers[i]);
-                platform->gameControllers[i] = NULL;
+    if (app != NULL) {
+        pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+        if (platform != NULL) {
+            // Close Gamepads
+            for (int i = 0; i < 4; i++) {
+                if (platform->gameControllers[i] != NULL) {
+                    if (SDL_IsGameController(i)) {
+                        SDL_GameControllerClose(platform->gameControllers[i]);
+                        platform->gameControllers[i] = NULL;
+                    }
+                }
             }
+
+            // Screen Surface
+            if (platform->screenSurface != NULL) {
+                SDL_FreeSurface(platform->screenSurface);
+                platform->screenSurface = NULL;
+            }
+
+            // Window surface
+            if (platform->windowSurface != NULL) {
+                SDL_FreeSurface(platform->windowSurface);
+                platform->windowSurface = NULL;
+            }
+
+            // Window
+            if (platform->window != NULL) {
+                SDL_DestroyWindow(platform->window);
+                platform->window = NULL;
+            }
+
+            // Platform
+            pntr_unload_memory(platform);
         }
     }
 
-    if (platform->screenSurface != NULL) {
-        SDL_FreeSurface(platform->screenSurface);
-        platform->screenSurface = NULL;
-    }
-
-    if (platform->windowSurface != NULL) {
-        SDL_FreeSurface(platform->windowSurface);
-        platform->windowSurface = NULL;
-    }
-
-    if (platform->window != NULL) {
-        SDL_DestroyWindow(platform->window);
-        platform->window = NULL;
-    }
-
-    pntr_unload_memory(platform);
+    // Audio
     Mix_CloseAudio();
+
+    // SDL
     SDL_Quit();
 }
 
