@@ -9,7 +9,9 @@ file(COPY ${examples_resources} DESTINATION "resources/")
 
 find_package(pntr)
 
-# SDL or Emscripten
+set(BUILD_SHARED_LIBS FALSE)
+
+# SDL
 if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
     add_executable(pntr_app_example_sdl
         pntr_app_example.c
@@ -18,12 +20,18 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
     target_compile_definitions(pntr_app_example_sdl PUBLIC PNTR_APP_SDL)
 
     # SDL
-    #set(SDL_SHARED FALSE)
-    #set(SDL2_SHARED FALSE)
+    set(SDL_SHARED FALSE)
+    set(SDL2_SHARED FALSE)
+    set(SDL_STATIC TRUE)
+    set(SDL_TEST FALSE)
+    set(SDL_TESTS FALSE)
+    set(INTERFACE_SDL2_SHARED false)
     set(SDL2_DISABLE_UNINSTALL TRUE)
     set(SDL2_DISABLE_INSTALL TRUE)
+    set(SDL_INSTALL_TESTS FALSE)
     find_package(SDL2 REQUIRED)
-    set(SDL2_LIBRARIES SDL2::SDL2 SDL2::SDL2main)
+    set(SDL2_LIBRARIES SDL2-static)
+    #set(SDL2_LIBRARIES SDL2::SDL2 SDL2::SDL2main)
 
     # SDL_mixer
     set(SDL2MIXER_INSTALL OFF)
@@ -49,7 +57,8 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
     set(SDL2MIXER_SAMPLES_INSTALL OFF)
     set(SDL2MIXER_BUILD_SHARED_LIBS OFF)
     find_package(SDL2_mixer REQUIRED)
-    set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer)
+    set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer::SDL2_mixer-static)
+    #set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer)
 
     target_link_libraries(pntr_app_example_sdl PUBLIC
         pntr
@@ -59,8 +68,8 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
     set_property(TARGET pntr_app_example_sdl PROPERTY C_STANDARD 99)
 endif()
 
-# raylib
-if (PNTR_APP_BUILD_EXAMPLE_RAYLIB)
+# raylib or Emscripten
+if (PNTR_APP_BUILD_EXAMPLE_RAYLIB OR EMSCRIPTEN)
     find_package(raylib QUIET)
     add_executable(pntr_app_example_raylib
         pntr_app_example.c
@@ -85,7 +94,7 @@ if (PNTR_APP_BUILD_EXAMPLE_RAYLIB)
     target_link_libraries(pntr_app_example_raylib PUBLIC
         pntr
         pntr_app
-        raylib
+        raylib_static
     )
 endif()
 
