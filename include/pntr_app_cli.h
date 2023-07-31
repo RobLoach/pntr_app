@@ -266,17 +266,34 @@ void pntr_app_close(pntr_app* app) {
 }
 
 pntr_sound* pntr_load_sound(const char* path) {
-    // TODO: Audio support for the Command line interface?
     pntr_sound* sound = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound));
     if (sound == NULL) {
         return NULL;
     }
 
+    // Load the file.
+    unsigned int bytesRead;
+    unsigned char* data = pntr_load_file(path, &bytesRead);
+    if (data == NULL) {
+        pntr_unload_memory(sound);
+        return NULL;
+    }
+
+    // TODO: Audio support for the Command line interface?
+    // We just free the memory as there is no CLI audio right now.
+    pntr_unload_memory(data);
+
+    // Save the path within the sound.
     sound->data = (void*)path;
     return sound;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
+    if (sound == NULL) {
+        return;
+    }
+
+    pntr_unload_memory(sound->data);
     pntr_unload_memory(sound);
 }
 
