@@ -53,11 +53,12 @@ extern "C" {
 
 // pntr configuration
 #if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO) //|| defined(EMSCRIPTEN)
-#define PNTR_PIXELFORMAT_ARGB
+    #define PNTR_PIXELFORMAT_ARGB
 #endif
 
+// pntr.h
 #ifndef PNTR_APP_PNTR_H
-#define PNTR_APP_PNTR_H "pntr.h"
+    #define PNTR_APP_PNTR_H "pntr.h"
 #endif
 #include PNTR_APP_PNTR_H
 
@@ -285,8 +286,14 @@ typedef struct pntr_app {
     void* platform;
 } pntr_app;
 
+/**
+ * Sound to be played through pntr_app.
+ *
+ * @see pntr_load_sound
+ * @see pntr_unload_sound
+ * @see pntr_play_sound
+ */
 typedef struct pntr_sound {
-    pntr_app* app;
     void* data;
 } pntr_sound;
 
@@ -341,8 +348,6 @@ void pntr_play_sound(pntr_sound* sound);
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
 
-#include <stddef.h>
-
 #ifndef PNTR_APP_MAIN
 /**
  * The name of the entry point in your application.
@@ -368,16 +373,17 @@ extern "C" {
 
 pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 
+// Platform
 #if defined(PNTR_APP_SDL)
-#include "pntr_app_sdl.h"
+    #include "pntr_app_sdl.h"
 #elif defined(PNTR_APP_RAYLIB) || defined(EMSCRIPTEN)
-#include "pntr_app_raylib.h"
+    #include "pntr_app_raylib.h"
 #elif defined(PNTR_APP_LIBRETRO)
-#include "pntr_app_libretro.h"
+    #include "pntr_app_libretro.h"
 #elif defined(PNTR_APP_CLI)
-#include "pntr_app_cli.h"
+    #include "pntr_app_cli.h"
 #else
-#error "[pntr_app] No target found. Set PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
+    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
 #endif
 
 #ifdef __cplusplus
@@ -394,10 +400,14 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 extern "C" {
 #endif
 
+// Whether or not the application uses int main().
 #ifndef PNTR_APP_NO_ENTRY
 
 #ifdef EMSCRIPTEN
-#include <emscripten/emscripten.h>
+#ifndef PNTR_APP_EMSCRIPTEN_H
+#define PNTR_APP_EMSCRIPTEN_H <emscripten/emscripten.h>
+#include PNTR_APP_EMSCRIPTEN_H
+#endif  // PNTR_APP_EMSCRIPTEN_H
 
 /**
  * The update callback for web.
@@ -445,8 +455,8 @@ int main(int argc, char* argv[]) {
         app.close = NULL;
     }
     else if (pntr_app_init(&app) == false) {
-        pntr_app_close(&app);
         pntr_unload_image(app.screen);
+        pntr_unload_memory(app.userData);
         return 1;
     }
 
@@ -462,15 +472,15 @@ int main(int argc, char* argv[]) {
 
     // Start the update loop
     if (app.update != NULL) {
-#if defined(EMSCRIPTEN)
-        // Set up the main loop.
-        emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, app.fps, 1);
-#else
-        // Continue running when update returns TRUE.
-        while (pntr_app_events(&app) &&
-            app.update(app.screen, app.userData) &&
-            pntr_app_render(&app));
-#endif
+        #if defined(EMSCRIPTEN)
+            // Set up the main loop.
+            emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, app.fps, 1);
+        #else
+            // Continue running when update returns TRUE.
+            while (pntr_app_events(&app) &&
+                app.update(app.screen, app.userData) &&
+                pntr_app_render(&app));
+        #endif
     }
 
     // Tell the application to close.
@@ -478,22 +488,17 @@ int main(int argc, char* argv[]) {
         app.close(app.userData);
     }
 
-    // Clear the screen
-    pntr_unload_image(app.screen);
-
     // Tell the platform to close.
     pntr_app_close(&app);
 
     // Clear up any user data.
+    pntr_unload_image(app.screen);
     pntr_unload_memory(app.userData);
-
-    // Clear up any user data.
-    pntr_unload_memory(app.platform);
 
     // Return an error state if update was nullified.
     return (app.update == NULL) ? 1 : 0;
 }
-#endif // PNTR_APP_NO_ENTRY
+#endif  // PNTR_APP_NO_ENTRY
 
 #ifdef __cplusplus
 }

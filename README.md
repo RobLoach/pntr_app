@@ -1,6 +1,6 @@
 # pntr_app
 
-Build [pntr](https://github.com/robloach/pntr) applications with the same code for a number of different targets, including SDL, raylib, the web, and more.
+Build [pntr](https://github.com/robloach/pntr) applications with the same code for a number of different targets, including SDL, raylib, libretro, the web, and more.
 
 ## Example
 
@@ -53,6 +53,20 @@ pntr_app Main(int argc, char* argv[]) {
 }
 ```
 
+## Features
+
+- [x] Target: [raylib](https://www.raylib.com/)
+- [x] Target: [SDL](https://www.libsdl.org/)
+- [x] Target: [Emscripten](https://emscripten.org/)
+- [x] Target: [libretro](https://www.libretro.com/)
+- [x] Target: Command Line Interface with [termbox2](https://github.com/termbox/termbox2)
+- [ ] Target: [sokol](https://github.com/floooh/sokol)
+- [x] Mouse
+- [x] Keyboard
+- [x] Gamepads
+- [x] Sound (wav)
+- [ ] Music
+
 ## Configuration
 
 When compiling, define one of the following to determine which platform you are targeting...
@@ -64,35 +78,32 @@ PNTR_APP_CLI
 EMSCRIPTEN
 ```
 
-Make sure to link the related library when building.
-
-## Features
-
-- [x] Target: [raylib](https://www.raylib.com/)
-- [x] Target: [SDL](https://www.libsdl.org/)
-- [x] Target: [Emscripten](https://emscripten.org/)
-- [x] Target: [libretro](https://www.libretro.com/)
-- [x] Target: Command Line Interface
-- [ ] Target: [WASI](https://github.com/WebAssembly/wasi-sdk)
-- [ ] Target: [GLFW](https://www.glfw.org/)
-- [ ] Target: [sokol](https://github.com/floooh/sokol)
-- [x] Mouse
-- [x] Keyboard
-- [x] Gamepads
-- [ ] Audio?
-
 ## Build
 
-pntr_app is a header-only library, so you can use any build method you would like. Building the examples though, you can use [CMake](https://cmake.org/)...
+There are a few platforms supported by pntr_app, which have their own build methods...
 
-### Build
+### Desktop
+
+To build the raylib and SDL applications, use [CMake](https://cmake.org/). Depends on either [raylib](https://www.raylib.com/), or [SDL](https://www.libsdl.org/) along with [SDL_mixer](https://github.com/libsdl-org/SDL_mixer)...
 
 ``` bash
 cmake -B build
 cmake --build build
 ```
 
-### Emscripten
+### libretro
+
+To build the libretro core, use `make`. Depends on [libretro-common](https://github.com/libretro/libretro-common).
+
+``` bash
+git submodule update --init
+cd example
+make
+```
+
+### Web
+
+To build for the web with [Emscripten](https://emscripten.org/). Depends on [emsdk](https://emscripten.org/docs/tools_reference/emsdk.html).
 
 ``` bash
 emcmake cmake -B build -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-s USE_GLFW=3" -DCMAKE_EXECUTABLE_SUFFIX=".html"

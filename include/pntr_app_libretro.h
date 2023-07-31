@@ -14,7 +14,6 @@
 #define PNTR_APP_NO_ENTRY
 
 pntr_app* pntr_app_libretro;
-#define PNTR_APP_LIBRETRO_SAMPLES 44100
 
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
@@ -267,6 +266,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
         height = pntr_app_libretro->height;
     }
 
+    // TODO: libretro: Is the FPS correct?
     info->timing = (struct retro_system_timing) {
         .fps = (fps > 0) ? (double)fps : 0.0,
         .sample_rate = 0.0,
@@ -298,9 +298,9 @@ void retro_set_environment(retro_environment_t cb) {
 	// vfs_interface_info.required_interface_version = DIRENT_REQUIRED_VFS_VERSION;
 	// vfs_interface_info.iface = NULL;
 	// if (cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_interface_info)) {
-	// 	vfs_interface = vfs_interface_info.iface;
-	// 	filestream_vfs_init(&vfs_interface_info);
-	// 	dirent_vfs_init(&vfs_interface_info);
+	// 	 vfs_interface = vfs_interface_info.iface;
+	//   filestream_vfs_init(&vfs_interface_info);
+	// 	 dirent_vfs_init(&vfs_interface_info);
 	// }
 }
 
@@ -347,9 +347,8 @@ void retro_audio_cb() {
         return;
     }
 
-    // Make sure the initial built buffer data is empty.
+    // Make sure the initial mixed buffer data is empty.
     memset(platform->audioSamples, 0, sizeof(float) * platform->audioBufferSize * 2);
-    //memset(platform->audioSamples2, 0, sizeof(int16_t) * platform->audioBufferSize * 2);
 
     // Mix the audio into the audio batch.
     audio_mixer_mix(platform->audioSamples, platform->audioBufferSize, 1.0, false);
@@ -491,50 +490,31 @@ bool pntr_app_render(pntr_app* app) {
     video_cb((void*)screen->data, screen->width, screen->height, screen->pitch);
 }
 
+/**
+ * Initialize the libretro platform with the given pntr_app.
+ */
 bool pntr_app_init(pntr_app* app) {
-    if (app == NULL) {
-        return false;
-    }
-
-    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
-    if (platform == NULL) {
+    if (app == NULL || app->platform == NULL) {
         return false;
     }
 
     // Audio
+    #ifndef PNTR_APP_LIBRETRO_SAMPLES
+    #define PNTR_APP_LIBRETRO_SAMPLES 44100
+    #endif
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
-    platform->audioBufferSize = PNTR_APP_LIBRETRO_SAMPLES / app->fps;
-    platform->audioSamples = pntr_load_memory(sizeof(float) * platform->audioBufferSize * 2);
-    platform->audioSamples2 = pntr_load_memory(sizeof(int16_t) * platform->audioBufferSize * 2);
 
     return true;
 }
 
+/**
+ * Close the libretro application.
+ */
 void pntr_app_close(pntr_app* app) {
-    if (app == NULL) {
-        return;
-    }
-
-    if (app->close != NULL) {
-        app->close(app->userData);
-    }
-
-    // Remove the screen.
-    pntr_unload_image(app->screen);
-
-    // Clear up any user data.
-    pntr_unload_memory(app->userData);
+    (void)app;
 
     // Audio
     audio_mixer_done();
-    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
-    if (platform != NULL) {
-        pntr_unload_memory(platform->audioSamples);
-        pntr_unload_memory(platform->audioSamples2);
-    }
-
-    pntr_unload_memory(app->platform);
-    pntr_unload_memory(app);
 }
 
 void retro_run(void) {
@@ -542,11 +522,13 @@ void retro_run(void) {
         return;
     }
 
+    // Process all events.
     if (pntr_app_events(pntr_app_libretro) == false) {
         environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
         return;
-    };
+    }
 
+    // Update the game state.
     if (pntr_app_libretro->update != NULL) {
         if (pntr_app_libretro->update(pntr_app_libretro->screen, pntr_app_libretro->userData) == false) {
             environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
@@ -554,8 +536,10 @@ void retro_run(void) {
         }
     }
 
+    // Render the application.
     pntr_app_render(pntr_app_libretro);
 
+    // Update any core options.
     bool updated = false;
     if (environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE_UPDATE, &updated) && updated) {
         check_variables();
@@ -580,6 +564,7 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
  * libretro callback; Load the labels for the input buttons.
  */
 void init_descriptors() {
+    // TODO: Update the input descriptions to match the header
 	struct retro_input_descriptor desc[] = {
 		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" },
 		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" },
@@ -651,22 +636,81 @@ void init_descriptors() {
     environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 }
 
+/**
+ * libretro callback: Indicate when the audio gets enabled or disabled.
+ */
 void audio_set_state(bool enabled) {
-	// TODO(RobLoach): Act on whether or not audio is enabled/disabled?
     pntr_app* app = pntr_app_libretro;
-    if (app == NULL) {
+    if (app == NULL || app->platform == NULL) {
         return;
     }
 
     pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
-    if (platform == NULL) {
-        return;
-    }
-
     platform->audioEnabled = enabled;
 }
 
+/**
+ * Initialize a pntr_app object.
+ */
+pntr_app* pntr_app_libretro_load_app(pntr_app* baseApp) {
+    // Copy the data to the core's app instance.
+    pntr_app* app = (pntr_app*)pntr_load_memory(sizeof(pntr_app));
+    if (app == NULL) {
+        return NULL;
+    }
+
+    if (baseApp != NULL) {
+        pntr_memory_copy(app, baseApp, sizeof(pntr_app));
+    }
+
+    app->screen = pntr_gen_image_color(app->width, app->height, PNTR_BLACK);
+    if (app->screen == NULL) {
+        pntr_unload_memory(app);
+        return false;
+    }
+
+    // Initialize the platform data with clear data.
+    app->platform = pntr_load_memory(sizeof(pntr_app_libretro_platform));
+    if (app->platform == NULL) {
+        pntr_unload_image(app->screen);
+        pntr_unload_memory(app);
+        return NULL;
+    }
+
+    // Make sure the platform has clear data.
+    memset(app->platform, 0, sizeof(pntr_app_libretro_platform));
+
+    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
+    platform->audioBufferSize = PNTR_APP_LIBRETRO_SAMPLES / app->fps;
+    platform->audioSamples = pntr_load_memory(sizeof(float) * platform->audioBufferSize * 2);
+    platform->audioSamples2 = pntr_load_memory(sizeof(int16_t) * platform->audioBufferSize * 2);
+    pntr_app_libretro = app;
+
+    return app;
+}
+
+void pntr_app_libretro_unload_app(pntr_app* app) {
+    if (app == NULL) {
+        return;
+    }
+
+    if (app->platform != NULL) {
+        pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
+        pntr_unload_memory(platform->audioSamples);
+        pntr_unload_memory(platform->audioSamples2);
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+    }
+
+    pntr_unload_memory(app->userData);
+    pntr_unload_image(app->screen);
+    pntr_unload_memory(app);
+
+    pntr_app_libretro = NULL;
+}
+
 bool retro_load_game(const struct retro_game_info *info) {
+    // TODO: retro_load_game: Send the entire data buffer to somewhere?
     int argc = 1;
     char* argv[2] = {
         "pntr_app",
@@ -676,76 +720,77 @@ bool retro_load_game(const struct retro_game_info *info) {
         argc++;
     }
 
-    pntr_app app = PNTR_APP_MAIN(argc, argv);
-
-    // Initialize the platform data with clear data.
-    app.platform = pntr_load_memory(sizeof(pntr_app_libretro_platform));
-    memset(app.platform, 0, sizeof(pntr_app_libretro_platform));
-
-    pntr_app_init(&app);
-
-    // Call the init callback.
-    if (app.init != NULL) {
-        // Check if initialization worked.
-        if (app.init(app.userData) == false) {
-            pntr_unload_memory(app.userData);
-            pntr_unload_memory(app.platform);
-            return false;
-        }
-    }
-
-    app.screen = pntr_gen_image_color(app.width, app.height, PNTR_BLACK);
-    if (app.screen == NULL) {
-        pntr_app_close(&app);
-        return false;
-    }
-
+    // Pixel Format
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt)) {
-        log_cb(RETRO_LOG_INFO, "XRGB8888 is not supported.\n");
-        pntr_app_close(&app);
+        log_cb(RETRO_LOG_INFO, "[pntr] XRGB8888 is not supported.\n");
         return false;
     }
 
+    // Keyboard callbacks
     struct retro_keyboard_callback keyboardCallback;
     keyboardCallback.callback = pntr_app_libretro_keyboard_callback;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback)) {
         log_cb(RETRO_LOG_INFO, "Failed to set keyboard callback.\n");
-        pntr_app_close(&app);
         return false;
     }
-
-    // Update the input button descriptions.
-	init_descriptors();
 
     // Set the audio callback.
 	struct retro_audio_callback retro_audio = { retro_audio_cb, audio_set_state };
 	if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &retro_audio)) {
         log_cb(RETRO_LOG_INFO, "Failed to set audio callback.\n");
+        // Don't quit if audio is not supported.
+        //return false;
     }
 
-    // struct retro_system_av_info avInfo;
-    // avInfo.geometry.base_width = app.width;
-    // avInfo.geometry.base_height = app.height;
-    // avInfo.geometry.max_width = app.width;
-    // avInfo.geometry.max_height = app.height;
-    // avInfo.geometry.aspect_ratio = (float)app.width / (float)app.height;
-    // avInfo.timing.fps = (app.fps > 0) ? (double)app.fps : 0.0;
-    // avInfo.timing.sample_rate = 0.0;
-    // environ_cb(RETRO_ENVIRONMENT_SET_SYSTEM_AV_INFO, &avInfo);
+    // Get the pntr_app definition.
+    pntr_app application = PNTR_APP_MAIN(argc, argv);
 
-    // Copy the data to the core's app instance.
-    pntr_app_libretro = (pntr_app*)pntr_load_memory(sizeof(pntr_app));
-    pntr_memory_copy(pntr_app_libretro, &app, sizeof(pntr_app));
+    // Create a fresh instance from it with all the primed data.
+    pntr_app* app = pntr_app_libretro_load_app(&application);
+    if (app == NULL) {
+        pntr_unload_memory(application.userData);
+        return false;
+    }
 
+    // Initialize the libretro platform.
+    if (!pntr_app_init(app)) {
+        pntr_app_libretro_unload_app(app);
+        return false;
+    }
+
+    // Call the init callback.
+    if (app->init != NULL) {
+        // Check if initialization worked.
+        if (!app->init(app->userData)) {
+            pntr_app_close(app);
+            pntr_app_libretro_unload_app(app);
+            return false;
+        }
+    }
+
+    // Update the input button descriptions.
+	init_descriptors();
+
+    // Update any core options.
     check_variables();
 
     return true;
 }
 
 void retro_unload_game(void) {
-    pntr_app_close(pntr_app_libretro);
-    pntr_app_libretro = NULL;
+    if (pntr_app_libretro == NULL) {
+        return;
+    }
+
+    pntr_app* app = pntr_app_libretro;
+
+    if (app->close != NULL) {
+        app->close(app->userData);
+    }
+
+    pntr_app_close(app);
+    pntr_app_libretro_unload_app(app);
 }
 
 unsigned retro_get_region(void) {
@@ -805,7 +850,6 @@ pntr_sound* pntr_load_sound(const char* path) {
 
     audio_mixer_sound_t* sound = audio_mixer_load_wav(data, bytesRead, "audio", RESAMPLER_QUALITY_DONTCARE);
     pntr_unload_file(data);
-
     if (sound == NULL) {
         log_cb(RETRO_LOG_INFO, "[pntr] Failed to load wav from %s\n", path);
         return NULL;
@@ -814,8 +858,10 @@ pntr_sound* pntr_load_sound(const char* path) {
     pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound));
     if (output == NULL) {
         log_cb(RETRO_LOG_INFO, "[pntr] Failed to build pntr_sound memory");
+        audio_mixer_destroy(sound);
         return NULL;
     }
+
     output->data = (void*)sound;
     return output;
 }
@@ -824,12 +870,8 @@ void pntr_unload_sound(pntr_sound* sound) {
     if (sound == NULL) {
         return;
     }
-
-    audio_mixer_sound_t* data = (audio_mixer_sound_t*)sound->data;
-    if (data != NULL) {
-        audio_mixer_destroy(data);
-    }
-
+    
+    audio_mixer_destroy((audio_mixer_sound_t*)sound->data);
     pntr_unload_memory((void*)sound);
 }
 

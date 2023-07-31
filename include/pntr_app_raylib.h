@@ -163,8 +163,14 @@ bool pntr_app_init(pntr_app* app) {
     // TODO: Allow resizing the window
     //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
-    InitWindow(app->width * 2, app->height * 2, app->title);
-    SetMouseScale(0.5f, 0.5f);
+    float scale = 2.0f;
+    InitWindow((int)((float)app->width * scale), (int)((float)app->height * scale), app->title);
+    if (!IsWindowReady()) {
+        pntr_unload_memory(app->platform);
+        app->platform = NULL;
+        return false;
+    }
+    SetMouseScale(1.0f / scale, 1.0f / scale);
 
     if (app->fps > 0) {
         SetTargetFPS(app->fps);

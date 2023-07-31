@@ -1,16 +1,16 @@
+#include <stdlib.h> // realloc
+
 #define tb_malloc  pntr_load_memory
-#include <stdlib.h>
 #define tb_realloc realloc
 #define tb_free    pntr_unload_memory
 
+// Termbox2
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
-
 #define TB_IMPL
 #include "external/termbox2.h"
-
 #pragma GCC diagnostic pop
 
 #include <stdio.h>
@@ -54,6 +54,8 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     struct tb_event ev;
+
+    // Delay for an input event, for maintain the FPS.
     if (app->fps <= 0) {
         tb_poll_event(&ev);
     }
@@ -64,6 +66,7 @@ bool pntr_app_events(pntr_app* app) {
         }
     }
 
+    // Process the event
     switch (ev.type) {
         case TB_EVENT_KEY: {
             event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
@@ -236,7 +239,10 @@ bool pntr_app_render(pntr_app* app) {
 }
 
 bool pntr_app_init(pntr_app* app) {
-    (void)app;
+    if (app == NULL) {
+        return false;
+    }
+
     app->platform = pntr_load_memory(sizeof(pntr_app_cli_platform));
     pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
 
@@ -249,21 +255,27 @@ bool pntr_app_init(pntr_app* app) {
 }
 
 void pntr_app_close(pntr_app* app) {
-    if (app != NULL) {
-        pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
-        platform->termbox = false;
-    }
     tb_shutdown();
+
+    if (app == NULL) {
+        return;
+    }
+
+    pntr_unload_memory(app->platform);
+    app->platform = NULL;
 }
 
 pntr_sound* pntr_load_sound(const char* path) {
-    // TODO: Audio
+    // TODO: Command line interface Audio?
+    (void)path;
     return NULL;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
+    (void)sound;
 }
 
 void pntr_play_sound(pntr_sound* sound) {
     // TODO: Add volume and panning.
+    (void)sound;
 }

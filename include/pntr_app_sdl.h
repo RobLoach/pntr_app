@@ -285,10 +285,37 @@ bool pntr_app_init(pntr_app* app) {
     }
 
     // SDL
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO);
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0) {
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
+
     platform->window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
+    if (platform->window == NULL) {
+        SDL_Quit();
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
     platform->windowSurface = SDL_GetWindowSurface(platform->window);
+    if (platform->windowSurface == NULL) {
+        SDL_DestroyWindow(platform->window);
+        SDL_Quit();
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
+
     platform->screenSurface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
+    if (platform->screenSurface == NULL) {
+        SDL_FreeSurface(platform->windowSurface);
+        SDL_DestroyWindow(platform->window);
+        SDL_Quit();
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
 
     // GamePads
     for (int i = 0; i < 4; i++) {
@@ -327,10 +354,25 @@ void pntr_app_close(pntr_app* app) {
         }
     }
 
-    SDL_FreeSurface(platform->screenSurface);
-    SDL_FreeSurface(platform->windowSurface);
+    if (platform->screenSurface != NULL) {
+        SDL_FreeSurface(platform->screenSurface);
+        platform->screenSurface = NULL;
+    }
+
+    if (platform->windowSurface != NULL) {
+        SDL_FreeSurface(platform->windowSurface);
+        platform->windowSurface = NULL;
+    }
+
+    pntr_unload_memory(platform);
     Mix_CloseAudio();
-    SDL_DestroyWindow(platform->window);
+
+    if (platform->window != NULL) {
+        SDL_DestroyWindow(platform->window);
+        platform->window = NULL;
+    }
+
+    SDL_Quit();
 }
 
 pntr_sound* pntr_load_sound(const char* path) {
