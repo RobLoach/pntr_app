@@ -332,7 +332,6 @@ static void check_variables(void) {
      // Nothing.
 }
 
-#include <stdio.h>
 /**
  * libretro callback; Step the audio forwards a step.
  */
