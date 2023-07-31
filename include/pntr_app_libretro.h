@@ -332,7 +332,6 @@ static void check_variables(void) {
      // Nothing.
 }
 
-#include <stdio.h>
 /**
  * libretro callback; Step the audio forwards a step.
  */
@@ -770,7 +769,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     }
 
     // Update the input button descriptions.
-	init_descriptors();
+    init_descriptors();
 
     // Update any core options.
     check_variables();
