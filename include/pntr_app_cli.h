@@ -266,16 +266,20 @@ void pntr_app_close(pntr_app* app) {
 }
 
 pntr_sound* pntr_load_sound(const char* path) {
-    // TODO: Command line interface Audio?
-    (void)path;
-    return NULL;
+    // TODO: Audio support for the Command line interface?
+    pntr_sound* sound = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound));
+    if (sound == NULL) {
+        return NULL;
+    }
+
+    sound->data = (void*)path;
+    return sound;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
-    (void)sound;
+    pntr_unload_memory(sound);
 }
 
 void pntr_play_sound(pntr_sound* sound) {
-    // TODO: Add volume and panning.
     (void)sound;
 }
