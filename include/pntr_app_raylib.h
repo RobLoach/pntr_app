@@ -222,7 +222,6 @@ pntr_sound* pntr_load_sound(const char* path) {
 
     Sound sound = LoadSoundFromWave(wave);
     UnloadWave(wave);
-
     if (!IsSoundReady(sound)) {
         return NULL;
     }
@@ -234,7 +233,11 @@ pntr_sound* pntr_load_sound(const char* path) {
     }
 
     output->data = pntr_load_memory(sizeof(Sound));
-
+    if (output->data == NULL) {
+        UnloadSound(sound);
+        pntr_unload_memory(output);
+        return NULL;
+    }
     pntr_memory_copy(output->data, &sound, sizeof(Sound));
 
     return output;

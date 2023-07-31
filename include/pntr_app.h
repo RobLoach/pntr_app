@@ -52,7 +52,7 @@ extern "C" {
 #endif
 
 // pntr configuration
-#if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO) //|| defined(EMSCRIPTEN)
+#if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO)
     #define PNTR_PIXELFORMAT_ARGB
 #endif
 
@@ -406,8 +406,8 @@ extern "C" {
 #ifdef EMSCRIPTEN
 #ifndef PNTR_APP_EMSCRIPTEN_H
 #define PNTR_APP_EMSCRIPTEN_H <emscripten/emscripten.h>
-#include PNTR_APP_EMSCRIPTEN_H
 #endif  // PNTR_APP_EMSCRIPTEN_H
+#include PNTR_APP_EMSCRIPTEN_H
 
 /**
  * The update callback for web.

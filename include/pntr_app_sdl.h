@@ -284,13 +284,14 @@ bool pntr_app_init(pntr_app* app) {
         return false;
     }
 
-    // SDL
+    // SDL_Init
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0) {
         pntr_unload_memory(platform);
         app->platform = NULL;
         return false;
     }
 
+    // Window
     platform->window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
     if (platform->window == NULL) {
         SDL_Quit();
@@ -298,6 +299,8 @@ bool pntr_app_init(pntr_app* app) {
         app->platform = NULL;
         return false;
     }
+
+    // Window Surface
     platform->windowSurface = SDL_GetWindowSurface(platform->window);
     if (platform->windowSurface == NULL) {
         SDL_DestroyWindow(platform->window);
@@ -307,6 +310,7 @@ bool pntr_app_init(pntr_app* app) {
         return false;
     }
 
+    // Screen Surface
     platform->screenSurface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
     if (platform->screenSurface == NULL) {
         SDL_FreeSurface(platform->windowSurface);
@@ -332,7 +336,6 @@ bool pntr_app_init(pntr_app* app) {
     if (Mix_OpenAudio(PNTR_APP_AUDIO_FREQUENCY, PNTR_APP_AUDIO_FORMAT, PNTR_APP_AUDIO_CHANNELS, PNTR_APP_AUDIO_CHUNKSIZE) < 0) {
         return false;
     }
-    //Mix_AllocateChannels(16);
 
     return true;
 }
@@ -364,14 +367,13 @@ void pntr_app_close(pntr_app* app) {
         platform->windowSurface = NULL;
     }
 
-    pntr_unload_memory(platform);
-    Mix_CloseAudio();
-
     if (platform->window != NULL) {
         SDL_DestroyWindow(platform->window);
         platform->window = NULL;
     }
 
+    pntr_unload_memory(platform);
+    Mix_CloseAudio();
     SDL_Quit();
 }
 
@@ -421,5 +423,6 @@ void pntr_play_sound(pntr_sound* sound) {
     if (sound == NULL || sound->data == NULL) {
         return;
     }
+
     Mix_PlayChannel(-1, (Mix_Chunk*)sound->data, 0);
 }
