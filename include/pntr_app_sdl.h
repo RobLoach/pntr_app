@@ -16,7 +16,6 @@ typedef struct pntr_app_sdl_platform {
     SDL_Surface* windowSurface;
     SDL_Surface* screenSurface;
     uint64_t pntr_app_sdl_start;
-    SDL_AudioDeviceID audioDeviceId;
 } pntr_app_sdl_platform;
 
 pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button) {
