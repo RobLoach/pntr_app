@@ -1,7 +1,14 @@
+// SDL.h
 #ifndef PNTR_APP_SDL_H
 #define PNTR_APP_SDL_H <SDL2/SDL.h>
 #endif
 #include PNTR_APP_SDL_H
+
+// SDL_mixer.h
+#ifndef PNTR_APP_SDL_MIXER_H
+#define PNTR_APP_SDL_MIXER_H "SDL_mixer.h"
+#endif
+#include PNTR_APP_SDL_MIXER_H
 
 typedef struct pntr_app_sdl_platform {
     SDL_GameController* gameControllers[4];
@@ -218,6 +225,12 @@ bool pntr_app_events(pntr_app* app) {
             }
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
+                // Don't process key repeats.
+                if (event.type == SDL_KEYDOWN && event.key.repeat == 1) {
+                    return true;
+                }
+
+                // Escape key quits.
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     return false;
                 }
@@ -263,16 +276,49 @@ bool pntr_app_init(pntr_app* app) {
         return false;
     }
 
+    // Prepare platform data.
     app->platform = pntr_load_memory(sizeof(pntr_app_sdl_platform));
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
     if (platform == NULL) {
         return false;
     }
 
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+    // SDL_Init
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0) {
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
+
+    // Window
     platform->window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
+    if (platform->window == NULL) {
+        SDL_Quit();
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
+
+    // Window Surface
     platform->windowSurface = SDL_GetWindowSurface(platform->window);
+    if (platform->windowSurface == NULL) {
+        SDL_DestroyWindow(platform->window);
+        SDL_Quit();
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
+
+    // Screen Surface
     platform->screenSurface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
+    if (platform->screenSurface == NULL) {
+        SDL_FreeSurface(platform->windowSurface);
+        SDL_DestroyWindow(platform->window);
+        SDL_Quit();
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
 
     // GamePads
     for (int i = 0; i < 4; i++) {
@@ -281,27 +327,108 @@ bool pntr_app_init(pntr_app* app) {
         }
     }
 
+    // Audio
+    #define PNTR_APP_AUDIO_FREQUENCY 44100
+    #define PNTR_APP_AUDIO_FORMAT MIX_DEFAULT_FORMAT
+    #define PNTR_APP_AUDIO_CHANNELS 2
+    #define PNTR_APP_AUDIO_CHUNKSIZE 1024
+    if (Mix_OpenAudio(PNTR_APP_AUDIO_FREQUENCY, PNTR_APP_AUDIO_FORMAT, PNTR_APP_AUDIO_CHANNELS, PNTR_APP_AUDIO_CHUNKSIZE) < 0) {
+        return false;
+    }
+
     return true;
 }
 
 void pntr_app_close(pntr_app* app) {
-    if (app == NULL || app->platform == NULL) {
-        return;
-    }
-
-    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-
-    // Close Gamepads
-    for (int i = 0; i < 4; i++) {
-        if (platform->gameControllers[i] != NULL) {
-            if (SDL_IsGameController(i)) {
-                SDL_GameControllerClose(platform->gameControllers[i]);
-                platform->gameControllers[i] = NULL;
+    if (app != NULL) {
+        pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+        if (platform != NULL) {
+            // Close Gamepads
+            for (int i = 0; i < 4; i++) {
+                if (platform->gameControllers[i] != NULL) {
+                    if (SDL_IsGameController(i)) {
+                        SDL_GameControllerClose(platform->gameControllers[i]);
+                        platform->gameControllers[i] = NULL;
+                    }
+                }
             }
+
+            // Screen Surface
+            if (platform->screenSurface != NULL) {
+                SDL_FreeSurface(platform->screenSurface);
+                platform->screenSurface = NULL;
+            }
+
+            // Window surface
+            if (platform->windowSurface != NULL) {
+                SDL_FreeSurface(platform->windowSurface);
+                platform->windowSurface = NULL;
+            }
+
+            // Window
+            if (platform->window != NULL) {
+                SDL_DestroyWindow(platform->window);
+                platform->window = NULL;
+            }
+
+            // Platform
+            pntr_unload_memory(platform);
         }
     }
 
-    SDL_FreeSurface(platform->screenSurface);
-    SDL_FreeSurface(platform->windowSurface);
-    SDL_DestroyWindow(platform->window);
+    // Audio
+    Mix_CloseAudio();
+
+    // SDL
+    SDL_Quit();
+}
+
+pntr_sound* pntr_load_sound(const char* path) {
+    unsigned int bytesRead;
+    unsigned char* data = pntr_load_file(path, &bytesRead);
+    if (data == NULL) {
+        return NULL;
+    }
+
+    SDL_RWops* rwops = SDL_RWFromMem(data, bytesRead);
+    if (rwops == NULL) {
+        pntr_unload_file(data);
+        return NULL;
+    }
+
+    Mix_Chunk* chunk = Mix_LoadWAV_RW(rwops, 1);
+    pntr_unload_file(data);
+    if (chunk == NULL) {
+        return NULL;
+    }
+
+    pntr_sound* output = pntr_load_memory(sizeof(pntr_sound));
+    if (output == NULL) {
+        Mix_FreeChunk(chunk);
+        return NULL;
+    }
+
+    output->data = (void*)chunk;
+
+    return output;
+}
+
+void pntr_unload_sound(pntr_sound* sound) {
+    if (sound == NULL) {
+        return;
+    }
+
+    if (sound->data) {
+        Mix_FreeChunk((Mix_Chunk*)sound->data);
+    }
+
+    pntr_unload_memory((void*)sound);
+}
+
+void pntr_play_sound(pntr_sound* sound) {
+    if (sound == NULL || sound->data == NULL) {
+        return;
+    }
+
+    Mix_PlayChannel(-1, (Mix_Chunk*)sound->data, 0);
 }

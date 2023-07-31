@@ -1,0 +1,10 @@
+[submodule "vendor/libretro-common"]
+    path = vendor/libretro-common
+    url = https://github.com/libretro/libretro-common.git
+    branch = master
+    ignore = dirty
+[submodule "vendor/pntr"]
+    path = vendor/pntr
+    url = https://github.com/RobLoach/pntr.git
+    branch = master
+    ignore = dirty

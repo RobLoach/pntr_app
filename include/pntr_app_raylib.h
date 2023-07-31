@@ -6,10 +6,18 @@
 // pntr Configuration
 // raylib has its own implementation of stb_image_resize, so use that instead of pntr's.
 #define PTNR_NO_STB_IMAGE_RESIZE_IMPLEMENTATION
-#define PNTR_FREE MemFree
-#define PNTR_MALLOC MemAlloc
-#define PNTR_LOAD_FILE LoadFileData
-#define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
+#ifndef PNTR_FREE
+    #define PNTR_FREE MemFree
+#endif
+#ifndef PNTR_MALLOC
+    #define PNTR_MALLOC MemAlloc
+#endif
+#ifndef PNTR_LOAD_FILE
+    #define PNTR_LOAD_FILE LoadFileData
+#endif
+#ifndef PNTR_SAVE_FILE
+    #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
+#endif
 
 typedef struct pntr_app_raylib_platform {
     Image screenImage;
@@ -155,8 +163,14 @@ bool pntr_app_init(pntr_app* app) {
     // TODO: Allow resizing the window
     //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
-    InitWindow(app->width * 2, app->height * 2, app->title);
-    SetMouseScale(0.5f, 0.5f);
+    float scale = 2.0f;
+    InitWindow((int)((float)app->width * scale), (int)((float)app->height * scale), app->title);
+    if (!IsWindowReady()) {
+        pntr_unload_memory(app->platform);
+        app->platform = NULL;
+        return false;
+    }
+    SetMouseScale(1.0f / scale, 1.0f / scale);
 
     if (app->fps > 0) {
         SetTargetFPS(app->fps);
@@ -172,6 +186,9 @@ bool pntr_app_init(pntr_app* app) {
     // Build a Texture off of the screen image.
     platform->screenTexture = LoadTextureFromImage(platform->screenImage);
 
+    // Audio
+    InitAudioDevice();
+
     return true;
 }
 
@@ -185,5 +202,68 @@ void pntr_app_close(pntr_app* app) {
         UnloadTexture(platform->screenTexture);
     }
 
+    CloseAudioDevice();
     CloseWindow();
+}
+
+pntr_sound* pntr_load_sound(const char* path) {
+    unsigned int bytesRead;
+    unsigned char* data = pntr_load_file(path, &bytesRead);
+    if (data == NULL) {
+        return NULL;
+    }
+
+    Wave wave = LoadWaveFromMemory(".wav", data, bytesRead);
+    pntr_unload_file(data);
+    if (!IsWaveReady(wave)) {
+        pntr_unload_file(data);
+        return NULL;
+    }
+
+    Sound sound = LoadSoundFromWave(wave);
+    UnloadWave(wave);
+    if (!IsSoundReady(sound)) {
+        return NULL;
+    }
+
+    pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound));
+    if (output == NULL) {
+        UnloadSound(sound);
+        return NULL;
+    }
+
+    output->data = pntr_load_memory(sizeof(Sound));
+    if (output->data == NULL) {
+        UnloadSound(sound);
+        pntr_unload_memory(output);
+        return NULL;
+    }
+    pntr_memory_copy(output->data, &sound, sizeof(Sound));
+
+    return output;
+}
+
+void pntr_unload_sound(pntr_sound* sound) {
+    if (sound == NULL) {
+        return;
+    }
+
+    Sound* data = (Sound*)sound->data;
+    if (data != NULL) {
+        UnloadSound(*data);
+        pntr_unload_memory(sound->data);
+    }
+
+    pntr_unload_memory(sound);
+}
+
+
+void pntr_play_sound(pntr_sound* sound) {
+    // TODO: Add volume and panning.
+    if (sound == NULL || sound->data == NULL) {
+        return;
+    }
+
+    Sound* data = (Sound*)sound->data;
+    PlaySound(*data);
 }
