@@ -920,9 +920,11 @@ void pntr_unload_music(pntr_music* music) {
 
 void pntr_play_music(pntr_music* music)  {
     if (music == NULL) {
-        printf("ASDFASFD\n");
+        return;
     }
-    pntr_play_sound((pntr_sound*)music);
+
+    audio_mixer_sound_t* audio = (audio_mixer_sound_t*)music;
+    audio_mixer_play(audio, false, 1.0f, "music", RESAMPLER_QUALITY_DONTCARE, NULL);
 }
 
 void pntr_update_music(pntr_music* music) {

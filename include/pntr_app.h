@@ -330,9 +330,17 @@ void pntr_unload_sound(pntr_sound* sound);
  */
 void pntr_play_sound(pntr_sound* sound);
 
-pntr_music* pntr_load_music(const char* fileName);
+/**
+ * TODO
+ *
+ * Pass the pntr_app into pntr_load_music()
+ * When requested to play music, stop the existing one
+ */
+pntr_music* pntr_load_music(/* pntr_app* app, */const char* fileName);
 void pntr_unload_music(pntr_music* music);
-void pntr_play_music(pntr_music* music);
+void pntr_play_music(pntr_music* music, /* bool loop */);
+
+// TODO: Remove the need of this
 void pntr_update_music(pntr_music* music);
 
 #ifdef __cplusplus

@@ -31,6 +31,7 @@ bool Init(void* userData) {
 bool Update(pntr_image* screen, void* userData) {
     AppData* appData = (AppData*)userData;
 
+    // TODO: Remove the need of calling pntr_update_music.
     pntr_update_music(appData->music);
 
     // Clear the screen
