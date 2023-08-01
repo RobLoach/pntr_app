@@ -265,15 +265,15 @@ void pntr_app_close(pntr_app* app) {
     app->platform = NULL;
 }
 
-pntr_sound* pntr_load_sound(const char* path) {
-    pntr_sound* sound = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound));
+pntr_sound* pntr_load_sound(const char* fileName) {
+    pntr_sound* sound = (pntr_sound*)pntr_load_memory(sizeof(char));
     if (sound == NULL) {
         return NULL;
     }
 
     // Load the file.
     unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(path, &bytesRead);
+    unsigned char* data = pntr_load_file(fileName, &bytesRead);
     if (data == NULL) {
         pntr_unload_memory(sound);
         return NULL;
@@ -284,7 +284,6 @@ pntr_sound* pntr_load_sound(const char* path) {
     pntr_unload_memory(data);
 
     // Save the path within the sound.
-    sound->data = (void*)path;
     return sound;
 }
 
@@ -293,10 +292,27 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    pntr_unload_memory(sound->data);
     pntr_unload_memory(sound);
 }
 
 void pntr_play_sound(pntr_sound* sound) {
+    // Do nothing.
     (void)sound;
+}
+
+pntr_music* pntr_load_music(const char* fileName) {
+    return pntr_load_sound(fileName);
+}
+
+void pntr_unload_music(pntr_music* music) {
+    pntr_unload_sound(music);
+}
+
+void pntr_play_music(pntr_music* music)  {
+    pntr_play_music(music);
+}
+
+
+void pntr_update_music(pntr_music* music) {
+
 }

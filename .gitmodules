@@ -8,3 +8,9 @@
     url = https://github.com/RobLoach/pntr.git
     branch = master
     ignore = dirty
+[submodule "vendor/stb"]
+	path = vendor/stb
+	url = https://github.com/nothings/stb.git
+[submodule "vendor/libretro-deps"]
+	path = vendor/libretro-deps
+	url = https://github.com/libretro/libretro-deps.git

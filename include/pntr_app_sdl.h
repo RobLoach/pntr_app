@@ -383,9 +383,9 @@ void pntr_app_close(pntr_app* app) {
     SDL_Quit();
 }
 
-pntr_sound* pntr_load_sound(const char* path) {
+pntr_sound* pntr_load_sound(const char* fileName) {
     unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(path, &bytesRead);
+    unsigned char* data = pntr_load_file(fileName, &bytesRead);
     if (data == NULL) {
         return NULL;
     }
@@ -398,19 +398,7 @@ pntr_sound* pntr_load_sound(const char* path) {
 
     Mix_Chunk* chunk = Mix_LoadWAV_RW(rwops, 1);
     pntr_unload_file(data);
-    if (chunk == NULL) {
-        return NULL;
-    }
-
-    pntr_sound* output = pntr_load_memory(sizeof(pntr_sound));
-    if (output == NULL) {
-        Mix_FreeChunk(chunk);
-        return NULL;
-    }
-
-    output->data = (void*)chunk;
-
-    return output;
+    return (pntr_sound*)chunk;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
@@ -418,17 +406,73 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    if (sound->data) {
-        Mix_FreeChunk((Mix_Chunk*)sound->data);
-    }
-
-    pntr_unload_memory((void*)sound);
+    Mix_FreeChunk((Mix_Chunk*)sound);
 }
 
 void pntr_play_sound(pntr_sound* sound) {
-    if (sound == NULL || sound->data == NULL) {
+    if (sound == NULL) {
         return;
     }
 
-    Mix_PlayChannel(-1, (Mix_Chunk*)sound->data, 0);
+    Mix_PlayChannel(-1, (Mix_Chunk*)sound, 0);
+}
+
+typedef struct pntr_music_sdl {
+    Mix_Music* music;
+    unsigned char* fileData;
+} pntr_music_sdl;
+
+pntr_music* pntr_load_music(const char* fileName) {
+    pntr_music_sdl* output = (pntr_music_sdl*)pntr_load_memory(sizeof(pntr_music_sdl));
+    if (output == NULL) {
+        return NULL;
+    }
+
+    unsigned int bytesRead;
+    output->fileData = pntr_load_file(fileName, &bytesRead);
+    if (output->fileData == NULL) {
+        pntr_unload_memory(output);
+        return NULL;
+    }
+
+    SDL_RWops* rwops = SDL_RWFromMem(output->fileData, bytesRead);
+    if (rwops == NULL) {
+        pntr_unload_file(output->fileData);
+        pntr_unload_memory(output);
+        return NULL;
+    }
+
+    output->music = Mix_LoadMUS_RW(rwops, 1);
+    if (output->music == NULL) {
+        pntr_unload_file(output->fileData);
+        pntr_unload_memory(output);
+        return NULL;
+    }
+
+    return output;
+}
+
+void pntr_play_music(pntr_music* music) {
+    if (music == NULL) {
+        return;
+    }
+
+    // TODO: Add loops
+    Mix_PlayMusic(((pntr_music_sdl*)music)->music, 0);
+}
+
+void pntr_unload_music(pntr_music* music) {
+    if (music == NULL) {
+        return;
+    }
+
+    pntr_music_sdl* musicSdl = (pntr_music_sdl*)music;
+    Mix_FreeMusic((Mix_Music*)musicSdl->music);
+    pntr_unload_file(musicSdl->fileData);
+    pntr_unload_memory((void*)music);
+}
+
+
+void pntr_update_music(pntr_music* music) {
+
 }

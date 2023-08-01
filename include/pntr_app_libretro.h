@@ -1,10 +1,25 @@
 #include <stdarg.h> // va_start, va_end
-#include <string.h> // memset
+#include <string.h> // memset, strstr
 
 #ifndef PNTR_APP_LIBRETRO_H
 #define PNTR_APP_LIBRETRO_H "libretro.h"
 #endif
 #include PNTR_APP_LIBRETRO_H
+
+#include <math.h>
+#include <stdlib.h>
+
+// #define STB_VORBIS_NO_PUSHDATA_API
+// #define STB_VORBIS_NO_PULLDATA_API
+// #define STB_VORBIS_NO_PUSHDATA_API
+// #define STB_VORBIS_NO_STDIO
+// #define STB_VORBIS_NO_CRT
+// #ifdef HAVE_STB_VORBIS
+// #define malloc(size) (void*)pntr_load_memory((size_t)size)
+// #define free(val) pntr_unload_memory(val)
+// #include "stb/stb_vorbis.h"
+// #undef malloc
+// #endif
 
 #include "audio/audio_mixer.h"
 #include "audio/audio_resampler.h"
@@ -512,6 +527,7 @@ bool pntr_app_init(pntr_app* app) {
 void pntr_app_close(pntr_app* app) {
     (void)app;
 
+    printf("pntr_app_close \n");
     // Audio
     audio_mixer_done();
 }
@@ -839,46 +855,76 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
     (void)code;
 }
 
-pntr_sound* pntr_load_sound(const char* path) {
+int pntr_app_libretro_audiotype(const char* fileName) {
+    if (strstr(fileName, ".wav")) {
+        return AUDIO_MIXER_TYPE_WAV;
+    }
+    if (strstr(fileName, ".ogg")) {
+        return AUDIO_MIXER_TYPE_OGG;
+    }
+    return AUDIO_MIXER_TYPE_NONE;
+}
+
+
+pntr_sound* pntr_load_sound(const char* fileName) {
     unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(path, &bytesRead);
+    unsigned char* data = pntr_load_file(fileName, &bytesRead);
     if (data == NULL) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load data from %s\n", path);
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load data from %s\n", fileName);
         return NULL;
     }
 
-    audio_mixer_sound_t* sound = audio_mixer_load_wav(data, bytesRead, "audio", RESAMPLER_QUALITY_DONTCARE);
-    pntr_unload_file(data);
+    audio_mixer_sound_t* sound;
+    switch(pntr_app_libretro_audiotype(fileName)) {
+        case AUDIO_MIXER_TYPE_WAV:
+            sound = audio_mixer_load_wav(data, bytesRead, "audio", RESAMPLER_QUALITY_DONTCARE);
+            break;
+        case AUDIO_MIXER_TYPE_OGG:
+            sound = audio_mixer_load_ogg(data, bytesRead);
+            break;
+    }
+
+    //pntr_unload_file(data);
     if (sound == NULL) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load wav from %s\n", path);
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load audio data from %s\n", fileName);
         return NULL;
     }
 
-    pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound));
-    if (output == NULL) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to build pntr_sound memory");
-        audio_mixer_destroy(sound);
-        return NULL;
-    }
-
-    output->data = (void*)sound;
-    return output;
+    return (pntr_sound*)sound;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
     if (sound == NULL) {
         return;
     }
-    
-    audio_mixer_destroy((audio_mixer_sound_t*)sound->data);
-    pntr_unload_memory((void*)sound);
+
+    audio_mixer_destroy((audio_mixer_sound_t*)sound);
 }
 
 void pntr_play_sound(pntr_sound* sound) {
-    if (sound == NULL || sound->data == NULL) {
+    if (sound == NULL) {
         return;
     }
 
-    audio_mixer_sound_t* data = (audio_mixer_sound_t*)sound->data;
-    audio_mixer_play(data, false, 1.0f, "audio", RESAMPLER_QUALITY_DONTCARE, NULL);
+    audio_mixer_sound_t* audio = (audio_mixer_sound_t*)sound;
+    audio_mixer_play(audio, false, 1.0f, "", RESAMPLER_QUALITY_DONTCARE, NULL);
+}
+
+pntr_music* pntr_load_music(const char* fileName) {
+    return pntr_load_sound(fileName);
+}
+
+void pntr_unload_music(pntr_music* music) {
+    pntr_unload_sound((pntr_sound*)music);
+}
+
+void pntr_play_music(pntr_music* music)  {
+    if (music == NULL) {
+        printf("ASDFASFD\n");
+    }
+    pntr_play_sound((pntr_sound*)music);
+}
+
+void pntr_update_music(pntr_music* music) {
+
 }

@@ -206,14 +206,15 @@ void pntr_app_close(pntr_app* app) {
     CloseWindow();
 }
 
-pntr_sound* pntr_load_sound(const char* path) {
+pntr_sound* pntr_load_sound(const char* fileName) {
     unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(path, &bytesRead);
+    unsigned char* data = pntr_load_file(fileName, &bytesRead);
     if (data == NULL) {
         return NULL;
     }
 
-    Wave wave = LoadWaveFromMemory(".wav", data, bytesRead);
+    const char* fileExtension = GetFileExtension(fileName);
+    Wave wave = LoadWaveFromMemory(fileExtension, data, bytesRead);
     pntr_unload_file(data);
     if (!IsWaveReady(wave)) {
         pntr_unload_file(data);
@@ -226,19 +227,12 @@ pntr_sound* pntr_load_sound(const char* path) {
         return NULL;
     }
 
-    pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound));
+    pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(Sound));
     if (output == NULL) {
         UnloadSound(sound);
         return NULL;
     }
-
-    output->data = pntr_load_memory(sizeof(Sound));
-    if (output->data == NULL) {
-        UnloadSound(sound);
-        pntr_unload_memory(output);
-        return NULL;
-    }
-    pntr_memory_copy(output->data, &sound, sizeof(Sound));
+    pntr_memory_copy(output, &sound, sizeof(Sound));
 
     return output;
 }
@@ -248,22 +242,79 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    Sound* data = (Sound*)sound->data;
-    if (data != NULL) {
-        UnloadSound(*data);
-        pntr_unload_memory(sound->data);
-    }
-
+    UnloadSound(*((Sound*)sound));
     pntr_unload_memory(sound);
 }
 
-
 void pntr_play_sound(pntr_sound* sound) {
     // TODO: Add volume and panning.
-    if (sound == NULL || sound->data == NULL) {
+    if (sound == NULL) {
         return;
     }
 
-    Sound* data = (Sound*)sound->data;
-    PlaySound(*data);
+    PlaySound(*((Sound*)sound));
+}
+
+//Music musd;
+
+pntr_music* pntr_load_music(const char* fileName) {
+
+    //musd = LoadMusicStream(fileName);
+
+    // if (!IsMusicReady(musd)) {
+    //     printf("FASDASDF\n");
+    // }
+    unsigned int bytesRead;
+    unsigned char* data = pntr_load_file(fileName, &bytesRead);
+    if (data == NULL) {
+        printf("Nope\n");
+        return NULL;
+    }
+
+    const char* fileExtension = GetFileExtension(fileName);
+    Music music = LoadMusicStreamFromMemory(fileExtension, data, bytesRead);
+    //pntr_unload_file(data);
+    if (!IsMusicReady(music)) {
+        printf("Nope\n");
+        return NULL;
+    }
+
+    pntr_music* output = (pntr_music*)pntr_load_memory(sizeof(Music));
+    if (output == NULL) {
+        printf("Nope\n");
+        pntr_unload_file(data);
+        UnloadMusicStream(music);
+        return NULL;
+    }
+    pntr_memory_copy(output, &music, sizeof(Music));
+
+    return output;
+}
+
+void pntr_play_music(pntr_music* music) {
+
+    //PlayMusicStream(musd);
+    if (music == NULL) {
+        printf("Nope\n");
+        return;
+    }
+
+    PlayMusicStream(*((Music*)music));
+}
+
+void pntr_unload_music(pntr_music* music) {
+    if (music == NULL) {
+        return;
+    }
+
+    UnloadMusicStream(*((Music*)music));
+    pntr_unload_memory(music);
+}
+
+void pntr_update_music(pntr_music* music) {
+    if (music == NULL) {
+        return;
+    }
+
+    UpdateMusicStream(*((Music*)music));
 }

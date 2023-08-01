@@ -286,16 +286,8 @@ typedef struct pntr_app {
     void* platform;
 } pntr_app;
 
-/**
- * Sound to be played through pntr_app.
- *
- * @see pntr_load_sound
- * @see pntr_unload_sound
- * @see pntr_play_sound
- */
-typedef struct pntr_sound {
-    void* data;
-} pntr_sound;
+typedef void pntr_sound;
+typedef void pntr_music;
 
 /**
  * Platform callback to initialize the platform.
@@ -326,7 +318,7 @@ void pntr_app_close(pntr_app* app);
 /**
  * Load a sound from the given path.
  */
-pntr_sound* pntr_load_sound(const char* path);
+pntr_sound* pntr_load_sound(const char* fileName);
 
 /**
  * Unload the given sound.
@@ -337,6 +329,11 @@ void pntr_unload_sound(pntr_sound* sound);
  * Play the given sound.
  */
 void pntr_play_sound(pntr_sound* sound);
+
+pntr_music* pntr_load_music(const char* fileName);
+void pntr_unload_music(pntr_music* music);
+void pntr_play_music(pntr_music* music);
+void pntr_update_music(pntr_music* music);
 
 #ifdef __cplusplus
 }

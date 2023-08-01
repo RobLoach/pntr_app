@@ -40,7 +40,6 @@ void Close(void* userData) {
 }
 
 void Event(pntr_app_event* event, void* userData) {
-    (void)userData;
     AppData* appData = (AppData*)userData;
 
     switch (event->type) {
