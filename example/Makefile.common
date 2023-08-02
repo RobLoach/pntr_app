@@ -1,8 +1,9 @@
 VENDOR_DIR := $(CORE_DIR)/../vendor
 LIBRETRO_COMM_DIR := $(VENDOR_DIR)/libretro-common
+PNTR_APP_DIR := $(CORE_DIR)/..
 
 INCFLAGS := \
-	-I$(CORE_DIR)/../include \
+	-I$(PNTR_APP_DIR)/include \
 	-I$(LIBRETRO_COMM_DIR)/include \
     -I$(VENDOR_DIR)/pntr \
     -I$(VENDOR_DIR)/libretro-deps \

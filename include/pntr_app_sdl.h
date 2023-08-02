@@ -383,6 +383,16 @@ void pntr_app_close(pntr_app* app) {
     SDL_Quit();
 }
 
+/**
+ * Internal structure for handling SDL audio.
+ *
+ * @internal
+ */
+typedef struct pntr_sound_sdl {
+    Mix_Chunk* chunk;
+    int channel;
+} pntr_sound_sdl;
+
 pntr_sound* pntr_load_sound(const char* fileName) {
     unsigned int bytesRead;
     unsigned char* data = pntr_load_file(fileName, &bytesRead);
@@ -398,7 +408,20 @@ pntr_sound* pntr_load_sound(const char* fileName) {
 
     Mix_Chunk* chunk = Mix_LoadWAV_RW(rwops, 1);
     pntr_unload_file(data);
-    return (pntr_sound*)chunk;
+    if (chunk == NULL) {
+        return NULL;
+    }
+
+    pntr_sound_sdl* output = (pntr_sound_sdl*)pntr_load_memory(sizeof(pntr_sound_sdl));
+    if (output == NULL) {
+        Mix_FreeChunk(chunk);
+        return NULL;
+    }
+
+    output->chunk = chunk;
+    output->channel = -1;
+
+    return (pntr_sound*)output;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
@@ -406,7 +429,9 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    Mix_FreeChunk((Mix_Chunk*)sound);
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    Mix_FreeChunk(audio->chunk);
+    pntr_unload_memory((void*)sound);
 }
 
 void pntr_play_sound(pntr_sound* sound) {
@@ -414,65 +439,18 @@ void pntr_play_sound(pntr_sound* sound) {
         return;
     }
 
-    Mix_PlayChannel(-1, (Mix_Chunk*)sound, 0);
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    audio->channel = Mix_PlayChannel(-1, audio->chunk, 0);
 }
 
-typedef struct pntr_music_sdl {
-    Mix_Music* music;
-    unsigned char* fileData;
-} pntr_music_sdl;
-
-pntr_music* pntr_load_music(const char* fileName) {
-    pntr_music_sdl* output = (pntr_music_sdl*)pntr_load_memory(sizeof(pntr_music_sdl));
-    if (output == NULL) {
-        return NULL;
-    }
-
-    unsigned int bytesRead;
-    output->fileData = pntr_load_file(fileName, &bytesRead);
-    if (output->fileData == NULL) {
-        pntr_unload_memory(output);
-        return NULL;
-    }
-
-    SDL_RWops* rwops = SDL_RWFromMem(output->fileData, bytesRead);
-    if (rwops == NULL) {
-        pntr_unload_file(output->fileData);
-        pntr_unload_memory(output);
-        return NULL;
-    }
-
-    output->music = Mix_LoadMUS_RW(rwops, 1);
-    if (output->music == NULL) {
-        pntr_unload_file(output->fileData);
-        pntr_unload_memory(output);
-        return NULL;
-    }
-
-    return output;
-}
-
-void pntr_play_music(pntr_music* music) {
-    if (music == NULL) {
+void pntr_stop_sound(pntr_sound* sound) {
+    if (sound == NULL) {
         return;
     }
 
-    // TODO: Add loops
-    Mix_PlayMusic(((pntr_music_sdl*)music)->music, 0);
-}
-
-void pntr_unload_music(pntr_music* music) {
-    if (music == NULL) {
-        return;
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    if (audio->channel >= 0) {
+        Mix_Pause(audio->channel);
+        audio->channel = -1;
     }
-
-    pntr_music_sdl* musicSdl = (pntr_music_sdl*)music;
-    Mix_FreeMusic((Mix_Music*)musicSdl->music);
-    pntr_unload_file(musicSdl->fileData);
-    pntr_unload_memory((void*)music);
-}
-
-
-void pntr_update_music(pntr_music* music) {
-
 }

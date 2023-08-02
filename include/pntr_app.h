@@ -316,32 +316,36 @@ bool pntr_app_render(pntr_app* app);
 void pntr_app_close(pntr_app* app);
 
 /**
- * Load a sound from the given path.
+ * Load a sound from the given path. Supports .wav or .ogg files.
+ *
+ * TODO: Sounds: Add looping, volume
+ *
+ * @param fileName The filename of the sound file to load.
+ *
+ * @return The loaded sound, or NULL on failure.
  */
 pntr_sound* pntr_load_sound(const char* fileName);
 
 /**
  * Unload the given sound.
+ *
+ * @param sound The sound to unload.
  */
 void pntr_unload_sound(pntr_sound* sound);
 
 /**
  * Play the given sound.
+ *
+ * @param sound The sound to play.
  */
 void pntr_play_sound(pntr_sound* sound);
 
 /**
- * TODO
+ * Stop playing the given sound.
  *
- * Pass the pntr_app into pntr_load_music()
- * When requested to play music, stop the existing one
+ * @param sound The sound to stop playing.
  */
-pntr_music* pntr_load_music(/* pntr_app* app, */const char* fileName);
-void pntr_unload_music(pntr_music* music);
-void pntr_play_music(pntr_music* music, /* bool loop */);
-
-// TODO: Remove the need of this
-void pntr_update_music(pntr_music* music);
+void pntr_stop_sound(pntr_sound* sound);
 
 #ifdef __cplusplus
 }

@@ -64,7 +64,7 @@ pntr_app Main(int argc, char* argv[]) {
 - [x] Mouse
 - [x] Keyboard
 - [x] Gamepads
-- [x] Sound (wav)
+- [x] Sound (wav, ogg)
 - [ ] Music
 
 ## Configuration

@@ -300,19 +300,6 @@ void pntr_play_sound(pntr_sound* sound) {
     (void)sound;
 }
 
-pntr_music* pntr_load_music(const char* fileName) {
-    return pntr_load_sound(fileName);
-}
-
-void pntr_unload_music(pntr_music* music) {
-    pntr_unload_sound(music);
-}
-
-void pntr_play_music(pntr_music* music)  {
-    pntr_play_music(music);
-}
-
-
-void pntr_update_music(pntr_music* music) {
-
+void pntr_stop_sound(pntr_sound* sound) {
+    (void)sound;
 }

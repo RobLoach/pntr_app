@@ -7,4 +7,4 @@ FetchContent_Declare(
     GIT_SHALLOW 1
 )
 FetchContent_MakeAvailable(SDL2MixerSource)
-include_directories(${sdl2mixersource_SOURCE_DIR}/include)
+#include_directories(${sdl2mixersource_SOURCE_DIR}/include)

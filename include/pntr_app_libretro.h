@@ -527,7 +527,6 @@ bool pntr_app_init(pntr_app* app) {
 void pntr_app_close(pntr_app* app) {
     (void)app;
 
-    printf("pntr_app_close \n");
     // Audio
     audio_mixer_done();
 }
@@ -855,7 +854,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
     (void)code;
 }
 
-int pntr_app_libretro_audiotype(const char* fileName) {
+int _pntr_app_libretro_audiotype(const char* fileName) {
     if (strstr(fileName, ".wav")) {
         return AUDIO_MIXER_TYPE_WAV;
     }
@@ -865,6 +864,15 @@ int pntr_app_libretro_audiotype(const char* fileName) {
     return AUDIO_MIXER_TYPE_NONE;
 }
 
+/**
+ * Internal structure to handle libretro audio.
+ *
+ * @internal
+ */
+typedef struct pntr_sound_libretro {
+    pntr_sound* sound;
+    audio_mixer_voice_t* voice;
+} pntr_sound_libretro;
 
 pntr_sound* pntr_load_sound(const char* fileName) {
     unsigned int bytesRead;
@@ -874,23 +882,38 @@ pntr_sound* pntr_load_sound(const char* fileName) {
         return NULL;
     }
 
-    audio_mixer_sound_t* sound;
-    switch(pntr_app_libretro_audiotype(fileName)) {
+    // Load the sound.
+    audio_mixer_sound_t* sound = NULL;
+    switch(_pntr_app_libretro_audiotype(fileName)) {
         case AUDIO_MIXER_TYPE_WAV:
             sound = audio_mixer_load_wav(data, bytesRead, "audio", RESAMPLER_QUALITY_DONTCARE);
+
+            // File data isn't required anymore for wavs.
+            pntr_unload_file(data);
+            data = NULL;
             break;
         case AUDIO_MIXER_TYPE_OGG:
             sound = audio_mixer_load_ogg(data, bytesRead);
             break;
     }
 
-    //pntr_unload_file(data);
     if (sound == NULL) {
         log_cb(RETRO_LOG_INFO, "[pntr] Failed to load audio data from %s\n", fileName);
+        pntr_unload_file(data);
         return NULL;
     }
 
-    return (pntr_sound*)sound;
+    pntr_sound_libretro* output = (pntr_sound_libretro*)pntr_load_memory(sizeof(pntr_sound_libretro));
+    if (output == NULL) {
+        pntr_unload_file(data);
+        audio_mixer_destroy(sound);
+        return NULL;
+    }
+
+    output->sound = sound;
+    output->voice = NULL;
+
+    return (pntr_sound*)output;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
@@ -898,7 +921,10 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    audio_mixer_destroy((audio_mixer_sound_t*)sound);
+    pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
+    pntr_stop_sound(sound);
+    audio_mixer_destroy(audio->sound);
+    pntr_unload_memory(audio);
 }
 
 void pntr_play_sound(pntr_sound* sound) {
@@ -906,27 +932,17 @@ void pntr_play_sound(pntr_sound* sound) {
         return;
     }
 
-    audio_mixer_sound_t* audio = (audio_mixer_sound_t*)sound;
-    audio_mixer_play(audio, false, 1.0f, "", RESAMPLER_QUALITY_DONTCARE, NULL);
+    pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
+    audio->voice = audio_mixer_play(audio->sound, false, 1.0f, "", RESAMPLER_QUALITY_DONTCARE, NULL);
+
+    // TODO: Set callback to set current voice to NULL
 }
 
-pntr_music* pntr_load_music(const char* fileName) {
-    return pntr_load_sound(fileName);
-}
-
-void pntr_unload_music(pntr_music* music) {
-    pntr_unload_sound((pntr_sound*)music);
-}
-
-void pntr_play_music(pntr_music* music)  {
-    if (music == NULL) {
+void pntr_stop_sound(pntr_sound* sound) {
+    if (sound == NULL) {
         return;
     }
 
-    audio_mixer_sound_t* audio = (audio_mixer_sound_t*)music;
-    audio_mixer_play(audio, false, 1.0f, "music", RESAMPLER_QUALITY_DONTCARE, NULL);
-}
-
-void pntr_update_music(pntr_music* music) {
-
+    pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
+    audio_mixer_stop(audio->voice);
 }

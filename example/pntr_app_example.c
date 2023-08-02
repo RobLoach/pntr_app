@@ -22,17 +22,14 @@ bool Init(void* userData) {
     appData->spacePressed = false;
     appData->x = 0;
     appData->sound = pntr_load_sound("resources/sound.wav");
-    appData->music = pntr_load_music("resources/music.ogg");
-    pntr_play_music(appData->music);
+    appData->music = pntr_load_sound("resources/music.ogg");
+    pntr_play_sound(appData->music);
 
     return true;
 }
 
 bool Update(pntr_image* screen, void* userData) {
     AppData* appData = (AppData*)userData;
-
-    // TODO: Remove the need of calling pntr_update_music.
-    pntr_update_music(appData->music);
 
     // Clear the screen
     pntr_clear_background(screen, PNTR_RAYWHITE);
@@ -61,7 +58,7 @@ void Close(void* userData) {
     pntr_unload_image(appData->logo);
     pntr_unload_font(appData->font);
     pntr_unload_sound(appData->sound);
-    pntr_unload_music(appData->music);
+    pntr_unload_sound(appData->music);
 }
 
 void Event(pntr_app_event* event, void* userData) {
@@ -106,10 +103,10 @@ void Event(pntr_app_event* event, void* userData) {
                     pntr_play_sound(appData->sound);
                 }
                 else if (event->mouseButton == PNTR_APP_MOUSE_BUTTON_RIGHT) {
-                    pntr_play_music(appData->music);
+                    pntr_stop_sound(appData->music);
+                    pntr_play_sound(appData->music);
                 }
             }
-
         }
         break;
 

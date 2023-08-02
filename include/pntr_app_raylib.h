@@ -227,6 +227,7 @@ pntr_sound* pntr_load_sound(const char* fileName) {
         return NULL;
     }
 
+    // Store the Sound into our own memory.
     pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(Sound));
     if (output == NULL) {
         UnloadSound(sound);
@@ -255,66 +256,10 @@ void pntr_play_sound(pntr_sound* sound) {
     PlaySound(*((Sound*)sound));
 }
 
-//Music musd;
-
-pntr_music* pntr_load_music(const char* fileName) {
-
-    //musd = LoadMusicStream(fileName);
-
-    // if (!IsMusicReady(musd)) {
-    //     printf("FASDASDF\n");
-    // }
-    unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(fileName, &bytesRead);
-    if (data == NULL) {
-        printf("Nope\n");
-        return NULL;
-    }
-
-    const char* fileExtension = GetFileExtension(fileName);
-    Music music = LoadMusicStreamFromMemory(fileExtension, data, bytesRead);
-    //pntr_unload_file(data);
-    if (!IsMusicReady(music)) {
-        printf("Nope\n");
-        return NULL;
-    }
-
-    pntr_music* output = (pntr_music*)pntr_load_memory(sizeof(Music));
-    if (output == NULL) {
-        printf("Nope\n");
-        pntr_unload_file(data);
-        UnloadMusicStream(music);
-        return NULL;
-    }
-    pntr_memory_copy(output, &music, sizeof(Music));
-
-    return output;
-}
-
-void pntr_play_music(pntr_music* music) {
-
-    //PlayMusicStream(musd);
-    if (music == NULL) {
-        printf("Nope\n");
+void pntr_stop_sound(pntr_sound* sound) {
+    if (sound == NULL) {
         return;
     }
 
-    PlayMusicStream(*((Music*)music));
-}
-
-void pntr_unload_music(pntr_music* music) {
-    if (music == NULL) {
-        return;
-    }
-
-    UnloadMusicStream(*((Music*)music));
-    pntr_unload_memory(music);
-}
-
-void pntr_update_music(pntr_music* music) {
-    if (music == NULL) {
-        return;
-    }
-
-    UpdateMusicStream(*((Music*)music));
+    StopSound(*((Sound*)sound));
 }
