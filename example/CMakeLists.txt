@@ -35,7 +35,6 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
 
     # SDL_mixer
     set(SDL2MIXER_VORBIS STB)
-
     set(SDL2MIXER_INSTALL OFF)
     set(SDL2MIXER_DEPS_SHARED OFF)
     set(SDL2MIXER_VENDORED OFF)
@@ -60,6 +59,8 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
     find_package(SDL2_mixer REQUIRED)
     set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer::SDL2_mixer-static)
     #set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer)
+
+    target_compile_definitions(pntr_app_example_sdl PUBLIC PNTR_APP_SDL_MIXER)
 
     target_link_libraries(pntr_app_example_sdl PUBLIC
         pntr
