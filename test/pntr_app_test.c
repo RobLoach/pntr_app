@@ -8,13 +8,15 @@ typedef struct AppData {
     int x;
     int mouseX;
     int mouseY;
+    pntr_image* logo;
 } AppData;
 
 bool Init(void* userData) {
-    AppData* appData = (AppData*)userData;
+    AppData* app = (AppData*)userData;
 
-    appData->font = pntr_load_font_default();
-    appData->x = 0;
+    app->font = pntr_load_font_default();
+    app->x = 0;
+    app->logo = pntr_load_image("resources/pntr-32x32.png");
 
     return true;
 }
@@ -30,29 +32,31 @@ bool Update(pntr_image* screen, void* userData) {
     pntr_draw_line(screen, 0, 17, screen->width, 20, PNTR_PURPLE);
     pntr_draw_circle(screen, app->mouseX, app->mouseY, 3, PNTR_RED);
 
+    pntr_draw_image(screen, app->logo, screen->width / 2 - app->logo->width / 2, screen->height / 2 - app->logo->height / 2);
+
     return app->x < screen->width;
 }
 
 void Close(void* userData) {
-    AppData* appData = (AppData*)userData;
+    AppData* app = (AppData*)userData;
 
-    pntr_unload_font(appData->font);
+    pntr_unload_font(app->font);
+    pntr_unload_image(app->logo);
 }
 
 void Event(pntr_app_event* event, void* userData) {
-    (void)userData;
-    AppData* appData = (AppData*)userData;
+    AppData* app = (AppData*)userData;
 
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN: {
             if (event->key == PNTR_APP_KEY_SPACE) {
-                appData->x = 0;
+                app->x = 0;
             }
         }
         break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            appData->mouseX = event->mouseX;
-            appData->mouseY = event->mouseY;
+            app->mouseX = event->mouseX;
+            app->mouseY = event->mouseY;
         }
 
         default:

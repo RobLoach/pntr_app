@@ -383,9 +383,19 @@ void pntr_app_close(pntr_app* app) {
     SDL_Quit();
 }
 
-pntr_sound* pntr_load_sound(const char* path) {
+/**
+ * Internal structure for handling SDL audio.
+ *
+ * @internal
+ */
+typedef struct pntr_sound_sdl {
+    Mix_Chunk* chunk;
+    int channel;
+} pntr_sound_sdl;
+
+pntr_sound* pntr_load_sound(const char* fileName) {
     unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(path, &bytesRead);
+    unsigned char* data = pntr_load_file(fileName, &bytesRead);
     if (data == NULL) {
         return NULL;
     }
@@ -402,15 +412,16 @@ pntr_sound* pntr_load_sound(const char* path) {
         return NULL;
     }
 
-    pntr_sound* output = pntr_load_memory(sizeof(pntr_sound));
+    pntr_sound_sdl* output = (pntr_sound_sdl*)pntr_load_memory(sizeof(pntr_sound_sdl));
     if (output == NULL) {
         Mix_FreeChunk(chunk);
         return NULL;
     }
 
-    output->data = (void*)chunk;
+    output->chunk = chunk;
+    output->channel = -1;
 
-    return output;
+    return (pntr_sound*)output;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
@@ -418,17 +429,28 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    if (sound->data) {
-        Mix_FreeChunk((Mix_Chunk*)sound->data);
-    }
-
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    Mix_FreeChunk(audio->chunk);
     pntr_unload_memory((void*)sound);
 }
 
 void pntr_play_sound(pntr_sound* sound) {
-    if (sound == NULL || sound->data == NULL) {
+    if (sound == NULL) {
         return;
     }
 
-    Mix_PlayChannel(-1, (Mix_Chunk*)sound->data, 0);
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    audio->channel = Mix_PlayChannel(-1, audio->chunk, 0);
+}
+
+void pntr_stop_sound(pntr_sound* sound) {
+    if (sound == NULL) {
+        return;
+    }
+
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    if (audio->channel >= 0) {
+        Mix_Pause(audio->channel);
+        audio->channel = -1;
+    }
 }

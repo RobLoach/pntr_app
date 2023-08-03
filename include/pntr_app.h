@@ -286,16 +286,7 @@ typedef struct pntr_app {
     void* platform;
 } pntr_app;
 
-/**
- * Sound to be played through pntr_app.
- *
- * @see pntr_load_sound
- * @see pntr_unload_sound
- * @see pntr_play_sound
- */
-typedef struct pntr_sound {
-    void* data;
-} pntr_sound;
+typedef void pntr_sound;
 
 /**
  * Platform callback to initialize the platform.
@@ -324,19 +315,36 @@ bool pntr_app_render(pntr_app* app);
 void pntr_app_close(pntr_app* app);
 
 /**
- * Load a sound from the given path.
+ * Load a sound from the given path. Supports .wav or .ogg files.
+ *
+ * TODO: Sounds: Add looping, volume
+ *
+ * @param fileName The filename of the sound file to load.
+ *
+ * @return The loaded sound, or NULL on failure.
  */
-pntr_sound* pntr_load_sound(const char* path);
+pntr_sound* pntr_load_sound(const char* fileName);
 
 /**
  * Unload the given sound.
+ *
+ * @param sound The sound to unload.
  */
 void pntr_unload_sound(pntr_sound* sound);
 
 /**
  * Play the given sound.
+ *
+ * @param sound The sound to play.
  */
 void pntr_play_sound(pntr_sound* sound);
+
+/**
+ * Stop playing the given sound.
+ *
+ * @param sound The sound to stop playing.
+ */
+void pntr_stop_sound(pntr_sound* sound);
 
 #ifdef __cplusplus
 }

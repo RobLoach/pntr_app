@@ -1,10 +1,12 @@
 VENDOR_DIR := $(CORE_DIR)/../vendor
 LIBRETRO_COMM_DIR := $(VENDOR_DIR)/libretro-common
+PNTR_APP_DIR := $(CORE_DIR)/..
 
 INCFLAGS := \
-	-I$(CORE_DIR)/../include \
+	-I$(PNTR_APP_DIR)/include \
 	-I$(LIBRETRO_COMM_DIR)/include \
     -I$(VENDOR_DIR)/pntr \
+    -I$(VENDOR_DIR)/libretro-deps \
 	-I$(CORE_DIR)
 
 ifneq (,$(findstring msvc2003,$(platform)))
@@ -14,7 +16,8 @@ endif
 COREDEFINES = \
 	-D__LIBRETRO__ \
 	-DPATH_MAX=1024 \
-    -DHAVE_RWAV=1
+    -DHAVE_RWAV=1 \
+    -DHAVE_STB_VORBIS
 
 SOURCES_C = $(CORE_DIR)/pntr_app_example.c
 

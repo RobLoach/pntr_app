@@ -206,14 +206,15 @@ void pntr_app_close(pntr_app* app) {
     CloseWindow();
 }
 
-pntr_sound* pntr_load_sound(const char* path) {
+pntr_sound* pntr_load_sound(const char* fileName) {
     unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(path, &bytesRead);
+    unsigned char* data = pntr_load_file(fileName, &bytesRead);
     if (data == NULL) {
         return NULL;
     }
 
-    Wave wave = LoadWaveFromMemory(".wav", data, bytesRead);
+    const char* fileExtension = GetFileExtension(fileName);
+    Wave wave = LoadWaveFromMemory(fileExtension, data, bytesRead);
     pntr_unload_file(data);
     if (!IsWaveReady(wave)) {
         pntr_unload_file(data);
@@ -226,19 +227,13 @@ pntr_sound* pntr_load_sound(const char* path) {
         return NULL;
     }
 
-    pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound));
+    // Store the Sound into our own memory.
+    pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(Sound));
     if (output == NULL) {
         UnloadSound(sound);
         return NULL;
     }
-
-    output->data = pntr_load_memory(sizeof(Sound));
-    if (output->data == NULL) {
-        UnloadSound(sound);
-        pntr_unload_memory(output);
-        return NULL;
-    }
-    pntr_memory_copy(output->data, &sound, sizeof(Sound));
+    pntr_memory_copy(output, &sound, sizeof(Sound));
 
     return output;
 }
@@ -248,22 +243,23 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    Sound* data = (Sound*)sound->data;
-    if (data != NULL) {
-        UnloadSound(*data);
-        pntr_unload_memory(sound->data);
-    }
-
+    UnloadSound(*((Sound*)sound));
     pntr_unload_memory(sound);
 }
 
-
 void pntr_play_sound(pntr_sound* sound) {
     // TODO: Add volume and panning.
-    if (sound == NULL || sound->data == NULL) {
+    if (sound == NULL) {
         return;
     }
 
-    Sound* data = (Sound*)sound->data;
-    PlaySound(*data);
+    PlaySound(*((Sound*)sound));
+}
+
+void pntr_stop_sound(pntr_sound* sound) {
+    if (sound == NULL) {
+        return;
+    }
+
+    StopSound(*((Sound*)sound));
 }

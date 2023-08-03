@@ -1,6 +1,12 @@
 # CMAKE Modules
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../cmake")
 
+# Resources
+file(GLOB resources resources/*)
+set(examples_resources)
+list(APPEND examples_resources ${resources})
+file(COPY ${examples_resources} DESTINATION "resources/")
+
 find_package(pntr)
 
 add_executable(pntr_app_test
