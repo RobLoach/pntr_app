@@ -11,7 +11,7 @@ typedef struct AppData {
     bool spacePressed;
     int x;
     pntr_sound* sound;
-    pntr_music* music;
+    pntr_sound* music;
 } AppData;
 
 bool Init(void* userData) {

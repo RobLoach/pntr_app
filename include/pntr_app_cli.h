@@ -281,7 +281,7 @@ pntr_sound* pntr_load_sound(const char* fileName) {
 
     // TODO: Audio support for the Command line interface?
     // We just free the memory as there is no CLI audio right now.
-    pntr_unload_memory(data);
+    pntr_unload_file(data);
 
     // Save the path within the sound.
     return sound;

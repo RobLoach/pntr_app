@@ -9,18 +9,6 @@
 #include <math.h>
 #include <stdlib.h>
 
-// #define STB_VORBIS_NO_PUSHDATA_API
-// #define STB_VORBIS_NO_PULLDATA_API
-// #define STB_VORBIS_NO_PUSHDATA_API
-// #define STB_VORBIS_NO_STDIO
-// #define STB_VORBIS_NO_CRT
-// #ifdef HAVE_STB_VORBIS
-// #define malloc(size) (void*)pntr_load_memory((size_t)size)
-// #define free(val) pntr_unload_memory(val)
-// #include "stb/stb_vorbis.h"
-// #undef malloc
-// #endif
-
 #include "audio/audio_mixer.h"
 #include "audio/audio_resampler.h"
 #include "audio/conversion/float_to_s16.h"
@@ -870,7 +858,7 @@ int _pntr_app_libretro_audiotype(const char* fileName) {
  * @internal
  */
 typedef struct pntr_sound_libretro {
-    pntr_sound* sound;
+    audio_mixer_sound_t* sound;
     audio_mixer_voice_t* voice;
 } pntr_sound_libretro;
 

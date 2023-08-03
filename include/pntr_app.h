@@ -287,7 +287,6 @@ typedef struct pntr_app {
 } pntr_app;
 
 typedef void pntr_sound;
-typedef void pntr_music;
 
 /**
  * Platform callback to initialize the platform.
