@@ -1,14 +1,13 @@
 #include <stdlib.h> // realloc
 
-#define tb_malloc  pntr_load_memory
-#define tb_realloc realloc
-#define tb_free    pntr_unload_memory
-
 // Termbox2
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
+#define tb_malloc  pntr_load_memory
+#define tb_realloc realloc
+#define tb_free    pntr_unload_memory
 #define TB_IMPL
 #include "external/termbox2.h"
 #pragma GCC diagnostic pop
@@ -149,9 +148,19 @@ bool pntr_app_events(pntr_app* app) {
         break;
 
         case TB_EVENT_MOUSE: {
+            // Mouse Move
+            // TODO: Mouse Delta
             event.mouseX = ev.x;
             event.mouseY = ev.y;
             event.mouseButton = PNTR_APP_MOUSE_BUTTON_UNKNOWN;
+
+            // Mouse Wheel
+            if (ev.key == TB_KEY_MOUSE_WHEEL_UP || ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
+                event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+                event.mouseWheel = (ev.key == TB_KEY_MOUSE_WHEEL_UP) ? -1 : 1;
+                app->event(&event, app->userData);
+                break;
+            }
 
             if (ev.key == TB_KEY_MOUSE_LEFT) {
                 event.mouseButton = PNTR_APP_MOUSE_BUTTON_LEFT;

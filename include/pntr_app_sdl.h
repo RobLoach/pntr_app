@@ -192,15 +192,27 @@ bool pntr_app_events(pntr_app* app) {
             case SDL_QUIT:
             case SDL_APP_TERMINATING:
                 return false;
+
             case SDL_MOUSEMOTION: {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
                 pntrEvent.mouseDeltaX = event.motion.xrel;
                 pntrEvent.mouseDeltaY = event.motion.yrel;
                 pntrEvent.mouseX = event.motion.x;
                 pntrEvent.mouseY = event.motion.y;
+                pntrEvent.mouseWheel = 0;
                 app->event(&pntrEvent, app->userData);
-                break;
             }
+            break;
+
+            case SDL_MOUSEWHEEL: {
+                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+                pntrEvent.mouseX = event.motion.x;
+                pntrEvent.mouseY = event.motion.y;
+                pntrEvent.mouseWheel = event.wheel.y > 0 ? 1 : -1;
+                app->event(&pntrEvent, app->userData);
+            }
+            break;
+
             case SDL_MOUSEBUTTONDOWN:
             case SDL_MOUSEBUTTONUP: {
                 pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event.button.button);
@@ -211,8 +223,9 @@ bool pntr_app_events(pntr_app* app) {
                     pntrEvent.mouseY = event.motion.y;
                     app->event(&pntrEvent, app->userData);
                 }
-                break;
             }
+            break;
+
             case SDL_CONTROLLERBUTTONDOWN:
             case SDL_CONTROLLERBUTTONUP: {
                 pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event.cbutton.button);
@@ -221,8 +234,9 @@ bool pntr_app_events(pntr_app* app) {
                     pntrEvent.gamepad = event.cbutton.which;
                     app->event(&pntrEvent, app->userData);
                 }
-                break;
             }
+            break;
+
             case SDL_KEYDOWN:
             case SDL_KEYUP: {
                 // Don't process key repeats.
@@ -240,8 +254,8 @@ bool pntr_app_events(pntr_app* app) {
                     pntrEvent.type = (event.type == SDL_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
                     app->event(&pntrEvent, app->userData);
                 }
-                break;
             }
+            break;
         }
     }
 

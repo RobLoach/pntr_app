@@ -84,6 +84,11 @@ void Event(pntr_app_event* event, void* userData) {
         }
         break;
 
+        case PNTR_APP_EVENTTYPE_MOUSE_WHEEL: {
+            printf("Wheel: %d\n", event->mouseWheel);
+        }
+        break;
+
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN:
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP: {
             const char* buttonDown = event->type == PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN ? "Pressed" : "Released";

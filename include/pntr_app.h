@@ -245,6 +245,7 @@ typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN,
     PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP,
     PNTR_APP_EVENTTYPE_MOUSE_MOVE,
+    PNTR_APP_EVENTTYPE_MOUSE_WHEEL,
     PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN,
     PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP
 } pntr_app_event_type;
@@ -259,11 +260,20 @@ typedef struct pntr_app_event {
      * With PNTR_APP_EVENTTYPE_KEY_DOWN or PNTR_APP_EVENTTYPE_KEY_UP, will determine the key that was affected.
      */
     pntr_app_key key;
+
+    /**
+     * PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN or PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP
+     */
     pntr_app_mouse_button mouseButton;
     int mouseX;
     int mouseY;
     int mouseDeltaX;
     int mouseDeltaY;
+
+    /**
+     * When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be -1 when the mouse wheel is scrolling up, and 1 when scrolling down.
+     */
+    int mouseWheel;
 
     pntr_app_gamepad_button gamepadButton;
     int gamepad;

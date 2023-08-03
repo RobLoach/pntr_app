@@ -99,25 +99,10 @@ if (PNTR_APP_BUILD_EXAMPLE_RAYLIB OR EMSCRIPTEN)
     )
 endif()
 
-# libretro
-# CMake libretro has been moved to the Makefile
-#if (PNTR_APP_BUILD_EXAMPLE_LIBRETRO AND NOT EMSCRIPTEN)
-#    find_package(libretro)
-#    add_library(pntr_app_example_libretro SHARED
-#        pntr_app_example.c
-#    )
-#    target_link_libraries(pntr_app_example_libretro PUBLIC
-#        pntr
-#         pntr_app
-#         libretro
-#     )
-#     set_target_properties(pntr_app_example_libretro PROPERTIES PREFIX "")
-#     target_compile_definitions(pntr_app_example_libretro PUBLIC PNTR_APP_LIBRETRO)
-#     set_property(TARGET pntr_app_example_libretro PROPERTY C_STANDARD 99)
-# endif()
-
-# CLI Example
-#add_executable(pntr_app_example_cli pntr_app_example.c)
-#target_link_libraries(pntr_app_example_cli PUBLIC pntr pntr_app)
-#target_compile_definitions(pntr_app_example_cli PUBLIC PNTR_APP_CLI)
-#set_property(TARGET pntr_app_example_cli PROPERTY C_STANDARD 99)
+# CLI
+if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
+    add_executable(pntr_app_example_cli pntr_app_example.c)
+    target_link_libraries(pntr_app_example_cli PUBLIC pntr pntr_app)
+    target_compile_definitions(pntr_app_example_cli PUBLIC PNTR_APP_CLI)
+    set_property(TARGET pntr_app_example_cli PROPERTY C_STANDARD 99)
+endif()

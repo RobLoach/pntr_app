@@ -430,10 +430,28 @@ bool pntr_app_events(pntr_app* app) {
         event.mouseDeltaY = event.mouseY - platform->mouseY;
         platform->mouseX = event.mouseX;
         platform->mouseY = event.mouseY;
+        event.mouseWheel = 0;
 
         // Invoke the event.
         app->event(&event, app->userData);
     }
+
+    // Mouse Wheel
+    int16_t mouseWheelUp = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELUP);
+    if (mouseWheelUp > 0) {
+        event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+        event.mouseWheel = 1;
+        app->event(&event, app->userData);
+    }
+    else {
+        int16_t mouseWheelDown = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELDOWN);
+        if (mouseWheelDown > 0) {
+            event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+            event.mouseWheel = -1;
+            app->event(&event, app->userData);
+        }
+    }
+
 
     // Mouse Buttons
     for (event.mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; event.mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; event.mouseButton++) {

@@ -64,6 +64,16 @@ bool pntr_app_events(pntr_app* app) {
         event.mouseY = GetMouseY();
         event.mouseDeltaX = (int)mouseMove.x;
         event.mouseDeltaY = (int)mouseMove.y;
+        event.mouseWheel = 0;
+        app->event(&event, app->userData);
+    }
+
+    Vector2 mouseWheel = GetMouseWheelMoveV();
+    if (mouseWheel.y != 0) {
+        event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+        event.mouseX = GetMouseX();
+        event.mouseY = GetMouseY();
+        event.mouseWheel = (mouseWheel.y > 0) ? 1 : -1;
         app->event(&event, app->userData);
     }
 
