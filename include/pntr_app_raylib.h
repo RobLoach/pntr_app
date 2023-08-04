@@ -216,15 +216,13 @@ void pntr_app_close(pntr_app* app) {
     CloseWindow();
 }
 
-pntr_sound* pntr_load_sound(const char* fileName) {
-    unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(fileName, &bytesRead);
-    if (data == NULL) {
+pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
+    if (data == NULL || dataSize <= 0) {
         return NULL;
     }
 
     const char* fileExtension = GetFileExtension(fileName);
-    Wave wave = LoadWaveFromMemory(fileExtension, data, bytesRead);
+    Wave wave = LoadWaveFromMemory(fileExtension, data, dataSize);
     pntr_unload_file(data);
     if (!IsWaveReady(wave)) {
         pntr_unload_file(data);

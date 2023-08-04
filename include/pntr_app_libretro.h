@@ -880,26 +880,23 @@ typedef struct pntr_sound_libretro {
     audio_mixer_voice_t* voice;
 } pntr_sound_libretro;
 
-pntr_sound* pntr_load_sound(const char* fileName) {
-    unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(fileName, &bytesRead);
-    if (data == NULL) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load data from %s\n", fileName);
+pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
+    if (data == NULL || dataSize <= 0) {
         return NULL;
     }
-
+    
     // Load the sound.
     audio_mixer_sound_t* sound = NULL;
     switch(_pntr_app_libretro_audiotype(fileName)) {
         case AUDIO_MIXER_TYPE_WAV:
-            sound = audio_mixer_load_wav(data, bytesRead, "audio", RESAMPLER_QUALITY_DONTCARE);
+            sound = audio_mixer_load_wav(data, dataSize, "audio", RESAMPLER_QUALITY_DONTCARE);
 
             // File data isn't required anymore for wavs.
             pntr_unload_file(data);
             data = NULL;
             break;
         case AUDIO_MIXER_TYPE_OGG:
-            sound = audio_mixer_load_ogg(data, bytesRead);
+            sound = audio_mixer_load_ogg(data, dataSize);
             break;
     }
 

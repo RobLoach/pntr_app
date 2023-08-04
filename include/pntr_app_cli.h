@@ -274,17 +274,14 @@ void pntr_app_close(pntr_app* app) {
     app->platform = NULL;
 }
 
-pntr_sound* pntr_load_sound(const char* fileName) {
-    pntr_sound* sound = (pntr_sound*)pntr_load_memory(sizeof(char));
-    if (sound == NULL) {
+pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
+    if (data == NULL || dataSize <= 0) {
         return NULL;
     }
 
-    // Load the file.
-    unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(fileName, &bytesRead);
-    if (data == NULL) {
-        pntr_unload_memory(sound);
+    pntr_sound* sound = (pntr_sound*)pntr_load_memory(sizeof(char));
+    if (sound == NULL) {
+        pntr_unload_file(data);
         return NULL;
     }
 

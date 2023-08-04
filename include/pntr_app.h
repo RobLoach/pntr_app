@@ -327,13 +327,24 @@ void pntr_app_close(pntr_app* app);
 /**
  * Load a sound from the given path. Supports .wav or .ogg files.
  *
- * TODO: Sounds: Add looping, volume
- *
  * @param fileName The filename of the sound file to load.
  *
  * @return The loaded sound, or NULL on failure.
  */
 pntr_sound* pntr_load_sound(const char* fileName);
+
+/**
+ * Load a sound from memory. Supports .wav or .ogg files.
+ *
+ * Will take ownership of the data and clear it when the sound is unloaded.
+ *
+ * @param fileName The original name of the file. Used to determine the type of sound from the file extension (.ogg, .wav, etc).
+ * @param data The file data.
+ * @param dataSize The size of the data in memory.
+ *
+ * @return The loaded sound, or NULL on failure.
+ */
+pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
 
 /**
  * Unload the given sound.
@@ -344,6 +355,8 @@ void pntr_unload_sound(pntr_sound* sound);
 
 /**
  * Play the given sound.
+ *
+ * TODO: Sounds: Add looping, volume
  *
  * @param sound The sound to play.
  */
@@ -517,6 +530,16 @@ int main(int argc, char* argv[]) {
     return (app.update == NULL) ? 1 : 0;
 }
 #endif  // PNTR_APP_NO_ENTRY
+
+pntr_sound* pntr_load_sound(const char* fileName) {
+    unsigned int bytesRead;
+    unsigned char* data = pntr_load_file(fileName, &bytesRead);
+    if (data == NULL) {
+        return NULL;
+    }
+
+    return pntr_load_sound_from_memory(fileName, data, bytesRead);
+}
 
 #ifdef __cplusplus
 }

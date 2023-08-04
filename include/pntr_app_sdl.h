@@ -422,14 +422,12 @@ typedef struct pntr_sound_sdl {
     #endif
 } pntr_sound_sdl;
 
-pntr_sound* pntr_load_sound(const char* fileName) {
-    unsigned int bytesRead;
-    unsigned char* data = pntr_load_file(fileName, &bytesRead);
-    if (data == NULL) {
+pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
+    if (data == NULL || dataSize <= 0) {
         return NULL;
     }
 
-    SDL_RWops* rwops = SDL_RWFromMem(data, bytesRead);
+    SDL_RWops* rwops = SDL_RWFromMem(data, dataSize);
     if (rwops == NULL) {
         pntr_unload_file(data);
         return NULL;
