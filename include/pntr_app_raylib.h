@@ -225,7 +225,6 @@ pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* dat
     Wave wave = LoadWaveFromMemory(fileExtension, data, dataSize);
     pntr_unload_file(data);
     if (!IsWaveReady(wave)) {
-        pntr_unload_file(data);
         return NULL;
     }
 
