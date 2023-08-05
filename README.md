@@ -101,6 +101,13 @@ cd example
 make
 ```
 
+#### libretro WASM
+
+``` bash
+cd example
+emmake make platform=emscripten
+```
+
 ### Web
 
 To build for the web with [Emscripten](https://emscripten.org/). Depends on [emsdk](https://emscripten.org/docs/tools_reference/emsdk.html).

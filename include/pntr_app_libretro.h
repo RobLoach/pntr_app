@@ -363,8 +363,9 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
         case PNTR_APP_MOUSE_BUTTON_LEFT: return RETRO_DEVICE_ID_MOUSE_LEFT;
         case PNTR_APP_MOUSE_BUTTON_RIGHT: return RETRO_DEVICE_ID_MOUSE_RIGHT;
         case PNTR_APP_MOUSE_BUTTON_MIDDLE: return RETRO_DEVICE_ID_MOUSE_MIDDLE;
+        default:
+            return -1;
     }
-    return -1;
 }
 
 /**
@@ -508,6 +509,8 @@ bool pntr_app_render(pntr_app* app) {
 
     pntr_image* screen = app->screen;
     video_cb((void*)screen->data, screen->width, screen->height, screen->pitch);
+
+    return true;
 }
 
 /**
@@ -884,7 +887,7 @@ pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* dat
     if (data == NULL || dataSize <= 0) {
         return NULL;
     }
-    
+
     // Load the sound.
     audio_mixer_sound_t* sound = NULL;
     switch(_pntr_app_libretro_audiotype(fileName)) {

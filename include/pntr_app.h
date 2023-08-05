@@ -12,7 +12,6 @@
 *       PNTR_APP_SDL
 *       PNTR_APP_LIBRETRO
 *       PNTR_APP_CLI
-*       EMSCRIPTEN
 *
 *   LICENSE: zlib/libpng
 *
@@ -407,14 +406,14 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 // Platform
 #if defined(PNTR_APP_SDL)
     #include "pntr_app_sdl.h"
-#elif defined(PNTR_APP_RAYLIB) || defined(EMSCRIPTEN)
+#elif defined(PNTR_APP_RAYLIB)
     #include "pntr_app_raylib.h"
 #elif defined(PNTR_APP_LIBRETRO)
     #include "pntr_app_libretro.h"
 #elif defined(PNTR_APP_CLI)
     #include "pntr_app_cli.h"
 #else
-    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or EMSCRIPTEN."
+    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, or PNTR_APP_LIBRETRO."
 #endif
 
 #ifdef __cplusplus
