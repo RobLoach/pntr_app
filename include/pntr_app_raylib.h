@@ -275,6 +275,7 @@ pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* dat
         for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
             if (pntr_app_raylib_platform_instance->sounds[i] ==  NULL) {
                 pntr_app_raylib_platform_instance->sounds[i] = output;
+                break;
             }
         }
     }
@@ -292,6 +293,7 @@ void pntr_unload_sound(pntr_sound* sound) {
         for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
             if (pntr_app_raylib_platform_instance->sounds[i] ==  audio) {
                 pntr_app_raylib_platform_instance->sounds[i] = NULL;
+                break;
             }
         }
     }
@@ -305,7 +307,6 @@ void pntr_play_sound(pntr_sound* sound, bool loop) {
     if (sound == NULL) {
         return;
     }
-
 
     pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
     audio->loop = loop;

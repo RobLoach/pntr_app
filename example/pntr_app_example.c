@@ -105,7 +105,7 @@ void Event(pntr_app_event* event, void* userData) {
 
             if (event->type == PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN) {
                 if (event->mouseButton == PNTR_APP_MOUSE_BUTTON_LEFT) {
-                    pntr_play_sound(appData->sound, true);
+                    pntr_play_sound(appData->sound, false);
                 }
                 else if (event->mouseButton == PNTR_APP_MOUSE_BUTTON_RIGHT) {
                     pntr_stop_sound(appData->music);

@@ -489,6 +489,7 @@ void pntr_play_sound(pntr_sound* sound, bool loop) {
     #ifdef PNTR_APP_SDL_MIXER
         audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
     #else
+        // TODO: Add sound looping to SDL Queue Audio.
         pntr_stop_sound(sound);
         int success = SDL_QueueAudio(audio->deviceId, audio->audio_buf, audio->audio_len);
         SDL_PauseAudioDevice(audio->deviceId, 0);
