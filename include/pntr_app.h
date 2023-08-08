@@ -355,11 +355,12 @@ void pntr_unload_sound(pntr_sound* sound);
 /**
  * Play the given sound.
  *
- * TODO: Sounds: Add looping, volume
+ * TODO: Sounds: Add volume
  *
  * @param sound The sound to play.
+ * @param loop Whether or not to loop back to the beginning when the sound finishes.
  */
-void pntr_play_sound(pntr_sound* sound);
+void pntr_play_sound(pntr_sound* sound, bool loop);
 
 /**
  * Stop playing the given sound.

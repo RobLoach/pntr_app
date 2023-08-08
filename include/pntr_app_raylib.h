@@ -216,6 +216,11 @@ void pntr_app_close(pntr_app* app) {
     CloseWindow();
 }
 
+typedef struct pntr_sound_raylib {
+    Sound sound;
+    bool loop;
+} pntr_sound_raylib;
+
 pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
     if (data == NULL || dataSize <= 0) {
         return NULL;
@@ -236,7 +241,7 @@ pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* dat
 
     // Store the Sound into our own memory.
     pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(Sound));
-    if (output == NULL) {
+    if (output == NULL) {true
         UnloadSound(sound);
         return NULL;
     }
@@ -254,12 +259,13 @@ void pntr_unload_sound(pntr_sound* sound) {
     pntr_unload_memory(sound);
 }
 
-void pntr_play_sound(pntr_sound* sound) {
+void pntr_play_sound(pntr_sound* sound, bool loop) {
     // TODO: Add volume and panning.
     if (sound == NULL) {
         return;
     }
 
+    // TODO: Add Looping
     PlaySound(*((Sound*)sound));
 }
 

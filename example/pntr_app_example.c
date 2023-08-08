@@ -23,7 +23,7 @@ bool Init(void* userData) {
     appData->x = 0;
     appData->sound = pntr_load_sound("resources/sound.wav");
     appData->music = pntr_load_sound("resources/music.ogg");
-    pntr_play_sound(appData->music);
+    pntr_play_sound(appData->music, true);
 
     return true;
 }
@@ -70,7 +70,7 @@ void Event(pntr_app_event* event, void* userData) {
                 appData->spacePressed = true;
             }
 
-            pntr_play_sound(appData->sound);
+            pntr_play_sound(appData->sound, false);
 
             printf("Key Pressed: %c\n", (char)event->key);
         }
@@ -105,11 +105,11 @@ void Event(pntr_app_event* event, void* userData) {
 
             if (event->type == PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN) {
                 if (event->mouseButton == PNTR_APP_MOUSE_BUTTON_LEFT) {
-                    pntr_play_sound(appData->sound);
+                    pntr_play_sound(appData->sound, true);
                 }
                 else if (event->mouseButton == PNTR_APP_MOUSE_BUTTON_RIGHT) {
                     pntr_stop_sound(appData->music);
-                    pntr_play_sound(appData->music);
+                    pntr_play_sound(appData->music, true);
                 }
             }
         }
