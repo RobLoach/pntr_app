@@ -169,7 +169,7 @@ bool pntr_app_render(pntr_app* app) {
         DrawTexturePro(platform->screenTexture, source, destRec, origin, 0, WHITE);
     EndDrawing();
 
-    // Update the audio
+    // Make sure to sounds that are looping are playing still
     if (pntr_app_raylib_platform_instance != NULL) {
         for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
             pntr_sound_raylib* sound = pntr_app_raylib_platform_instance->sounds[i];
@@ -271,6 +271,7 @@ pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* dat
     output->sound = sound;
     output->loop = false;
 
+    // Find the first available Sound object
     if (pntr_app_raylib_platform_instance != NULL) {
         for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
             if (pntr_app_raylib_platform_instance->sounds[i] ==  NULL) {
@@ -288,6 +289,7 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
+    // Make sure to clean up the sound from the sound library
     pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
     if (pntr_app_raylib_platform_instance != NULL) {
         for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
