@@ -19,10 +19,20 @@
     #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
 #endif
 
+typedef struct pntr_sound_raylib {
+    Sound sound;
+    bool loop;
+} pntr_sound_raylib;
+
+#define PNTR_APP_RAYLIB_MAX_SOUNDS 100
+
 typedef struct pntr_app_raylib_platform {
     Image screenImage;
     Texture screenTexture;
+    pntr_sound_raylib* sounds[PNTR_APP_RAYLIB_MAX_SOUNDS];
 } pntr_app_raylib_platform;
+
+pntr_app_raylib_platform* pntr_app_raylib_platform_instance;
 
 pntr_app_mouse_button pntr_app_raylib_mouse_button(int button) {
     switch (button) {
@@ -159,6 +169,20 @@ bool pntr_app_render(pntr_app* app) {
         DrawTexturePro(platform->screenTexture, source, destRec, origin, 0, WHITE);
     EndDrawing();
 
+    // Make sure to sounds that are looping are playing still
+    if (pntr_app_raylib_platform_instance != NULL) {
+        for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
+            pntr_sound_raylib* sound = pntr_app_raylib_platform_instance->sounds[i];
+            if (sound !=  NULL) {
+                if (sound->loop) {
+                    if (!IsSoundPlaying(sound->sound)) {
+                        PlaySound(sound->sound);
+                    }
+                }
+            }
+        }
+    }
+
     return !WindowShouldClose();
 }
 
@@ -195,6 +219,7 @@ bool pntr_app_init(pntr_app* app) {
 
     // Build a Texture off of the screen image.
     platform->screenTexture = LoadTextureFromImage(platform->screenImage);
+    pntr_app_raylib_platform_instance = platform;
 
     // Audio
     InitAudioDevice();
@@ -211,6 +236,8 @@ void pntr_app_close(pntr_app* app) {
         pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
         UnloadTexture(platform->screenTexture);
     }
+
+    pntr_app_raylib_platform_instance = NULL;
 
     CloseAudioDevice();
     CloseWindow();
@@ -235,12 +262,24 @@ pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* dat
     }
 
     // Store the Sound into our own memory.
-    pntr_sound* output = (pntr_sound*)pntr_load_memory(sizeof(Sound));
+    pntr_sound_raylib* output = (pntr_sound*)pntr_load_memory(sizeof(pntr_sound_raylib));
     if (output == NULL) {
         UnloadSound(sound);
         return NULL;
     }
-    pntr_memory_copy(output, &sound, sizeof(Sound));
+
+    output->sound = sound;
+    output->loop = false;
+
+    // Find the first available Sound object
+    if (pntr_app_raylib_platform_instance != NULL) {
+        for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
+            if (pntr_app_raylib_platform_instance->sounds[i] ==  NULL) {
+                pntr_app_raylib_platform_instance->sounds[i] = output;
+                break;
+            }
+        }
+    }
 
     return output;
 }
@@ -250,17 +289,30 @@ void pntr_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    UnloadSound(*((Sound*)sound));
-    pntr_unload_memory(sound);
+    // Make sure to clean up the sound from the sound library
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    if (pntr_app_raylib_platform_instance != NULL) {
+        for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
+            if (pntr_app_raylib_platform_instance->sounds[i] ==  audio) {
+                pntr_app_raylib_platform_instance->sounds[i] = NULL;
+                break;
+            }
+        }
+    }
+
+    UnloadSound(audio->sound);
+    pntr_unload_memory(audio);
 }
 
-void pntr_play_sound(pntr_sound* sound) {
+void pntr_play_sound(pntr_sound* sound, bool loop) {
     // TODO: Add volume and panning.
     if (sound == NULL) {
         return;
     }
 
-    PlaySound(*((Sound*)sound));
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    audio->loop = loop;
+    PlaySound(audio->sound);
 }
 
 void pntr_stop_sound(pntr_sound* sound) {
@@ -268,5 +320,7 @@ void pntr_stop_sound(pntr_sound* sound) {
         return;
     }
 
-    StopSound(*((Sound*)sound));
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    audio->loop = false;
+    PlaySound(audio->sound);
 }

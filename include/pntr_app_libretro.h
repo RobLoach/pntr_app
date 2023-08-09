@@ -933,13 +933,13 @@ void pntr_unload_sound(pntr_sound* sound) {
     pntr_unload_memory(audio);
 }
 
-void pntr_play_sound(pntr_sound* sound) {
+void pntr_play_sound(pntr_sound* sound, bool loop) {
     if (sound == NULL) {
         return;
     }
 
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
-    audio->voice = audio_mixer_play(audio->sound, false, 1.0f, "", RESAMPLER_QUALITY_DONTCARE, NULL);
+    audio->voice = audio_mixer_play(audio->sound, loop, 1.0f, "", RESAMPLER_QUALITY_DONTCARE, NULL);
 
     // TODO: Set callback to set current voice to NULL
 }

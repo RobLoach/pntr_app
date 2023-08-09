@@ -301,9 +301,10 @@ void pntr_unload_sound(pntr_sound* sound) {
     pntr_unload_memory(sound);
 }
 
-void pntr_play_sound(pntr_sound* sound) {
+void pntr_play_sound(pntr_sound* sound, bool loop) {
     // Do nothing.
     (void)sound;
+    (void)loop;
 }
 
 void pntr_stop_sound(pntr_sound* sound) {
