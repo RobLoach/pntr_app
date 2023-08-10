@@ -1,13 +1,13 @@
 #include <stdarg.h> // va_start, va_end
 #include <string.h> // memset, strstr
+#include <stdio.h>  // vfprintf
+#include <math.h>
+#include <stdlib.h>
 
 #ifndef PNTR_APP_LIBRETRO_H
 #define PNTR_APP_LIBRETRO_H "libretro.h"
 #endif
 #include PNTR_APP_LIBRETRO_H
-
-#include <math.h>
-#include <stdlib.h>
 
 #include "audio/audio_mixer.h"
 #include "audio/audio_resampler.h"
