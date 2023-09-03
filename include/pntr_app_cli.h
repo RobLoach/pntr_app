@@ -275,6 +275,7 @@ void pntr_app_close(pntr_app* app) {
 }
 
 pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
+    (void)fileName;
     if (data == NULL || dataSize <= 0) {
         return NULL;
     }

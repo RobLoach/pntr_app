@@ -198,25 +198,25 @@ typedef enum pntr_app_key {
  * Gamepad button.
  */
 typedef enum pntr_app_gamepad_button {
-    PNTR_APP_GAMEPAD_BUTTON_UNKNOWN = 0,         // Unknown button, just for error checking
+    PNTR_APP_GAMEPAD_BUTTON_UNKNOWN = 0,        // Unknown button, just for error checking
     PNTR_APP_GAMEPAD_BUTTON_FIRST = 1,
-    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_UP = 1,    // Gamepad left DPAD up button
-    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_RIGHT,     // Gamepad left DPAD right button
-    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_DOWN,      // Gamepad left DPAD down button
-    PNTR_APP_GAMEPAD_BUTTON_LEFT_FACE_LEFT,      // Gamepad left DPAD left button
-    PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_UP,       // Gamepad right button up (i.e. PS3: Triangle, Xbox: Y)
-    PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_RIGHT,    // Gamepad right button right (i.e. PS3: Square, Xbox: X)
-    PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_DOWN,     // Gamepad right button down (i.e. PS3: Cross, Xbox: A)
-    PNTR_APP_GAMEPAD_BUTTON_RIGHT_FACE_LEFT,     // Gamepad right button left (i.e. PS3: Circle, Xbox: B)
-    PNTR_APP_GAMEPAD_BUTTON_LEFT_TRIGGER_1,      // Gamepad top/back trigger left (first), it could be a trailing button
-    PNTR_APP_GAMEPAD_BUTTON_LEFT_TRIGGER_2,      // Gamepad top/back trigger left (second), it could be a trailing button
-    PNTR_APP_GAMEPAD_BUTTON_RIGHT_TRIGGER_1,     // Gamepad top/back trigger right (one), it could be a trailing button
-    PNTR_APP_GAMEPAD_BUTTON_RIGHT_TRIGGER_2,     // Gamepad top/back trigger right (second), it could be a trailing button
-    PNTR_APP_GAMEPAD_BUTTON_MIDDLE_LEFT,         // Gamepad center buttons, left one (i.e. PS3: Select)
-    PNTR_APP_GAMEPAD_BUTTON_MIDDLE,              // Gamepad center buttons, middle one (i.e. PS3: PS, Xbox: XBOX)
-    PNTR_APP_GAMEPAD_BUTTON_MIDDLE_RIGHT,        // Gamepad center buttons, right one (i.e. PS3: Start)
-    PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB,          // Gamepad joystick pressed button left
-    PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB,         // Gamepad joystick pressed button right
+    PNTR_APP_GAMEPAD_BUTTON_UP = 1,             // Gamepad left DPAD up button
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT,              // Gamepad left DPAD right button
+    PNTR_APP_GAMEPAD_BUTTON_DOWN,               // Gamepad left DPAD down button
+    PNTR_APP_GAMEPAD_BUTTON_LEFT,               // Gamepad left DPAD left button
+    PNTR_APP_GAMEPAD_BUTTON_Y,                  // Gamepad right button up (i.e. PS3: Triangle, Xbox: Y)
+    PNTR_APP_GAMEPAD_BUTTON_B,                  // Gamepad right button right (i.e. PS3: Square, Xbox: X)
+    PNTR_APP_GAMEPAD_BUTTON_A,                  // Gamepad right button down (i.e. PS3: Cross, Xbox: A)
+    PNTR_APP_GAMEPAD_BUTTON_X,                  // Gamepad right button left (i.e. PS3: Circle, Xbox: B)
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_SHOULDER,      // Gamepad top/back trigger left (first), it could be a trailing button
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_TRIGGER,       // Gamepad top/back trigger left (second), it could be a trailing button
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_SHOULDER,     // Gamepad top/back trigger right (one), it could be a trailing button
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_TRIGGER,      // Gamepad top/back trigger right (second), it could be a trailing button
+    PNTR_APP_GAMEPAD_BUTTON_SELECT,             // Gamepad center buttons, left one (i.e. PS3: Select)
+    PNTR_APP_GAMEPAD_BUTTON_MENU,               // Gamepad center buttons, middle one (i.e. PS3: PS, Xbox: XBOX)
+    PNTR_APP_GAMEPAD_BUTTON_START,              // Gamepad center buttons, right one (i.e. PS3: Start)
+    PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB,         // Gamepad joystick pressed button left
+    PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB,        // Gamepad joystick pressed button right
     PNTR_APP_GAMEPAD_BUTTON_LAST
 } pntr_app_gamepad_button;
 
@@ -229,7 +229,7 @@ typedef enum pntr_app_mouse_button {
     PNTR_APP_MOUSE_BUTTON_LEFT = 1,
     PNTR_APP_MOUSE_BUTTON_RIGHT = 2,
     PNTR_APP_MOUSE_BUTTON_MIDDLE = 3,
-    PNTR_APP_MOUSE_BUTTON_LAST = 4
+    PNTR_APP_MOUSE_BUTTON_LAST
 } pntr_app_mouse_button;
 
 /**
