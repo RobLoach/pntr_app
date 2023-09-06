@@ -278,22 +278,24 @@ typedef struct pntr_app_event {
     int gamepad;
 } pntr_app_event;
 
+typedef struct pntr_app pntr_app;
+
 /**
  * Application definition.
  */
-typedef struct pntr_app {
+struct pntr_app {
     int width;                      // The pixel width of the application.
     int height;                     // The pixel height of the application.
     const char* title;              // The name of the application, which will usually become the window title.
-    bool (*init)(void* userData);
-    bool (*update)(pntr_image* screen, void* userData);
-    void (*close)(void* userData);
-    void (*event)(pntr_app_event* event, void* userData);
+    bool (*init)(pntr_app* app);
+    bool (*update)(pntr_app* app, pntr_image* screen);
+    void (*close)(pntr_app* app);
+    void (*event)(pntr_app* app, pntr_app_event* event);
     int fps;                        // The desired framerate. Use 0 for a variable framerate.
     void* userData;                 // A pointer to a custom state in memory that is passed across all pntr_app callbacks.
     pntr_image* screen;
     void* platform;
-} pntr_app;
+};
 
 typedef void pntr_sound;
 
@@ -369,6 +371,15 @@ void pntr_play_sound(pntr_sound* sound, bool loop);
  */
 void pntr_stop_sound(pntr_sound* sound);
 
+/**
+ * Get the user data associated with the application.
+ *
+ * @param app The application.
+ *
+ * @return A pointer to the user data associated with the application.
+ */
+void* pntr_app_userdata(pntr_app* app);
+
 #ifdef __cplusplus
 }
 #endif
@@ -378,6 +389,10 @@ void pntr_stop_sound(pntr_sound* sound);
 #ifdef PNTR_APP_IMPLEMENTATION
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
+
+void* pntr_app_userdata(pntr_app* app) {
+    return app->userData;
+}
 
 #ifndef PNTR_APP_MAIN
 /**
@@ -494,7 +509,7 @@ int main(int argc, char* argv[]) {
     // Call the init callback.
     if (app.init != NULL) {
         // Check if initialization worked.
-        if (app.init(app.userData) == false) {
+        if (app.init(&app) == false) {
             // Skip calling the other callbacks if it failed.
             app.update = NULL;
             app.close = NULL;
@@ -509,14 +524,14 @@ int main(int argc, char* argv[]) {
         #else
             // Continue running when update returns TRUE.
             while (pntr_app_events(&app) &&
-                app.update(app.screen, app.userData) &&
+                app.update(&app, app.screen) &&
                 pntr_app_render(&app));
         #endif
     }
 
     // Tell the application to close.
     if (app.close != NULL) {
-        app.close(app.userData);
+        app.close(&app);
     }
 
     // Tell the platform to close.

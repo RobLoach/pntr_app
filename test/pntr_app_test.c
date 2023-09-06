@@ -11,52 +11,52 @@ typedef struct AppData {
     pntr_image* logo;
 } AppData;
 
-bool Init(void* userData) {
-    AppData* app = (AppData*)userData;
+bool Init(pntr_app* app) {
+    AppData* appData = (AppData*)pntr_app_userdata(app);
 
-    app->font = pntr_load_font_default();
-    app->x = 0;
-    app->logo = pntr_load_image("resources/pntr-32x32.png");
+    appData->font = pntr_load_font_default();
+    appData->x = 0;
+    appData->logo = pntr_load_image("resources/pntr-32x32.png");
 
     return true;
 }
 
-bool Update(pntr_image* screen, void* userData) {
-    AppData* app = (AppData*)userData;
+bool Update(pntr_app* app, pntr_image* screen) {
+    AppData* appData = (AppData*)pntr_app_userdata(app);
 
     // Clear the screen
     pntr_clear_background(screen, PNTR_WHITE);
 
     // Draw some text
-    pntr_draw_text(screen, app->font, "Hello!", app->x++, 10, PNTR_BLACK);
+    pntr_draw_text(screen, appData->font, "Hello!", appData->x++, 10, PNTR_BLACK);
     pntr_draw_line(screen, 0, 17, screen->width, 20, PNTR_PURPLE);
-    pntr_draw_circle(screen, app->mouseX, app->mouseY, 3, PNTR_RED);
+    pntr_draw_circle(screen, appData->mouseX, appData->mouseY, 3, PNTR_RED);
 
-    pntr_draw_image(screen, app->logo, screen->width / 2 - app->logo->width / 2, screen->height / 2 - app->logo->height / 2);
+    pntr_draw_image(screen, appData->logo, screen->width / 2 - appData->logo->width / 2, screen->height / 2 - appData->logo->height / 2);
 
-    return app->x < screen->width;
+    return appData->x < screen->width;
 }
 
-void Close(void* userData) {
-    AppData* app = (AppData*)userData;
+void Close(pntr_app* app) {
+    AppData* appData = (AppData*)pntr_app_userdata(app);
 
-    pntr_unload_font(app->font);
-    pntr_unload_image(app->logo);
+    pntr_unload_font(appData->font);
+    pntr_unload_image(appData->logo);
 }
 
-void Event(pntr_app_event* event, void* userData) {
-    AppData* app = (AppData*)userData;
+void Event(pntr_app* app, pntr_app_event* event) {
+    AppData* appData = (AppData*)pntr_app_userdata(app);
 
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN: {
             if (event->key == PNTR_APP_KEY_SPACE) {
-                app->x = 0;
+                appData->x = 0;
             }
         }
         break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            app->mouseX = event->mouseX;
-            app->mouseY = event->mouseY;
+            appData->mouseX = event->mouseX;
+            appData->mouseY = event->mouseY;
         }
 
         default:

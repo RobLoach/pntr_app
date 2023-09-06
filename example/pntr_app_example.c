@@ -14,8 +14,8 @@ typedef struct AppData {
     pntr_sound* music;
 } AppData;
 
-bool Init(void* userData) {
-    AppData* appData = (AppData*)userData;
+bool Init(pntr_app* app) {
+    AppData* appData = (AppData*)pntr_app_userdata(app);
 
     appData->logo = pntr_load_image("resources/logo.png");
     appData->font = pntr_load_font_default();
@@ -28,8 +28,8 @@ bool Init(void* userData) {
     return true;
 }
 
-bool Update(pntr_image* screen, void* userData) {
-    AppData* appData = (AppData*)userData;
+bool Update(pntr_app* app, pntr_image* screen) {
+    AppData* appData = (AppData*)pntr_app_userdata(app);
 
     // Clear the screen
     pntr_clear_background(screen, PNTR_RAYWHITE);
@@ -52,8 +52,8 @@ bool Update(pntr_image* screen, void* userData) {
     return true;
 }
 
-void Close(void* userData) {
-    AppData* appData = (AppData*)userData;
+void Close(pntr_app* app) {
+    AppData* appData = (AppData*)pntr_app_userdata(app);
 
     pntr_unload_image(appData->logo);
     pntr_unload_font(appData->font);
@@ -61,8 +61,8 @@ void Close(void* userData) {
     pntr_unload_sound(appData->music);
 }
 
-void Event(pntr_app_event* event, void* userData) {
-    AppData* appData = (AppData*)userData;
+void Event(pntr_app* app, pntr_app_event* event) {
+    AppData* appData = (AppData*)pntr_app_userdata(app);
 
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN: {

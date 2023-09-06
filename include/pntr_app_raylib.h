@@ -58,11 +58,11 @@ bool pntr_app_events(pntr_app* app) {
     for (event.key = PNTR_APP_KEY_FIRST; event.key < PNTR_APP_KEY_LAST; event.key++) {
         if (IsKeyPressed(event.key)) {
             event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
-            app->event(&event, app->userData);
+            app->event(app, &event);
         }
         else if (IsKeyReleased(event.key)) {
             event.type = PNTR_APP_EVENTTYPE_KEY_UP;
-            app->event(&event, app->userData);
+            app->event(app, &event);
         }
     }
 
@@ -75,7 +75,7 @@ bool pntr_app_events(pntr_app* app) {
         event.mouseDeltaX = (int)mouseMove.x;
         event.mouseDeltaY = (int)mouseMove.y;
         event.mouseWheel = 0;
-        app->event(&event, app->userData);
+        app->event(app, &event);
     }
 
     Vector2 mouseWheel = GetMouseWheelMoveV();
@@ -84,7 +84,7 @@ bool pntr_app_events(pntr_app* app) {
         event.mouseX = GetMouseX();
         event.mouseY = GetMouseY();
         event.mouseWheel = (mouseWheel.y > 0) ? 1 : -1;
-        app->event(&event, app->userData);
+        app->event(app, &event);
     }
 
     // Mouse Buttons
@@ -101,7 +101,7 @@ bool pntr_app_events(pntr_app* app) {
             event.mouseButton = pntr_app_raylib_mouse_button(i);
             event.mouseX = GetMouseX();
             event.mouseY = GetMouseY();
-            app->event(&event, app->userData);
+            app->event(app, &event);
         }
     }
 
@@ -111,11 +111,11 @@ bool pntr_app_events(pntr_app* app) {
             for (event.gamepadButton = 1; event.gamepadButton <= PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB; event.gamepadButton++) {
                 if (IsGamepadButtonPressed(event.gamepad, event.gamepadButton)) {
                     event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN;
-                    app->event(&event, app->userData);
+                    app->event(app, &event);
                 }
                 else if (IsGamepadButtonReleased(event.gamepad, event.gamepadButton)) {
                     event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
-                    app->event(&event, app->userData);
+                    app->event(app, &event);
                 }
             }
         }

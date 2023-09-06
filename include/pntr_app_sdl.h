@@ -202,7 +202,7 @@ bool pntr_app_events(pntr_app* app) {
                 pntrEvent.mouseX = event.motion.x;
                 pntrEvent.mouseY = event.motion.y;
                 pntrEvent.mouseWheel = 0;
-                app->event(&pntrEvent, app->userData);
+                app->event(app, &pntrEvent);
             }
             break;
 
@@ -211,7 +211,7 @@ bool pntr_app_events(pntr_app* app) {
                 pntrEvent.mouseX = event.motion.x;
                 pntrEvent.mouseY = event.motion.y;
                 pntrEvent.mouseWheel = event.wheel.y > 0 ? 1 : -1;
-                app->event(&pntrEvent, app->userData);
+                app->event(app, &pntrEvent);
             }
             break;
 
@@ -223,7 +223,7 @@ bool pntr_app_events(pntr_app* app) {
                     pntrEvent.mouseButton = button;
                     pntrEvent.mouseX = event.motion.x;
                     pntrEvent.mouseY = event.motion.y;
-                    app->event(&pntrEvent, app->userData);
+                    app->event(app, &pntrEvent);
                 }
             }
             break;
@@ -234,7 +234,7 @@ bool pntr_app_events(pntr_app* app) {
                 if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
                     pntrEvent.type = (event.cbutton.state == SDL_PRESSED) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
                     pntrEvent.gamepad = event.cbutton.which;
-                    app->event(&pntrEvent, app->userData);
+                    app->event(app, &pntrEvent);
                 }
             }
             break;
@@ -254,7 +254,7 @@ bool pntr_app_events(pntr_app* app) {
                 pntrEvent.key = pntr_app_sdl_key(event.key.keysym.sym);
                 if (pntrEvent.key != PNTR_APP_KEY_INVALID) {
                     pntrEvent.type = (event.type == SDL_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
-                    app->event(&pntrEvent, app->userData);
+                    app->event(app, &pntrEvent);
                 }
             }
             break;

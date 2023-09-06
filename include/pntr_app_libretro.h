@@ -434,7 +434,7 @@ bool pntr_app_events(pntr_app* app) {
         event.mouseWheel = 0;
 
         // Invoke the event.
-        app->event(&event, app->userData);
+        app->event(app, &event);
     }
 
     // Mouse Wheel
@@ -442,14 +442,14 @@ bool pntr_app_events(pntr_app* app) {
     if (mouseWheelUp > 0) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
         event.mouseWheel = 1;
-        app->event(&event, app->userData);
+        app->event(app, &event);
     }
     else {
         int16_t mouseWheelDown = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELDOWN);
         if (mouseWheelDown > 0) {
             event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
             event.mouseWheel = -1;
-            app->event(&event, app->userData);
+            app->event(app, &event);
         }
     }
 
@@ -468,7 +468,7 @@ bool pntr_app_events(pntr_app* app) {
             platform->mouseButtonState[event.mouseButton] = currentState;
 
             // Invoke the event.
-            app->event(&event, app->userData);
+            app->event(app, &event);
         }
     }
 
@@ -490,7 +490,7 @@ bool pntr_app_events(pntr_app* app) {
                     event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
                 }
 
-                app->event(&event, app->userData);
+                app->event(app, &event);
                 platform->gamepadState[event.gamepad][button] = currentState;
             }
         }
@@ -553,7 +553,7 @@ void retro_run(void) {
 
     // Update the game state.
     if (pntr_app_libretro->update != NULL) {
-        if (pntr_app_libretro->update(pntr_app_libretro->screen, pntr_app_libretro->userData) == false) {
+        if (pntr_app_libretro->update(pntr_app_libretro, pntr_app_libretro->screen) == false) {
             environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
             return;
         }
@@ -578,10 +578,9 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
     event.key = pntr_app_libretro_key(keycode);
     if (event.key != PNTR_APP_KEY_INVALID) {
         event.type = down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
-        pntr_app_libretro->event(&event, pntr_app_libretro->userData);
+        pntr_app_libretro->event(pntr_app_libretro, &event);
     }
 }
-
 
 /**
  * libretro callback; Load the labels for the input buttons.
@@ -785,7 +784,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     // Call the init callback.
     if (app->init != NULL) {
         // Check if initialization worked.
-        if (!app->init(app->userData)) {
+        if (!app->init(app)) {
             pntr_app_close(app);
             pntr_app_libretro_unload_app(app);
             return false;
@@ -809,7 +808,7 @@ void retro_unload_game(void) {
     pntr_app* app = pntr_app_libretro;
 
     if (app->close != NULL) {
-        app->close(app->userData);
+        app->close(app);
     }
 
     pntr_app_close(app);
@@ -867,9 +866,11 @@ int _pntr_app_libretro_audiotype(const char* fileName) {
     if (strstr(fileName, ".wav")) {
         return AUDIO_MIXER_TYPE_WAV;
     }
+
     if (strstr(fileName, ".ogg")) {
         return AUDIO_MIXER_TYPE_OGG;
     }
+
     return AUDIO_MIXER_TYPE_NONE;
 }
 
@@ -890,7 +891,7 @@ pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* dat
 
     // Load the sound.
     audio_mixer_sound_t* sound = NULL;
-    switch(_pntr_app_libretro_audiotype(fileName)) {
+    switch (_pntr_app_libretro_audiotype(fileName)) {
         case AUDIO_MIXER_TYPE_WAV:
             sound = audio_mixer_load_wav(data, dataSize, "audio", RESAMPLER_QUALITY_DONTCARE);
 

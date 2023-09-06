@@ -8,12 +8,12 @@ Build [pntr](https://github.com/robloach/pntr) applications with the same code f
 #define PNTR_APP_IMPLEMENTATION
 #include "pntr_app.h"
 
-bool Init(void* userData) {
+bool Init(pntr_app* app) {
     // Initialize the application, return false on failure.
     return true;
 }
 
-bool Update(pntr_image* screen, void* userData) {
+bool Update(pntr_app* app, pntr_image* screen) {
     // Clear the screen.
     pntr_clear_background(screen, PNTR_WHITE);
 
@@ -24,7 +24,7 @@ bool Update(pntr_image* screen, void* userData) {
     return true;
 }
 
-void Event(pntr_app_event* event, void* userData) {
+void Event(pntr_app* app, pntr_app_event* event) {
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN:
             if (event->key == PNTR_APP_KEY_SPACE) {
@@ -34,7 +34,7 @@ void Event(pntr_app_event* event, void* userData) {
     }
 }
 
-void Close(void* userData) {
+void Close(pntr_app* app) {
     // Uninitialize the application.
 }
 
