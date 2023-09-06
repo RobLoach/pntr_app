@@ -380,6 +380,9 @@ void pntr_stop_sound(pntr_sound* sound);
  */
 void* pntr_app_userdata(pntr_app* app);
 
+int pntr_app_width(pntr_app* app);
+int pntr_app_height(pntr_app* app);
+
 #ifdef __cplusplus
 }
 #endif
@@ -389,10 +392,6 @@ void* pntr_app_userdata(pntr_app* app);
 #ifdef PNTR_APP_IMPLEMENTATION
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
-
-void* pntr_app_userdata(pntr_app* app) {
-    return app->userData;
-}
 
 #ifndef PNTR_APP_MAIN
 /**
@@ -554,6 +553,18 @@ pntr_sound* pntr_load_sound(const char* fileName) {
     }
 
     return pntr_load_sound_from_memory(fileName, data, bytesRead);
+}
+
+void* pntr_app_userdata(pntr_app* app) {
+    return app->userData;
+}
+
+int pntr_app_width(pntr_app* app) {
+    return app->width;
+}
+
+int pntr_app_height(pntr_app* app) {
+    return app->height;
 }
 
 #ifdef __cplusplus
