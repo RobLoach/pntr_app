@@ -324,3 +324,7 @@ void pntr_stop_sound(pntr_sound* sound) {
     audio->loop = false;
     PlaySound(audio->sound);
 }
+
+void pntr_app_platform_update_delta_time(pntr_app* app) {
+    app->deltaTime = GetFrameTime();
+}

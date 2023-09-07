@@ -731,6 +731,14 @@ void pntr_app_libretro_unload_app(pntr_app* app) {
     pntr_app_libretro = NULL;
 }
 
+void retro_frame_time_cb(retro_usec_t usec) {
+    if (pntr_app_libretro == NULL) {
+        return;
+    }
+
+    pntr_app_libretro->deltaTime = usec / 1000000.0f;
+}
+
 bool retro_load_game(const struct retro_game_info *info) {
     // TODO: retro_load_game: Send the entire data buffer to somewhere?
     int argc = 1;
@@ -773,6 +781,15 @@ bool retro_load_game(const struct retro_game_info *info) {
     if (app == NULL) {
         pntr_unload_memory(application.userData);
         return false;
+    }
+
+    // Set up the frame time callback.
+    struct retro_frame_time_callback retro_frame_time = {
+        retro_frame_time_cb,
+        1000000 / app->fps
+    };
+    if (!environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &retro_frame_time)) {
+        log_cb(RETRO_LOG_INFO, "Failed to set frame time callback.\n");
     }
 
     // Initialize the libretro platform.
@@ -952,4 +969,8 @@ void pntr_stop_sound(pntr_sound* sound) {
 
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     audio_mixer_stop(audio->voice);
+}
+
+void pntr_app_platform_update_delta_time(pntr_app* app) {
+    // Nothing, using retro_frame_time_cb() instead.
 }

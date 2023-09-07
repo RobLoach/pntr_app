@@ -2,6 +2,21 @@
 
 Build [pntr](https://github.com/robloach/pntr) applications with the same code for a number of different targets, including SDL, raylib, libretro, the web, and more.
 
+## Features
+
+- Compile for a number of platforms...
+    - [raylib](https://www.raylib.com/)
+    - [SDL](https://www.libsdl.org/)
+    - Web with [Emscripten](https://emscripten.org/)
+    - [libretro](https://www.libretro.com/) and RetroArch
+    - Command Line Interfaces with [termbox2](https://github.com/termbox/termbox2)
+- Software rendering with [pntr](https://github.com/robloach/pntr)
+- Audio (*.wav* or *.ogg*)
+- User input...
+    - Mouse
+    - Keyboard
+    - Gamepads
+
 ## Example
 
 ``` c
@@ -53,20 +68,6 @@ pntr_app Main(int argc, char* argv[]) {
 }
 ```
 
-## Features
-
-- [x] Target: [raylib](https://www.raylib.com/)
-- [x] Target: [SDL](https://www.libsdl.org/)
-- [x] Target: [Emscripten](https://emscripten.org/)
-- [x] Target: [libretro](https://www.libretro.com/)
-- [x] Target: Command Line Interface with [termbox2](https://github.com/termbox/termbox2)
-- [ ] Target: [sokol](https://github.com/floooh/sokol)
-- [x] Mouse
-- [x] Keyboard
-- [x] Gamepads
-- [x] Sound (wav, ogg)
-- [ ] Music
-
 ## Configuration
 
 When compiling, define one of the following to determine which platform you are targeting...
@@ -76,6 +77,21 @@ PNTR_APP_RAYLIB
 PNTR_APP_LIBRETRO
 PNTR_APP_CLI
 EMSCRIPTEN
+```
+
+## API
+
+``` c
+pntr_app Main(int argc, char* argv[]);
+int pntr_app_width(pntr_app* app);
+int pntr_app_height(pntr_app* app);
+float pntr_app_delta_time(pntr_app* app);
+void* pntr_app_userdata(pntr_app* app);
+pntr_sound* pntr_load_sound(const char* fileName);
+pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
+void pntr_unload_sound(pntr_sound* sound);
+void pntr_play_sound(pntr_sound* sound, bool loop);
+void pntr_stop_sound(pntr_sound* sound);
 ```
 
 ## Build
@@ -110,7 +126,7 @@ emmake make platform=emscripten
 
 ### Web
 
-To build for the web with [Emscripten](https://emscripten.org/). Depends on [emsdk](https://emscripten.org/docs/tools_reference/emsdk.html).
+Build for the web with [Emscripten](https://emscripten.org/) and raylib. Depends on [emsdk](https://emscripten.org/docs/tools_reference/emsdk.html).
 
 ``` bash
 emcmake cmake -B build -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXE_LINKER_FLAGS="-s USE_GLFW=3" -DCMAKE_EXECUTABLE_SUFFIX=".html"

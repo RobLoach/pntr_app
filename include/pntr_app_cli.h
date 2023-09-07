@@ -311,3 +311,8 @@ void pntr_play_sound(pntr_sound* sound, bool loop) {
 void pntr_stop_sound(pntr_sound* sound) {
     (void)sound;
 }
+
+void pntr_app_platform_update_delta_time(pntr_app* app) {
+    // TODO: Make CLI delta time get the actual delta time.
+    app->deltaTime = (float)app->fps / 1000.0f;
+}

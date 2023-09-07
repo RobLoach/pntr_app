@@ -9,9 +9,10 @@ typedef struct AppData {
     pntr_image* logo;
     pntr_font* font;
     bool spacePressed;
-    int x;
+    float x;
     pntr_sound* sound;
     pntr_sound* music;
+    float velocity;
 } AppData;
 
 bool Init(pntr_app* app) {
@@ -21,6 +22,7 @@ bool Init(pntr_app* app) {
     appData->font = pntr_load_font_default();
     appData->spacePressed = false;
     appData->x = 0;
+    appData->velocity = 60.0f;
     appData->sound = pntr_load_sound("resources/sound.wav");
     appData->music = pntr_load_sound("resources/music.ogg");
     pntr_play_sound(appData->music, true);
@@ -30,6 +32,7 @@ bool Init(pntr_app* app) {
 
 bool Update(pntr_app* app, pntr_image* screen) {
     AppData* appData = (AppData*)pntr_app_userdata(app);
+    float deltaTime = pntr_app_delta_time(app);
 
     // Clear the screen
     pntr_clear_background(screen, PNTR_RAYWHITE);
@@ -37,9 +40,11 @@ bool Update(pntr_app* app, pntr_image* screen) {
     // Draw some text
     pntr_draw_text(screen, appData->font, "Congrats! You created your first pntr_app!", 35, screen->height - 30, PNTR_DARKGRAY);
 
+    appData->x += appData->velocity * deltaTime;
+
     // Draw the logo
     if (appData->logo) {
-        pntr_draw_image(screen, appData->logo, appData->x++, screen->height / 2 - appData->logo->height / 2);
+        pntr_draw_image(screen, appData->logo, (int)appData->x, screen->height / 2 - appData->logo->height / 2);
     }
 
     if (appData->spacePressed) {

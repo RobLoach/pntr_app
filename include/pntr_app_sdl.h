@@ -18,6 +18,7 @@ typedef struct pntr_app_sdl_platform {
     SDL_Surface* windowSurface;
     SDL_Surface* screenSurface;
     uint64_t pntr_app_sdl_start;
+    uint64_t timerLastTime;
 } pntr_app_sdl_platform;
 
 pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button) {
@@ -354,6 +355,9 @@ bool pntr_app_init(pntr_app* app) {
         }
     #endif
 
+    platform->timerLastTime = SDL_GetTicks64();
+    //platform->timerLastTime = SDL_GetPerformanceCounter();
+
     return true;
 }
 
@@ -510,4 +514,20 @@ void pntr_stop_sound(pntr_sound* sound) {
     #else
         SDL_ClearQueuedAudio(audio->deviceId);
     #endif
+}
+
+void pntr_app_platform_update_delta_time(pntr_app* app) {
+    if (app == NULL || app->platform == NULL) {
+        return;
+    }
+
+    pntr_app_sdl_platform* platform = app->platform;
+
+    uint64_t now = SDL_GetTicks64();
+    app->deltaTime = (now - platform->timerLastTime) / 1000.0f;
+    platform->timerLastTime = now;
+
+    // uint64_t now = SDL_GetPerformanceCounter();
+    // app->deltaTime = (now - platform->timerLastTime) / (float)SDL_GetPerformanceFrequency();
+    // platform->timerLastTime = now;
 }

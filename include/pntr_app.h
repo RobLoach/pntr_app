@@ -295,6 +295,7 @@ struct pntr_app {
     void* userData;                 // A pointer to a custom state in memory that is passed across all pntr_app callbacks.
     pntr_image* screen;
     void* platform;
+    float deltaTime;
 };
 
 typedef void pntr_sound;
@@ -303,6 +304,8 @@ typedef void pntr_sound;
  * Platform callback to initialize the platform.
  *
  * @return True if initialization was successful, false otherwise.
+ *
+ * @internal
  */
 bool pntr_app_init(pntr_app* app);
 
@@ -310,6 +313,8 @@ bool pntr_app_init(pntr_app* app);
  * Platform callback to invoke all events for the platform.
  *
  * @return True if the application should continue to run, false if the platform is requested to close.
+ *
+ * @internal
  */
 bool pntr_app_events(pntr_app* app);
 
@@ -317,11 +322,15 @@ bool pntr_app_events(pntr_app* app);
  * Platform callback to render to the screen.
  *
  * @return True if rendering was successful, false otherwise.
+ *
+ * @internal
  */
 bool pntr_app_render(pntr_app* app);
 
 /**
  * Platform callback to close the application.
+ *
+ * @internal
  */
 void pntr_app_close(pntr_app* app);
 
@@ -380,8 +389,27 @@ void pntr_stop_sound(pntr_sound* sound);
  */
 void* pntr_app_userdata(pntr_app* app);
 
+/**
+ * Get the screen width of the application.
+ */
 int pntr_app_width(pntr_app* app);
+
+/**
+ * Get the screen height of the application.
+ */
 int pntr_app_height(pntr_app* app);
+
+/**
+ * Retrieves the change in time in seconds since the last update run.
+ */
+float pntr_app_delta_time(pntr_app* app);
+
+/**
+ * Asks the platform to update the delta time.
+ *
+ * @internal
+ */
+void pntr_app_platform_update_delta_time(pntr_app* app);
 
 #ifdef __cplusplus
 }
@@ -463,21 +491,27 @@ void pntr_app_emscripten_update_loop(void* app) {
         return;
     }
 
-    pntr_app* application = (pntr_app*)app;
-
-    if (!pntr_app_events(application)) {
+    // Poll Events
+    if (!pntr_app_events(app)) {
         emscripten_cancel_main_loop();
         return;
     }
 
-    // Ensure the application exists.
-    if (application->update == NULL ||
-        application->update(application->screen, application->userData) == false) {
+    // Check the update function.
+    if (app->update == NULL) {
         emscripten_cancel_main_loop();
         return;
     }
 
-    if (!pntr_app_render(application)) {
+    // Run the update function.
+    pntr_app_platform_update_delta_time(app);
+    if (app->update(app, app->screen) == false) {
+        emscripten_cancel_main_loop();
+        return;
+    }
+
+    // Render
+    if (!pntr_app_render(app)) {
         emscripten_cancel_main_loop();
     }
 }
@@ -522,9 +556,24 @@ int main(int argc, char* argv[]) {
             emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, app.fps, 1);
         #else
             // Continue running when update returns TRUE.
-            while (pntr_app_events(&app) &&
-                app.update(&app, app.screen) &&
-                pntr_app_render(&app));
+            do {
+
+                // Events
+                if (!pntr_app_events(&app)) {
+                    break;
+                }
+
+                // Update
+                pntr_app_platform_update_delta_time(&app);
+                if (!app.update(&app, app.screen)) {
+                    break;
+                }
+
+                // Render
+                if (!pntr_app_render(&app)) {
+                    break;
+                }
+            } while(true);
         #endif
     }
 
@@ -555,16 +604,20 @@ pntr_sound* pntr_load_sound(const char* fileName) {
     return pntr_load_sound_from_memory(fileName, data, bytesRead);
 }
 
-void* pntr_app_userdata(pntr_app* app) {
+inline void* pntr_app_userdata(pntr_app* app) {
     return app->userData;
 }
 
-int pntr_app_width(pntr_app* app) {
+inline int pntr_app_width(pntr_app* app) {
     return app->width;
 }
 
-int pntr_app_height(pntr_app* app) {
+inline int pntr_app_height(pntr_app* app) {
     return app->height;
+}
+
+inline float pntr_app_delta_time(pntr_app* app) {
+    return app->deltaTime;
 }
 
 #ifdef __cplusplus
