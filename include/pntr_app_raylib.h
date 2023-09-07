@@ -145,28 +145,27 @@ bool pntr_app_render(pntr_app* app) {
         ClearBackground(BLACK);
 
         // Find the aspect ratio.
-        // TODO: Fix aspect workings
-        float aspect = GetScreenHeight() / GetScreenWidth() ;
+        float aspect = (float)screen->width / (float)screen->height;
         if (aspect <= 0) {
-            aspect = (float)platform->screenImage.width / (float)platform->screenImage.height;
+            aspect = (float)screen->height / (float)screen->width;
         }
 
         // Calculate the optimal width/height to display in the screen size.
-        int height = GetScreenHeight();
-        int width = height * aspect;
+        float height = GetScreenHeight();
+        float width = height * aspect;
         if (width > GetScreenWidth()) {
             height = (float)GetScreenWidth() / aspect;
             width = GetScreenWidth();
         }
 
         // Draw the texture in the middle of the screen.
-        int x = (GetScreenWidth() - width) / 2;
-        int y = (GetScreenHeight() - height) / 2;
-
-        Rectangle destRec = {x, y, width, height};
+        Rectangle destRect = {
+            (GetScreenWidth() - width) / 2,
+            (GetScreenHeight() - height) / 2,
+            width, height};
         Rectangle source = {0, 0, platform->screenImage.width, platform->screenImage.height};
         Vector2 origin = {0, 0};
-        DrawTexturePro(platform->screenTexture, source, destRec, origin, 0, WHITE);
+        DrawTexturePro(platform->screenTexture, source, destRect, origin, 0, WHITE);
     EndDrawing();
 
     // Make sure to sounds that are looping are playing still
@@ -194,8 +193,7 @@ bool pntr_app_init(pntr_app* app) {
 
     pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
 
-    // TODO: Allow resizing the window
-    //SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
 
     float scale = 2.0f;
     InitWindow((int)((float)app->width * scale), (int)((float)app->height * scale), app->title);
