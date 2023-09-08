@@ -15,8 +15,8 @@
 typedef struct pntr_app_sdl_platform {
     SDL_GameController* gameControllers[4];
     SDL_Window* window;
-    SDL_Surface* windowSurface;
-    SDL_Surface* screenSurface;
+    SDL_Renderer* renderer;
+    SDL_Texture* texture;
     uint64_t pntr_app_sdl_start;
     uint64_t timerLastTime;
 } pntr_app_sdl_platform;
@@ -173,6 +173,51 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
     return PNTR_APP_KEY_INVALID;
 }
 
+void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
+    // Update the Texture
+    void* pixels;
+    int pitch;
+    if (SDL_LockTexture(platform->texture, NULL, &pixels, &pitch) != 0) {
+        return;
+    }
+
+    uint32_t* destinationPixels = pixels;
+    uint32_t* sourcePixels = (uint32_t*)app->screen->data;
+    for (int i = 0; i < app->screen->width * app->screen->height; i++) {
+        destinationPixels[i] = sourcePixels[i];
+    }
+    SDL_UnlockTexture(platform->texture);
+
+    // Find the aspect ratio.
+    pntr_image* screen = app->screen;
+    float aspect = (float)screen->width / (float)screen->height;
+    if (aspect <= 0) {
+        aspect = (float)screen->height / (float)screen->width;
+    }
+
+    int windowWidth;
+    int windowHeight;
+    SDL_GetRendererOutputSize(platform->renderer, &windowWidth, &windowHeight);
+
+    // Calculate the optimal width/height to display in the screen size.
+    float height = (float)windowHeight;
+    float width = height * aspect;
+    if (width > windowWidth) {
+        height = (float)windowWidth / aspect;
+        width = windowWidth;
+    }
+
+    // Draw the texture in the middle of the screen.
+    SDL_Rect dstRect = {
+        (windowWidth - width) / 2,
+        (windowHeight - height) / 2,
+        width, height};
+
+    SDL_RenderClear(platform->renderer);
+    SDL_RenderCopy( platform->renderer, platform->texture, NULL, &dstRect );
+    SDL_RenderPresent( platform->renderer );
+}
+
 bool pntr_app_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
@@ -274,9 +319,7 @@ bool pntr_app_render(pntr_app* app) {
     }
 
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-
-    SDL_BlitSurface(platform->screenSurface, NULL, platform->windowSurface, NULL);
-    SDL_UpdateWindowSurface(platform->window);
+    pntr_app_render_surface(app, platform);
 
     // Limit the FPS
     if (app->fps > 0) {
@@ -307,35 +350,29 @@ bool pntr_app_init(pntr_app* app) {
         return false;
     }
 
-    // Window
-    platform->window = SDL_CreateWindow(app->title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, app->width, app->height, SDL_WINDOW_SHOWN);
-    if (platform->window == NULL) {
+    // Window and Renderer
+    if (SDL_CreateWindowAndRenderer(app->width, app->height, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE, &platform->window, &platform->renderer) == -1) {
         SDL_Quit();
         pntr_unload_memory(platform);
         app->platform = NULL;
         return false;
     }
 
-    // Window Surface
-    platform->windowSurface = SDL_GetWindowSurface(platform->window);
-    if (platform->windowSurface == NULL) {
-        SDL_DestroyWindow(platform->window);
-        SDL_Quit();
-        pntr_unload_memory(platform);
-        app->platform = NULL;
-        return false;
-    }
+    // Window Title
+    SDL_SetWindowTitle(platform->window, app->title);
 
-    // Screen Surface
-    platform->screenSurface = SDL_CreateRGBSurfaceWithFormatFrom(app->screen->data, app->width, app->height, 8, app->screen->pitch, SDL_PIXELFORMAT_ARGB8888);
-    if (platform->screenSurface == NULL) {
-        SDL_FreeSurface(platform->windowSurface);
+    // Texture
+    platform->texture = SDL_CreateTexture(platform->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, app->width, app->height);
+    if (platform->texture == NULL) {
+        SDL_DestroyRenderer(platform->renderer);
         SDL_DestroyWindow(platform->window);
         SDL_Quit();
         pntr_unload_memory(platform);
         app->platform = NULL;
         return false;
     }
+    SDL_SetTextureBlendMode(platform->texture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(platform->texture, SDL_ScaleModeBest);
 
     // GamePads
     for (int i = 0; i < 4; i++) {
@@ -355,6 +392,7 @@ bool pntr_app_init(pntr_app* app) {
         }
     #endif
 
+    // Start the tick counter for the delta time.
     platform->timerLastTime = SDL_GetTicks64();
     //platform->timerLastTime = SDL_GetPerformanceCounter();
 
@@ -375,22 +413,17 @@ void pntr_app_close(pntr_app* app) {
                 }
             }
 
-            // Screen Surface
-            if (platform->screenSurface != NULL) {
-                SDL_FreeSurface(platform->screenSurface);
-                platform->screenSurface = NULL;
+            if (platform->texture != NULL) {
+                SDL_DestroyTexture(platform->texture);
             }
 
-            // Window surface
-            if (platform->windowSurface != NULL) {
-                SDL_FreeSurface(platform->windowSurface);
-                platform->windowSurface = NULL;
+            if (platform->renderer != NULL) {
+                SDL_DestroyRenderer(platform->renderer);
             }
 
             // Window
             if (platform->window != NULL) {
                 SDL_DestroyWindow(platform->window);
-                platform->window = NULL;
             }
 
             // Platform
@@ -400,8 +433,10 @@ void pntr_app_close(pntr_app* app) {
 
     // Audio
     #ifdef PNTR_APP_SDL_MIXER
+        Mix_HaltChannel(-1);
         Mix_CloseAudio();
     #else
+        SDL_PauseAudio(1);
         SDL_CloseAudio();
     #endif
 
@@ -526,8 +561,4 @@ void pntr_app_platform_update_delta_time(pntr_app* app) {
     uint64_t now = SDL_GetTicks64();
     app->deltaTime = (now - platform->timerLastTime) / 1000.0f;
     platform->timerLastTime = now;
-
-    // uint64_t now = SDL_GetPerformanceCounter();
-    // app->deltaTime = (now - platform->timerLastTime) / (float)SDL_GetPerformanceFrequency();
-    // platform->timerLastTime = now;
 }
