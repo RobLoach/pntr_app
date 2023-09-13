@@ -27,10 +27,6 @@ bool pntr_app_events(pntr_app* app) {
         return false;
     }
 
-    if (app->event == NULL) {
-        return true;
-    }
-
     pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
     pntr_app_event event;
 
@@ -39,7 +35,7 @@ bool pntr_app_events(pntr_app* app) {
     for (event.key = PNTR_APP_KEY_FIRST; event.key < PNTR_APP_KEY_LAST; event.key++) {
         if (platform->keysEnabled[event.key]) {
             platform->keysEnabled[event.key] = false;
-            app->event(app, &event);
+            pntr_app_process_event(app, &event);
         }
     }
 
@@ -48,7 +44,7 @@ bool pntr_app_events(pntr_app* app) {
     for (event.mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; event.mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; event.mouseButton++) {
         if (platform->mouseButtonsPressed[event.mouseButton]) {
             platform->mouseButtonsPressed[event.mouseButton] = false;
-            app->event(app, &event);
+            pntr_app_process_event(app, &event);
         }
     }
 
@@ -133,7 +129,7 @@ bool pntr_app_events(pntr_app* app) {
 
             if (event.key != PNTR_APP_KEY_INVALID) {
                 platform->keysEnabled[event.key] = true;
-                app->event(app, &event);
+                pntr_app_process_event(app, &event);
             }
             else {
                 // Lower vs uppercase
@@ -142,7 +138,7 @@ bool pntr_app_events(pntr_app* app) {
                 }
                 event.key = ev.ch;
                 platform->keysEnabled[event.key] = true;
-                app->event(app, &event);
+                pntr_app_process_event(app, &event);
             }
         }
         break;
@@ -158,7 +154,7 @@ bool pntr_app_events(pntr_app* app) {
             if (ev.key == TB_KEY_MOUSE_WHEEL_UP || ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
                 event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
                 event.mouseWheel = (ev.key == TB_KEY_MOUSE_WHEEL_UP) ? -1 : 1;
-                app->event(app, &event);
+                pntr_app_process_event(app, &event);
                 break;
             }
 
@@ -175,11 +171,11 @@ bool pntr_app_events(pntr_app* app) {
             if (event.mouseButton != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
                 event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
                 platform->mouseButtonsPressed[event.mouseButton] = true;
-                app->event(app, &event);
+                pntr_app_process_event(app, &event);
             }
             else {
                 event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                app->event(app, &event);
+                pntr_app_process_event(app, &event);
             }
         }
         break;

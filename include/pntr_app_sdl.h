@@ -284,10 +284,6 @@ bool pntr_app_events(pntr_app* app) {
         platform->pntr_app_sdl_start = SDL_GetPerformanceCounter();
     }
 
-    if (app->event == NULL) {
-        return true;
-    }
-
     pntr_app_event pntrEvent;
     SDL_Event event;
 
@@ -304,7 +300,7 @@ bool pntr_app_events(pntr_app* app) {
                 pntrEvent.mouseX = event.motion.x;
                 pntrEvent.mouseY = event.motion.y;
                 pntrEvent.mouseWheel = 0;
-                app->event(app, &pntrEvent);
+                pntr_app_process_event(app, &pntrEvent);
             }
             break;
 
@@ -313,7 +309,7 @@ bool pntr_app_events(pntr_app* app) {
                 pntrEvent.mouseX = event.motion.x;
                 pntrEvent.mouseY = event.motion.y;
                 pntrEvent.mouseWheel = event.wheel.y > 0 ? 1 : -1;
-                app->event(app, &pntrEvent);
+                pntr_app_process_event(app, &pntrEvent);
             }
             break;
 
@@ -325,7 +321,7 @@ bool pntr_app_events(pntr_app* app) {
                     pntrEvent.mouseButton = button;
                     pntrEvent.mouseX = event.motion.x;
                     pntrEvent.mouseY = event.motion.y;
-                    app->event(app, &pntrEvent);
+                    pntr_app_process_event(app, &pntrEvent);
                 }
             }
             break;
@@ -336,7 +332,7 @@ bool pntr_app_events(pntr_app* app) {
                 if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
                     pntrEvent.type = (event.cbutton.state == SDL_PRESSED) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
                     pntrEvent.gamepad = event.cbutton.which;
-                    app->event(app, &pntrEvent);
+                    pntr_app_process_event(app, &pntrEvent);
                 }
             }
             break;
@@ -356,7 +352,7 @@ bool pntr_app_events(pntr_app* app) {
                 pntrEvent.key = pntr_app_sdl_key(event.key.keysym.sym);
                 if (pntrEvent.key != PNTR_APP_KEY_INVALID) {
                     pntrEvent.type = (event.type == SDL_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
-                    app->event(app, &pntrEvent);
+                    pntr_app_process_event(app, &pntrEvent);
                 }
             }
             break;

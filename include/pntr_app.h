@@ -296,43 +296,12 @@ struct pntr_app {
     pntr_image* screen;
     void* platform;
     float deltaTime;
+
+    bool keysDown[PNTR_APP_KEY_LAST];
+    bool keysDownLast[PNTR_APP_KEY_LAST];
 };
 
 typedef void pntr_sound;
-
-/**
- * Platform callback to initialize the platform.
- *
- * @return True if initialization was successful, false otherwise.
- *
- * @internal
- */
-bool pntr_app_init(pntr_app* app);
-
-/**
- * Platform callback to invoke all events for the platform.
- *
- * @return True if the application should continue to run, false if the platform is requested to close.
- *
- * @internal
- */
-bool pntr_app_events(pntr_app* app);
-
-/**
- * Platform callback to render to the screen.
- *
- * @return True if rendering was successful, false otherwise.
- *
- * @internal
- */
-bool pntr_app_render(pntr_app* app);
-
-/**
- * Platform callback to close the application.
- *
- * @internal
- */
-void pntr_app_close(pntr_app* app);
 
 /**
  * Load a sound from the given path. Supports .wav or .ogg files.
@@ -408,6 +377,48 @@ PNTR_APP_API int pntr_app_height(pntr_app* app);
  * Retrieves the change in time in seconds since the last update run.
  */
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
+
+PNTR_APP_API bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
+PNTR_APP_API bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
+PNTR_APP_API bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
+PNTR_APP_API bool pntr_app_key_up(pntr_app* app, pntr_app_key key);
+
+/**
+ * Platform callback to initialize the platform.
+ *
+ * @return True if initialization was successful, false otherwise.
+ *
+ * @internal
+ */
+bool pntr_app_init(pntr_app* app);
+
+/**
+ * Platform callback to invoke all events for the platform.
+ *
+ * @return True if the application should continue to run, false if the platform is requested to close.
+ *
+ * @internal
+ */
+bool pntr_app_events(pntr_app* app);
+void pntr_app_pre_events(pntr_app* app);
+void pntr_app_process_event(pntr_app* app, pntr_app_event* event);
+
+/**
+ * Platform callback to render to the screen.
+ *
+ * @return True if rendering was successful, false otherwise.
+ *
+ * @internal
+ */
+bool pntr_app_render(pntr_app* app);
+
+/**
+ * Platform callback to close the application.
+ *
+ * @internal
+ */
+void pntr_app_close(pntr_app* app);
+
 
 /**
  * Asks the platform to update the delta time.
@@ -490,13 +501,16 @@ extern "C" {
 /**
  * The update callback for web.
  */
-void pntr_app_emscripten_update_loop(void* app) {
-    if (app == NULL) {
+void pntr_app_emscripten_update_loop(void* application) {
+    if (application == NULL) {
         emscripten_cancel_main_loop();
         return;
     }
 
+    pntr_app* app = (pntr_app*)application;
+
     // Poll Events
+    pntr_app_pre_events(app);
     if (!pntr_app_events(app)) {
         emscripten_cancel_main_loop();
         return;
@@ -540,7 +554,6 @@ int main(int argc, char* argv[]) {
     }
     else if (pntr_app_init(&app) == false) {
         pntr_unload_image(app.screen);
-        pntr_unload_memory(app.userData);
         return 1;
     }
 
@@ -563,6 +576,7 @@ int main(int argc, char* argv[]) {
             // Continue running when update returns TRUE.
             do {
                 // Events
+                pntr_app_pre_events(&app);
                 if (!pntr_app_events(&app)) {
                     break;
                 }
@@ -591,7 +605,6 @@ int main(int argc, char* argv[]) {
 
     // Clear up any user data.
     pntr_unload_image(app.screen);
-    pntr_unload_memory(app.userData);
 
     // Return an error state if update was nullified.
     return (app.update == NULL) ? 1 : 0;
@@ -629,6 +642,43 @@ PNTR_APP_API inline void pntr_app_set_userdata(pntr_app* app, void* userData) {
         return;
     }
     app->userData = userData;
+}
+
+void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
+    switch (event->type) {
+        case PNTR_APP_EVENTTYPE_KEY_DOWN:
+            app->keysDown[event->key] = true;
+            break;
+        case PNTR_APP_EVENTTYPE_KEY_UP:
+            app->keysDown[event->key] = false;
+            break;
+    }
+
+    if (app->event != NULL) {
+        app->event(app, event);
+    }
+}
+
+void pntr_app_pre_events(pntr_app* app) {
+    // Move the active keys to the last keys.
+    for (int i = PNTR_APP_KEY_FIRST; i < PNTR_APP_KEY_LAST; i++) {
+        app->keysDownLast[i] = app->keysDown[i];
+    }
+}
+
+PNTR_APP_API bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key) {
+    return app->keysDown[key] && !app->keysDownLast[key];
+}
+
+PNTR_APP_API bool pntr_app_key_down(pntr_app* app, pntr_app_key key) {
+    return app->keysDown[key];
+}
+
+PNTR_APP_API bool pntr_app_key_released(pntr_app* app, pntr_app_key key) {
+    return !app->keysDown[key] && app->keysDownLast[key];
+}
+PNTR_APP_API bool pntr_app_key_up(pntr_app* app, pntr_app_key key) {
+    return !app->keysDown[key];
 }
 
 #ifdef __cplusplus

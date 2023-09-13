@@ -473,7 +473,7 @@ int pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margi
 
 bool pntr_app_events(pntr_app* app) {
     // Tell the frontend to update its input state.
-    if (app == NULL || app->event == NULL || input_poll_cb == NULL || input_state_cb == NULL) {
+    if (app == NULL || input_poll_cb == NULL || input_state_cb == NULL) {
         return false;
     }
 
@@ -501,6 +501,7 @@ bool pntr_app_events(pntr_app* app) {
     else if (event.mouseX > app->width) {
         event.mouseX = app->width;
     }
+
     if (event.mouseY < 0) {
         event.mouseY = 0;
     }
@@ -517,7 +518,7 @@ bool pntr_app_events(pntr_app* app) {
         event.mouseWheel = 0;
 
         // Invoke the event.
-        app->event(app, &event);
+        pntr_app_process_event(app, &event);
     }
 
     // Mouse Wheel
@@ -525,17 +526,16 @@ bool pntr_app_events(pntr_app* app) {
     if (mouseWheelUp > 0) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
         event.mouseWheel = 1;
-        app->event(app, &event);
+        pntr_app_process_event(app, &event);
     }
     else {
         int16_t mouseWheelDown = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELDOWN);
         if (mouseWheelDown > 0) {
             event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
             event.mouseWheel = -1;
-            app->event(app, &event);
+            pntr_app_process_event(app, &event);
         }
     }
-
 
     // Mouse Buttons
     for (event.mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; event.mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; event.mouseButton++) {
@@ -551,7 +551,7 @@ bool pntr_app_events(pntr_app* app) {
             platform->mouseButtonState[event.mouseButton] = currentState;
 
             // Invoke the event.
-            app->event(app, &event);
+            pntr_app_process_event(app, &event);
         }
     }
 
@@ -573,7 +573,7 @@ bool pntr_app_events(pntr_app* app) {
                     event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
                 }
 
-                app->event(app, &event);
+                pntr_app_process_event(app, &event);
                 platform->gamepadState[event.gamepad][button] = currentState;
             }
         }
@@ -629,6 +629,7 @@ void retro_run(void) {
     }
 
     // Process all events.
+    pntr_app_pre_events(pntr_app_libretro);
     if (pntr_app_events(pntr_app_libretro) == false) {
         environ_cb(RETRO_ENVIRONMENT_SHUTDOWN, NULL);
         return;

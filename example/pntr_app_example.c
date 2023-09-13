@@ -16,7 +16,8 @@ typedef struct AppData {
 } AppData;
 
 bool Init(pntr_app* app) {
-    AppData* appData = (AppData*)pntr_app_userdata(app);
+    AppData* appData = pntr_load_memory(sizeof(AppData));
+    pntr_app_set_userdata(app, appData);
 
     appData->logo = pntr_load_image("resources/logo.png");
     appData->font = pntr_load_font_default();
@@ -54,6 +55,10 @@ bool Update(pntr_app* app, pntr_image* screen) {
         pntr_draw_text(screen, appData->font, "Space is not pressed", 10, 10, PNTR_BLACK);
     }
 
+    if (pntr_app_key_pressed(app, PNTR_APP_KEY_Y)) {
+        pntr_draw_rectangle_fill(screen, 10, 10, 80, 40, PNTR_RED);
+    }
+
     return true;
 }
 
@@ -64,6 +69,8 @@ void Close(pntr_app* app) {
     pntr_unload_font(appData->font);
     pntr_unload_sound(appData->sound);
     pntr_unload_sound(appData->music);
+
+    pntr_unload_memory(appData);
 }
 
 void Event(pntr_app* app, pntr_app_event* event) {
@@ -147,7 +154,6 @@ pntr_app Main(int argc, char* argv[]) {
         .update = Update,
         .close = Close,
         .event = Event,
-        .fps = 60,
-        .userData = PNTR_MALLOC(sizeof(AppData)),
+        .fps = 60
     };
 }

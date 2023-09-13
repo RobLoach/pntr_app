@@ -62,8 +62,7 @@ pntr_app Main(int argc, char* argv[]) {
         .update = Update,
         .event = Event,
         .close = Close,
-        .fps = 60,
-        .userData = NULL
+        .fps = 60
     };
 }
 ```
@@ -83,15 +82,20 @@ EMSCRIPTEN
 
 ``` c
 pntr_app Main(int argc, char* argv[]);
-int pntr_app_width(pntr_app* app);
-int pntr_app_height(pntr_app* app);
-float pntr_app_delta_time(pntr_app* app);
-void* pntr_app_userdata(pntr_app* app);
 pntr_sound* pntr_load_sound(const char* fileName);
 pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
 void pntr_unload_sound(pntr_sound* sound);
 void pntr_play_sound(pntr_sound* sound, bool loop);
 void pntr_stop_sound(pntr_sound* sound);
+void* pntr_app_userdata(pntr_app* app);
+void pntr_app_set_userdata(pntr_app* app, void* userData);
+int pntr_app_width(pntr_app* app);
+int pntr_app_height(pntr_app* app);
+float pntr_app_delta_time(pntr_app* app);
+bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
+bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
+bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
+bool pntr_app_key_up(pntr_app* app, pntr_app_key key);
 ```
 
 ## Build
