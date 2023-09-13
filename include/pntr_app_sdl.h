@@ -12,6 +12,62 @@
     #include PNTR_APP_SDL_MIXER_H
 #endif
 
+#ifndef PNTR_FREE
+    /**
+     * Free the given memory pointer using SDL.
+     */
+    void pntr_app_sdl_free(void* ptr) {
+        SDL_free_func free_func;
+        SDL_GetMemoryFunctions(NULL, NULL, NULL, &free_func);
+        free_func(ptr);
+    }
+    #define PNTR_FREE pntr_app_sdl_free
+#endif
+
+#ifndef PNTR_MALLOC
+    /**
+     * Allocate memory using SDL's malloc.
+     */
+    void* pntr_app_sdl_malloc(size_t size) {
+        SDL_malloc_func malloc_func;
+        SDL_GetMemoryFunctions(&malloc_func, NULL, NULL, NULL);
+        return malloc_func(size);
+    }
+    #define PNTR_MALLOC pntr_app_sdl_malloc
+#endif
+
+#ifndef PNTR_LOAD_FILE
+    /**
+     * Load a file using SDL.
+     */
+    unsigned char* pntr_app_sdl_load_file(const char* fileName, unsigned int* bytesRead) {
+        size_t dataSize;
+        void* output = SDL_LoadFile(fileName, &dataSize);
+        if (bytesRead != NULL) {
+            *bytesRead = (unsigned int)dataSize;
+        }
+        return (unsigned char*)output;
+    }
+    #define PNTR_LOAD_FILE pntr_app_sdl_load_file
+#endif
+
+#ifndef PNTR_SAVE_FILE
+    /**
+     * Save a file using SDL.
+     */
+    bool pntr_app_sdl_save_file(const char *fileName, const void *data, unsigned int bytesToWrite) {
+        SDL_RWops* file = SDL_RWFromFile(fileName, "w+b");
+        if (file == NULL) {
+            return false;
+        }
+
+        size_t written = SDL_RWwrite(file, data, bytesToWrite, 1);
+        SDL_RWclose(file);
+        return written > 0;
+    }
+    #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) pntr_app_sdl_save_file(fileName, data, bytesToWrite)
+#endif
+
 typedef struct pntr_app_sdl_platform {
     SDL_GameController* gameControllers[4];
     SDL_Window* window;

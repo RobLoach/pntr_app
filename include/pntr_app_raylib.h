@@ -6,15 +6,19 @@
 // pntr Configuration
 // raylib has its own implementation of stb_image_resize, so use that instead of pntr's.
 #define PTNR_NO_STB_IMAGE_RESIZE_IMPLEMENTATION
+
 #ifndef PNTR_FREE
     #define PNTR_FREE MemFree
 #endif
+
 #ifndef PNTR_MALLOC
     #define PNTR_MALLOC MemAlloc
 #endif
+
 #ifndef PNTR_LOAD_FILE
     #define PNTR_LOAD_FILE LoadFileData
 #endif
+
 #ifndef PNTR_SAVE_FILE
     #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
 #endif
