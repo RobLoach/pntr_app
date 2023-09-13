@@ -310,9 +310,6 @@ void retro_get_system_info(struct retro_system_info *info) {
         argv[0] = "pntr_app";
         pntr_app app = PNTR_APP_MAIN(1, argv);
         info->library_name = app.title;
-
-        // Clear up any user data.
-        pntr_unload_memory(app.userData);
     }
     else {
         info->library_name = pntr_app_libretro->title;
@@ -341,9 +338,6 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
         fps = app.fps;
         width = app.width;
         height = app.height;
-        if (app.userData != NULL) {
-            pntr_unload_memory(app.userData);
-        }
     }
     else {
         fps = pntr_app_libretro->fps;
@@ -808,7 +802,6 @@ void pntr_app_libretro_unload_app(pntr_app* app) {
         app->platform = NULL;
     }
 
-    pntr_unload_memory(app->userData);
     pntr_unload_image(app->screen);
     pntr_unload_memory(app);
 
@@ -863,7 +856,6 @@ bool retro_load_game(const struct retro_game_info *info) {
     // Create a fresh instance from it with all the primed data.
     pntr_app* app = pntr_app_libretro_load_app(&application);
     if (app == NULL) {
-        pntr_unload_memory(application.userData);
         return false;
     }
 
