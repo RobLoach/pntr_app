@@ -341,7 +341,7 @@ void pntr_app_close(pntr_app* app);
  *
  * @return The loaded sound, or NULL on failure.
  */
-pntr_sound* pntr_load_sound(const char* fileName);
+PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName);
 
 /**
  * Load a sound from memory. Supports .wav or .ogg files.
@@ -354,14 +354,14 @@ pntr_sound* pntr_load_sound(const char* fileName);
  *
  * @return The loaded sound, or NULL on failure.
  */
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
+PNTR_APP_API pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
 
 /**
  * Unload the given sound.
  *
  * @param sound The sound to unload.
  */
-void pntr_unload_sound(pntr_sound* sound);
+PNTR_APP_API void pntr_unload_sound(pntr_sound* sound);
 
 /**
  * Play the given sound.
@@ -371,14 +371,14 @@ void pntr_unload_sound(pntr_sound* sound);
  * @param sound The sound to play.
  * @param loop Whether or not to loop back to the beginning when the sound finishes.
  */
-void pntr_play_sound(pntr_sound* sound, bool loop);
+PNTR_APP_API void pntr_play_sound(pntr_sound* sound, bool loop);
 
 /**
  * Stop playing the given sound.
  *
  * @param sound The sound to stop playing.
  */
-void pntr_stop_sound(pntr_sound* sound);
+PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
 
 /**
  * Get the user data associated with the application.
@@ -387,22 +387,27 @@ void pntr_stop_sound(pntr_sound* sound);
  *
  * @return A pointer to the user data associated with the application.
  */
-void* pntr_app_userdata(pntr_app* app);
+PNTR_APP_API void* pntr_app_userdata(pntr_app* app);
+
+/**
+ * Sets the user data for the application.
+ */
+PNTR_APP_API void pntr_app_set_userdata(pntr_app* app, void* userData);
 
 /**
  * Get the screen width of the application.
  */
-int pntr_app_width(pntr_app* app);
+PNTR_APP_API int pntr_app_width(pntr_app* app);
 
 /**
  * Get the screen height of the application.
  */
-int pntr_app_height(pntr_app* app);
+PNTR_APP_API int pntr_app_height(pntr_app* app);
 
 /**
  * Retrieves the change in time in seconds since the last update run.
  */
-float pntr_app_delta_time(pntr_app* app);
+PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
 
 /**
  * Asks the platform to update the delta time.
@@ -557,7 +562,6 @@ int main(int argc, char* argv[]) {
         #else
             // Continue running when update returns TRUE.
             do {
-
                 // Events
                 if (!pntr_app_events(&app)) {
                     break;
@@ -594,7 +598,7 @@ int main(int argc, char* argv[]) {
 }
 #endif  // PNTR_APP_NO_ENTRY
 
-pntr_sound* pntr_load_sound(const char* fileName) {
+PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName) {
     unsigned int bytesRead;
     unsigned char* data = pntr_load_file(fileName, &bytesRead);
     if (data == NULL) {
@@ -604,20 +608,27 @@ pntr_sound* pntr_load_sound(const char* fileName) {
     return pntr_load_sound_from_memory(fileName, data, bytesRead);
 }
 
-inline void* pntr_app_userdata(pntr_app* app) {
+PNTR_APP_API inline void* pntr_app_userdata(pntr_app* app) {
     return app->userData;
 }
 
-inline int pntr_app_width(pntr_app* app) {
+PNTR_APP_API inline int pntr_app_width(pntr_app* app) {
     return app->width;
 }
 
-inline int pntr_app_height(pntr_app* app) {
+PNTR_APP_API inline int pntr_app_height(pntr_app* app) {
     return app->height;
 }
 
-inline float pntr_app_delta_time(pntr_app* app) {
+PNTR_APP_API inline float pntr_app_delta_time(pntr_app* app) {
     return app->deltaTime;
+}
+
+PNTR_APP_API inline void pntr_app_set_userdata(pntr_app* app, void* userData) {
+    if (app == NULL) {
+        return;
+    }
+    app->userData = userData;
 }
 
 #ifdef __cplusplus
