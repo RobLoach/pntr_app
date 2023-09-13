@@ -69,7 +69,7 @@
 #endif
 
 typedef struct pntr_app_sdl_platform {
-    SDL_GameController* gameControllers[4];
+    SDL_GameController* gameControllers[PNTR_APP_MAX_GAMEPADS];
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* texture;

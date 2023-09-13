@@ -55,7 +55,7 @@ bool Update(pntr_app* app, pntr_image* screen) {
         pntr_draw_text(screen, appData->font, "Space is not pressed", 10, 10, PNTR_BLACK);
     }
 
-    if (pntr_app_key_pressed(app, PNTR_APP_KEY_Y)) {
+    if (pntr_app_mouse_button_down(app, PNTR_APP_MOUSE_BUTTON_LEFT)) {
         pntr_draw_rectangle_fill(screen, 10, 10, 80, 40, PNTR_RED);
     }
 

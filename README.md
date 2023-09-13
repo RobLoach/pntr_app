@@ -96,6 +96,18 @@ bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
 bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
 bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
 bool pntr_app_key_up(pntr_app* app, pntr_app_key key);
+bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+int pntr_app_mouse_x(pntr_app* app);
+int pntr_app_mouse_y(pntr_app* app);
+int pntr_app_mouse_delta_x(pntr_app* app);
+int pntr_app_mouse_delta_y(pntr_app* app);
+bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
+bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
+bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
+bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
 ```
 
 ## Build

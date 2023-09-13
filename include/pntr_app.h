@@ -194,6 +194,13 @@ typedef enum pntr_app_key {
     PNTR_APP_KEY_LAST
 } pntr_app_key;
 
+#ifndef PNTR_APP_MAX_GAMEPADS
+/**
+ * The maximum number of supported gamepads
+ */
+#define PNTR_APP_MAX_GAMEPADS 4
+#endif
+
 /**
  * Gamepad button.
  */
@@ -297,8 +304,28 @@ struct pntr_app {
     void* platform;
     float deltaTime;
 
+    // Input state
+
+    // Keyboard
+    bool keysChanged;
     bool keysDown[PNTR_APP_KEY_LAST];
     bool keysDownLast[PNTR_APP_KEY_LAST];
+
+    // Gamepad
+    bool gamepadButtonsChanged;
+    bool gamepadButtonsDown[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
+    bool gamepadButtonsDownLast[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
+
+    // Mouse
+    int mouseX;
+    int mouseY;
+    int mouseDeltaX;
+    int mouseDeltaY;
+    int mouseWheel;
+    bool mouseWheelChanged;
+    bool mouseButtonsDown[PNTR_APP_MOUSE_BUTTON_LAST];
+    bool mouseButtonsDownLast[PNTR_APP_MOUSE_BUTTON_LAST];
+    bool mouseButtonsChanged;
 };
 
 typedef void pntr_sound;
@@ -382,6 +409,18 @@ PNTR_APP_API bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_key_up(pntr_app* app, pntr_app_key key);
+PNTR_APP_API bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+PNTR_APP_API bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+PNTR_APP_API int pntr_app_mouse_x(pntr_app* app);
+PNTR_APP_API int pntr_app_mouse_y(pntr_app* app);
+PNTR_APP_API int pntr_app_mouse_delta_x(pntr_app* app);
+PNTR_APP_API int pntr_app_mouse_delta_y(pntr_app* app);
+PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
+PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
+PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
+PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
 
 /**
  * Platform callback to initialize the platform.
@@ -648,9 +687,40 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN:
             app->keysDown[event->key] = true;
+            app->keysChanged = true;
             break;
         case PNTR_APP_EVENTTYPE_KEY_UP:
             app->keysDown[event->key] = false;
+            app->keysChanged = true;
+            break;
+        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN:
+            app->gamepadButtonsDown[event->gamepad][event->gamepadButton] = true;
+            app->gamepadButtonsChanged = true;
+            break;
+        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP:
+            app->gamepadButtonsDown[event->gamepad][event->gamepadButton] = false;
+            app->gamepadButtonsChanged = true;
+            break;
+        case PNTR_APP_EVENTTYPE_MOUSE_MOVE:
+            app->mouseX = event->mouseX;
+            app->mouseY = event->mouseY;
+            app->mouseDeltaX = event->mouseDeltaX;
+            app->mouseDeltaY = event->mouseDeltaY;
+            break;
+        case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
+            app->mouseWheel = event->mouseWheel;
+            app->mouseWheelChanged = true;
+            break;
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN:
+            app->mouseButtonsDown[event->mouseButton] = true;
+            app->mouseButtonsChanged = true;
+            break;
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP:
+            app->mouseButtonsDown[event->mouseButton] = false;
+            app->mouseButtonsChanged = true;
+            break;
+        default:
+            // Not covered here.
             break;
     }
 
@@ -660,9 +730,34 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
 }
 
 void pntr_app_pre_events(pntr_app* app) {
-    // Move the active keys to the last keys.
-    for (int i = PNTR_APP_KEY_FIRST; i < PNTR_APP_KEY_LAST; i++) {
-        app->keysDownLast[i] = app->keysDown[i];
+    if (app->keysChanged) {
+        // Move the active keys to the last keys.
+        for (int i = PNTR_APP_KEY_FIRST; i < PNTR_APP_KEY_LAST; i++) {
+            app->keysDownLast[i] = app->keysDown[i];
+        }
+        app->keysChanged = false;
+    }
+
+    if (app->gamepadButtonsChanged) {
+        // Move the active gamepad buttons to the last buttons.
+        for (int player = 0; player < PNTR_APP_MAX_GAMEPADS; player++) {
+            for (int i = PNTR_APP_GAMEPAD_BUTTON_FIRST; i < PNTR_APP_GAMEPAD_BUTTON_LAST; i++) {
+                app->gamepadButtonsDownLast[player][i] = app->gamepadButtonsDown[player][i];
+            }
+        }
+        app->gamepadButtonsChanged = false;
+    }
+
+    if (app->mouseWheelChanged) {
+        app->mouseWheel = 0;
+        app->mouseWheelChanged = false;
+    }
+
+    if (app->mouseButtonsChanged) {
+        for (int i = PNTR_APP_MOUSE_BUTTON_FIRST; i < PNTR_APP_MOUSE_BUTTON_LAST; i++) {
+            app->mouseButtonsDownLast[i] = app->mouseButtonsDown[i];
+        }
+        app->mouseButtonsChanged = false;
     }
 }
 
@@ -677,8 +772,60 @@ PNTR_APP_API bool pntr_app_key_down(pntr_app* app, pntr_app_key key) {
 PNTR_APP_API bool pntr_app_key_released(pntr_app* app, pntr_app_key key) {
     return !app->keysDown[key] && app->keysDownLast[key];
 }
+
 PNTR_APP_API bool pntr_app_key_up(pntr_app* app, pntr_app_key key) {
     return !app->keysDown[key];
+}
+
+PNTR_APP_API bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
+    return app->gamepadButtonsDown[gamepad][button] && !app->gamepadButtonsDownLast[gamepad][button];
+}
+
+PNTR_APP_API bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
+    return app->gamepadButtonsDown[gamepad][button];
+}
+
+PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
+    return !app->gamepadButtonsDown[gamepad][button] && app->gamepadButtonsDownLast[gamepad][button];
+}
+
+PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
+    return !app->gamepadButtonsDown[gamepad][button];
+}
+
+PNTR_APP_API int pntr_app_mouse_x(pntr_app* app) {
+    return app->mouseX;
+}
+
+PNTR_APP_API int pntr_app_mouse_y(pntr_app* app) {
+    return app->mouseY;
+}
+
+PNTR_APP_API int pntr_app_mouse_delta_x(pntr_app* app) {
+    return app->mouseDeltaX;
+}
+
+PNTR_APP_API int pntr_app_mouse_delta_y(pntr_app* app) {
+    return app->mouseDeltaY;
+}
+
+PNTR_APP_API int pntr_app_mouse_wheel(pntr_app* app) {
+    return app->mouseWheel;
+}
+
+PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button) {
+    return app->mouseButtonsDown[button] && !app->mouseButtonsDownLast[button];
+}
+
+PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button) {
+    return app->mouseButtonsDown[button];
+}
+
+PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button) {
+    return !app->mouseButtonsDown[button] && app->mouseButtonsDownLast[button];
+}
+PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button) {
+    return !app->mouseButtonsDown[button];
 }
 
 #ifdef __cplusplus

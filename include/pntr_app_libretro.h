@@ -107,7 +107,7 @@ typedef struct pntr_app_libretro_platform {
     int16_t mouseButtonState[PNTR_APP_MOUSE_BUTTON_LAST];
     int16_t mouseX;
     int16_t mouseY;
-    int16_t gamepadState[4][PNTR_APP_GAMEPAD_BUTTON_LAST];
+    int16_t gamepadState[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
 
     float* audioSamples;
     int16_t* audioSamples2;

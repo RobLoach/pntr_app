@@ -106,7 +106,7 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     // Gamepads
-    for (event.gamepad = 0; event.gamepad < 4; event.gamepad++) {
+    for (event.gamepad = 0; event.gamepad < PNTR_APP_MAX_GAMEPADS; event.gamepad++) {
         if (IsGamepadAvailable(event.gamepad)) {
             for (event.gamepadButton = 1; event.gamepadButton <= PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB; event.gamepadButton++) {
                 if (IsGamepadButtonPressed(event.gamepad, event.gamepadButton)) {
