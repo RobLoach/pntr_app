@@ -614,3 +614,16 @@ void pntr_app_platform_update_delta_time(pntr_app* app) {
     app->deltaTime = (now - platform->timerLastTime) / 1000.0f;
     platform->timerLastTime = now;
 }
+
+PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+    if (app == NULL || title == NULL || app->platform == NULL) {
+        return;
+    }
+
+    pntr_app_sdl_platform* platform = app->platform;
+    if (platform->window == NULL) {
+        return;
+    }
+
+    SDL_SetWindowTitle(platform->window, title);
+}

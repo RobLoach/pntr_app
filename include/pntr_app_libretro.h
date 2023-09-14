@@ -1050,3 +1050,9 @@ void pntr_stop_sound(pntr_sound* sound) {
 void pntr_app_platform_update_delta_time(pntr_app* app) {
     // Nothing, using retro_frame_time_cb() instead.
 }
+
+PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+    // Nothing.
+    (void)app;
+    (void)title;
+}

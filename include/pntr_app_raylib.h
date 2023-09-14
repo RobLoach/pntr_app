@@ -326,3 +326,7 @@ void pntr_stop_sound(pntr_sound* sound) {
 void pntr_app_platform_update_delta_time(pntr_app* app) {
     app->deltaTime = GetFrameTime();
 }
+
+PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+    SetWindowTitle(title);
+}

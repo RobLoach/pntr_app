@@ -28,6 +28,8 @@ bool Init(pntr_app* app) {
     appData->music = pntr_load_sound("resources/music.ogg");
     pntr_play_sound(appData->music, true);
 
+    pntr_app_set_title(app, "pntr_app: Examples");
+
     return true;
 }
 
