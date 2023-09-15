@@ -38,6 +38,22 @@ typedef struct pntr_app_raylib_platform {
 
 pntr_app_raylib_platform* pntr_app_raylib_platform_instance;
 
+Image pntr_app_raylib_screen_image(pntr_app* app) {
+    Image output = { 0 };
+    if (app == NULL) {
+        return output;
+    }
+
+    // Set up the raylib image to match the screen.
+    output.data = app->screen->data;
+    output.width = app->width;
+    output.height = app->height;
+    output.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+    output.mipmaps = 1;
+
+    return output;
+}
+
 pntr_app_mouse_button pntr_app_raylib_mouse_button(int button) {
     switch (button) {
         case MOUSE_BUTTON_LEFT: return PNTR_APP_MOUSE_BUTTON_LEFT;
@@ -139,7 +155,16 @@ bool pntr_app_render(pntr_app* app) {
     pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
 
     // Update the texture with the latest from the pntr screen.
-    UpdateTexture(platform->screenTexture, screen->data);
+    if (!IsTextureReady(platform->screenTexture)) {
+        platform->screenTexture = LoadTextureFromImage(pntr_app_raylib_screen_image(app));
+        if (!IsTextureReady(platform->screenTexture)) {
+            TraceLog(LOG_ERROR, "pntr: Failed to resize screen texture");
+            return false;
+        }
+    }
+    else {
+        UpdateTexture(platform->screenTexture, screen->data);
+    }
 
     BeginDrawing();
         ClearBackground(BLACK);
@@ -163,7 +188,7 @@ bool pntr_app_render(pntr_app* app) {
             (GetScreenWidth() - width) / 2,
             (GetScreenHeight() - height) / 2,
             width, height};
-        Rectangle source = {0, 0, platform->screenImage.width, platform->screenImage.height};
+        Rectangle source = {0, 0, screen->width, screen->height};
         Vector2 origin = {0, 0};
         DrawTexturePro(platform->screenTexture, source, destRect, origin, 0, WHITE);
     EndDrawing();
@@ -208,15 +233,6 @@ bool pntr_app_init(pntr_app* app) {
         SetTargetFPS(app->fps);
     }
 
-    // Set up the raylib image to match the screen.
-    platform->screenImage.data = app->screen->data;
-    platform->screenImage.width = app->width;
-    platform->screenImage.height = app->height;
-    platform->screenImage.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
-    platform->screenImage.mipmaps = 1;
-
-    // Build a Texture off of the screen image.
-    platform->screenTexture = LoadTextureFromImage(platform->screenImage);
     pntr_app_raylib_platform_instance = platform;
 
     // Audio
@@ -329,4 +345,27 @@ void pntr_app_platform_update_delta_time(pntr_app* app) {
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     SetWindowTitle(title);
+}
+
+bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
+    if (app == NULL || app->platform == NULL) {
+        return false;
+    }
+
+    pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
+
+    SetWindowSize(width, height);
+
+    // Unload the screen texture, it'll get rebuilt at next render
+    if (IsTextureReady(platform->screenTexture)) {
+        UnloadTexture(platform->screenTexture);
+    }
+
+    platform->screenTexture.id = 0;
+    platform->screenTexture.width = 0;
+    platform->screenTexture.height = 0;
+    platform->screenTexture.mipmaps = 0;
+    platform->screenTexture.format = 0;
+
+    return true;
 }

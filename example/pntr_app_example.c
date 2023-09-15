@@ -87,6 +87,10 @@ void Event(pntr_app* app, pntr_app_event* event) {
             pntr_play_sound(appData->sound, false);
 
             printf("Key Pressed: %c\n", (char)event->key);
+
+            if (event->key == PNTR_APP_KEY_G) {
+                pntr_app_set_size(app, 700, 400);
+            }
         }
         break;
 

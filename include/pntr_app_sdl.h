@@ -230,6 +230,13 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
 }
 
 void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
+
+    if (platform->texture == NULL) {
+        platform->texture = SDL_CreateTexture(platform->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, app->screen->width, app->screen->height);
+        SDL_SetTextureBlendMode(platform->texture, SDL_BLENDMODE_BLEND);
+        SDL_SetTextureScaleMode(platform->texture, SDL_ScaleModeBest);
+    }
+
     // Update the Texture
     void* pixels;
     int pitch;
@@ -270,8 +277,8 @@ void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
         width, height};
 
     SDL_RenderClear(platform->renderer);
-    SDL_RenderCopy( platform->renderer, platform->texture, NULL, &dstRect );
-    SDL_RenderPresent( platform->renderer );
+    SDL_RenderCopy(platform->renderer, platform->texture, NULL, &dstRect);
+    SDL_RenderPresent(platform->renderer);
 }
 
 bool pntr_app_events(pntr_app* app) {
@@ -356,6 +363,15 @@ bool pntr_app_events(pntr_app* app) {
                 }
             }
             break;
+
+            case SDL_WINDOWEVENT: {
+                if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                    if (platform->texture == NULL) {
+                        SDL_DestroyTexture(platform->texture);
+                        platform->texture = NULL;
+                    }
+                }
+            }
         }
     }
 
@@ -467,6 +483,7 @@ void pntr_app_close(pntr_app* app) {
 
             if (platform->texture != NULL) {
                 SDL_DestroyTexture(platform->texture);
+                platform->texture = NULL;
             }
 
             if (platform->renderer != NULL) {
@@ -626,4 +643,25 @@ PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     }
 
     SDL_SetWindowTitle(platform->window, title);
+}
+
+bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
+    if (app == NULL || app->platform == NULL) {
+        return false;
+    }
+
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    if (platform->window == NULL) {
+        return false;
+    }
+
+    SDL_SetWindowSize(platform->window, width, height);
+
+    // Recreate the screen texture
+    if (platform->texture != NULL) {
+        SDL_DestroyTexture(platform->texture);
+    }
+    platform->texture = NULL;
+
+    return true;
 }

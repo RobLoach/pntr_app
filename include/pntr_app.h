@@ -467,6 +467,9 @@ void pntr_app_close(pntr_app* app);
  */
 void pntr_app_platform_update_delta_time(pntr_app* app);
 
+PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
+bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
+
 #ifdef __cplusplus
 }
 #endif
@@ -666,11 +669,19 @@ PNTR_APP_API inline void* pntr_app_userdata(pntr_app* app) {
 }
 
 PNTR_APP_API inline int pntr_app_width(pntr_app* app) {
-    return app->width;
+    if (app->screen == NULL) {
+        return app->width;
+    }
+
+    return app->screen->width;
 }
 
 PNTR_APP_API inline int pntr_app_height(pntr_app* app) {
-    return app->height;
+    if (app->screen == NULL) {
+        return app->height;
+    }
+
+    return app->screen->height;
 }
 
 PNTR_APP_API inline float pntr_app_delta_time(pntr_app* app) {
@@ -827,6 +838,34 @@ PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_b
 }
 PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button) {
     return !app->mouseButtonsDown[button];
+}
+
+/**
+ * Change the size of the screen.
+ *
+ * @param app The application to act on.
+ * @param width The desired width of the screen.
+ * @param height The desired height of the screen.
+ */
+PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
+    if (width <= 0 || height <= 0) {
+        return false;
+    }
+
+    // Request that the platform resizes the window.
+    if (!_pntr_app_platform_set_size(app, width, height)) {
+        return false;
+    }
+
+    // Resize the internal screen canvas.
+    if (!pntr_image_resize_canvas(app->screen, width, height, 0, 0, PNTR_BLACK)) {
+        return false;
+    }
+
+    app->width = app->screen->width;
+    app->height = app->screen->height;
+
+    return true;
 }
 
 #ifdef __cplusplus
