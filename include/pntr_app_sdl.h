@@ -228,6 +228,32 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
     return PNTR_APP_KEY_INVALID;
 }
 
+SDL_Rect pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_Rect* outRect) {
+    // Find the aspect ratio.
+    float aspect = (float)screen->width / (float)screen->height;
+    if (aspect <= 0) {
+        aspect = (float)screen->height / (float)screen->width;
+    }
+
+    int windowWidth;
+    int windowHeight;
+    SDL_GetRendererOutputSize(platform->renderer, &windowWidth, &windowHeight);
+
+    // Calculate the optimal width/height to display in the screen size.
+    float height = (float)windowHeight;
+    float width = height * aspect;
+    if (width > windowWidth) {
+        height = (float)windowWidth / aspect;
+        width = windowWidth;
+    }
+
+    // Draw the texture in the middle of the screen.
+    outRect->x = (windowWidth - width) / 2;
+    outRect->y = (windowHeight - height) / 2;
+    outRect->w = width;
+    outRect->h = height;
+}
+
 void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
     void* pixels;
     int pitch;
@@ -266,34 +292,21 @@ void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
     }
     SDL_UnlockTexture(platform->texture);
 
-    // Find the aspect ratio.
-    pntr_image* screen = app->screen;
-    float aspect = (float)screen->width / (float)screen->height;
-    if (aspect <= 0) {
-        aspect = (float)screen->height / (float)screen->width;
-    }
-
-    int windowWidth;
-    int windowHeight;
-    SDL_GetRendererOutputSize(platform->renderer, &windowWidth, &windowHeight);
-
-    // Calculate the optimal width/height to display in the screen size.
-    float height = (float)windowHeight;
-    float width = height * aspect;
-    if (width > windowWidth) {
-        height = (float)windowWidth / aspect;
-        width = windowWidth;
-    }
-
-    // Draw the texture in the middle of the screen.
-    SDL_Rect dstRect = {
-        (windowWidth - width) / 2,
-        (windowHeight - height) / 2,
-        width, height};
+    SDL_Rect dstRect;
+    pntr_app_platform_get_destination(app->screen, platform, &dstRect);
 
     SDL_RenderClear(platform->renderer);
     SDL_RenderCopy(platform->renderer, platform->texture, NULL, &dstRect);
     SDL_RenderPresent(platform->renderer);
+}
+
+
+void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event, int x, int y) {
+    SDL_Rect dstRect;
+    pntr_app_platform_get_destination(app->screen, app->platform, &dstRect);
+
+    event->mouseX = (x - dstRect.x) * app->screen->width / dstRect.w;
+    event->mouseY = (y - dstRect.y) * app->screen->height / dstRect.h;
 }
 
 bool pntr_app_events(pntr_app* app) {
@@ -313,10 +326,7 @@ bool pntr_app_events(pntr_app* app) {
 
             case SDL_MOUSEMOTION: {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                pntrEvent.mouseDeltaX = event.motion.xrel;
-                pntrEvent.mouseDeltaY = event.motion.yrel;
-                pntrEvent.mouseX = event.motion.x;
-                pntrEvent.mouseY = event.motion.y;
+                pntr_app_platform_fix_mouse_coordinates(app, &pntrEvent, event.motion.x, event.motion.y);
                 pntrEvent.mouseWheel = 0;
                 pntr_app_process_event(app, &pntrEvent);
             }
@@ -324,8 +334,6 @@ bool pntr_app_events(pntr_app* app) {
 
             case SDL_MOUSEWHEEL: {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-                pntrEvent.mouseX = event.motion.x;
-                pntrEvent.mouseY = event.motion.y;
                 pntrEvent.mouseWheel = event.wheel.y > 0 ? 1 : -1;
                 pntr_app_process_event(app, &pntrEvent);
             }
@@ -337,8 +345,6 @@ bool pntr_app_events(pntr_app* app) {
                 if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
                     pntrEvent.type = (event.type == SDL_MOUSEBUTTONDOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
                     pntrEvent.mouseButton = button;
-                    pntrEvent.mouseX = event.motion.x;
-                    pntrEvent.mouseY = event.motion.y;
                     pntr_app_process_event(app, &pntrEvent);
                 }
             }

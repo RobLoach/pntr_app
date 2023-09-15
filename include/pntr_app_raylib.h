@@ -63,6 +63,36 @@ pntr_app_mouse_button pntr_app_raylib_mouse_button(int button) {
     }
 }
 
+void pntr_app_raylib_destination_rect(pntr_app* app, Rectangle* outRect) {
+    // Find the aspect ratio.
+    float aspect = (float)app->screen->width / (float)app->screen->height;
+    if (aspect <= 0) {
+        aspect = (float)app->screen->height / (float)app->screen->width;
+    }
+
+    // Calculate the optimal width/height to display in the screen size.
+    float height = GetScreenHeight();
+    float width = height * aspect;
+    if (width > GetScreenWidth()) {
+        height = (float)GetScreenWidth() / aspect;
+        width = GetScreenWidth();
+    }
+
+    // Draw the texture in the middle of the screen.
+    outRect->x = (GetScreenWidth() - width) / 2;
+    outRect->y = (GetScreenHeight() - height) / 2;
+    outRect->width = width;
+    outRect->height = height;
+}
+
+void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event) {
+    Rectangle dstRect;
+    pntr_app_raylib_destination_rect(app, &dstRect);
+
+    event->mouseX = (GetMouseX() - dstRect.x) * app->screen->width / dstRect.width;
+    event->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
+}
+
 bool pntr_app_events(pntr_app* app) {
     if (app == NULL) {
         return false;
@@ -86,10 +116,7 @@ bool pntr_app_events(pntr_app* app) {
     Vector2 mouseMove = GetMouseDelta();
     if ((int)mouseMove.x != 0 || (int)mouseMove.y != 0) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-        event.mouseX = GetMouseX();
-        event.mouseY = GetMouseY();
-        event.mouseDeltaX = (int)mouseMove.x;
-        event.mouseDeltaY = (int)mouseMove.y;
+        pntr_app_raylib_fix_mouse_coordinates(app, &event);
         event.mouseWheel = 0;
         pntr_app_process_event(app, &event);
     }
@@ -97,8 +124,6 @@ bool pntr_app_events(pntr_app* app) {
     Vector2 mouseWheel = GetMouseWheelMoveV();
     if (mouseWheel.y != 0) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-        event.mouseX = GetMouseX();
-        event.mouseY = GetMouseY();
         event.mouseWheel = (mouseWheel.y > 0) ? 1 : -1;
         pntr_app_process_event(app, &event);
     }
@@ -115,8 +140,6 @@ bool pntr_app_events(pntr_app* app) {
 
         if (event.type != PNTR_APP_EVENTTYPE_UNKNOWN) {
             event.mouseButton = pntr_app_raylib_mouse_button(i);
-            event.mouseX = GetMouseX();
-            event.mouseY = GetMouseY();
             pntr_app_process_event(app, &event);
         }
     }
@@ -184,10 +207,9 @@ bool pntr_app_render(pntr_app* app) {
         }
 
         // Draw the texture in the middle of the screen.
-        Rectangle destRect = {
-            (GetScreenWidth() - width) / 2,
-            (GetScreenHeight() - height) / 2,
-            width, height};
+        Rectangle destRect;
+        pntr_app_raylib_destination_rect(app, &destRect);
+
         Rectangle source = {0, 0, screen->width, screen->height};
         Vector2 origin = {0, 0};
         DrawTexturePro(platform->screenTexture, source, destRect, origin, 0, WHITE);
@@ -227,7 +249,6 @@ bool pntr_app_init(pntr_app* app) {
         app->platform = NULL;
         return false;
     }
-    SetMouseScale(1.0f / scale, 1.0f / scale);
 
     if (app->fps > 0) {
         SetTargetFPS(app->fps);

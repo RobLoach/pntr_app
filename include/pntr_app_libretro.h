@@ -16,6 +16,11 @@
 // libretro has its own entry point
 #define PNTR_APP_NO_ENTRY
 
+// Audio sample size
+#ifndef PNTR_APP_LIBRETRO_SAMPLES
+    #define PNTR_APP_LIBRETRO_SAMPLES 48000
+#endif
+
 pntr_app* pntr_app_libretro;
 
 static struct retro_log_callback logging;
@@ -348,7 +353,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     // TODO: libretro: Is the FPS correct?
     info->timing = (struct retro_system_timing) {
         .fps = (fps > 0) ? (double)fps : 0.0,
-        .sample_rate = 0.0,
+        .sample_rate = PNTR_APP_LIBRETRO_SAMPLES,
     };
     info->geometry = (struct retro_game_geometry) {
         .base_width   = width,
@@ -505,8 +510,6 @@ bool pntr_app_events(pntr_app* app) {
 
     if (platform->mouseX != event.mouseX || platform->mouseY != event.mouseY) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-        event.mouseDeltaX = event.mouseX - platform->mouseX;
-        event.mouseDeltaY = event.mouseY - platform->mouseY;
         platform->mouseX = event.mouseX;
         platform->mouseY = event.mouseY;
         event.mouseWheel = 0;
@@ -540,8 +543,6 @@ bool pntr_app_events(pntr_app* app) {
         int16_t currentState = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, retroButton);
         if (platform->mouseButtonState[event.mouseButton] != currentState) {
             event.type = (currentState == 0) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
-            event.mouseX = platform->mouseX;
-            event.mouseY = platform->mouseY;
             platform->mouseButtonState[event.mouseButton] = currentState;
 
             // Invoke the event.
@@ -599,9 +600,6 @@ bool pntr_app_init(pntr_app* app) {
     }
 
     // Audio
-    #ifndef PNTR_APP_LIBRETRO_SAMPLES
-    #define PNTR_APP_LIBRETRO_SAMPLES 44100
-    #endif
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
 
     return true;

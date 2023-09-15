@@ -718,22 +718,28 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             app->gamepadButtonsChanged = true;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE:
+            event->mouseDeltaX = app->mouseDeltaX = app->mouseX - event->mouseX;
+            event->mouseDeltaX = app->mouseDeltaY = app->mouseY - event->mouseY;
             app->mouseX = event->mouseX;
             app->mouseY = event->mouseY;
-            app->mouseDeltaX = event->mouseDeltaX;
-            app->mouseDeltaY = event->mouseDeltaY;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
             app->mouseWheel = event->mouseWheel;
             app->mouseWheelChanged = true;
+            event->mouseX = app->mouseX;
+            event->mouseX = app->mouseX;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN:
             app->mouseButtonsDown[event->mouseButton] = true;
             app->mouseButtonsChanged = true;
+            event->mouseX = app->mouseX;
+            event->mouseX = app->mouseX;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP:
             app->mouseButtonsDown[event->mouseButton] = false;
             app->mouseButtonsChanged = true;
+            event->mouseX = app->mouseX;
+            event->mouseX = app->mouseX;
             break;
         default:
             // Not covered here.

@@ -61,6 +61,8 @@ bool Update(pntr_app* app, pntr_image* screen) {
         pntr_draw_rectangle_fill(screen, 10, 10, 80, 40, PNTR_RED);
     }
 
+    pntr_draw_circle(screen, pntr_app_mouse_x(app), pntr_app_mouse_y(app), 5, PNTR_BLACK);
+
     return true;
 }
 
