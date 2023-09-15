@@ -1047,12 +1047,36 @@ void pntr_stop_sound(pntr_sound* sound) {
     audio_mixer_stop(audio->voice);
 }
 
-void pntr_app_platform_update_delta_time(pntr_app* app) {
+bool pntr_app_platform_update_delta_time(pntr_app* app) {
     // Nothing, using retro_frame_time_cb() instead.
+    return true;
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     // Nothing.
     (void)app;
     (void)title;
+}
+
+bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
+    if (app == NULL || app->platform == NULL) {
+        return false;
+    }
+
+    struct retro_game_geometry geometry;
+    geometry.base_width = width;
+    geometry.base_height = height;
+    geometry.max_width = width;
+    geometry.max_height = height;
+    geometry.aspect_ratio = (float)width / (float)height;
+
+    if (!environ_cb) {
+        return false;
+    }
+
+    if (!environ_cb(RETRO_ENVIRONMENT_SET_GEOMETRY, &geometry)) {
+        return false;
+    }
+
+    return true;
 }

@@ -308,13 +308,30 @@ void pntr_stop_sound(pntr_sound* sound) {
     (void)sound;
 }
 
-void pntr_app_platform_update_delta_time(pntr_app* app) {
+bool pntr_app_platform_update_delta_time(pntr_app* app) {
     // TODO: Make CLI delta time get the actual delta time.
     app->deltaTime = (float)app->fps / 1000.0f;
+
+    return true;
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     // Nothing.
     (void)app;
     (void)title;
+}
+
+bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
+    (void)width;
+    (void)height;
+    if (app == NULL || app->platform == NULL) {
+        return false;
+    }
+
+    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    (void)platform;
+
+    // TODO: CLI Resizing in termbox2?
+
+    return true;
 }
