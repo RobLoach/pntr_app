@@ -308,9 +308,11 @@ void pntr_stop_sound(pntr_sound* sound) {
     (void)sound;
 }
 
-void pntr_app_platform_update_delta_time(pntr_app* app) {
+bool pntr_app_platform_update_delta_time(pntr_app* app) {
     // TODO: Make CLI delta time get the actual delta time.
     app->deltaTime = (float)app->fps / 1000.0f;
+
+    return true;
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {

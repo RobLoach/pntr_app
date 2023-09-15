@@ -339,8 +339,9 @@ void pntr_stop_sound(pntr_sound* sound) {
     PlaySound(audio->sound);
 }
 
-void pntr_app_platform_update_delta_time(pntr_app* app) {
+bool pntr_app_platform_update_delta_time(pntr_app* app) {
     app->deltaTime = GetFrameTime();
+    return true;
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {

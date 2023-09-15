@@ -1047,8 +1047,9 @@ void pntr_stop_sound(pntr_sound* sound) {
     audio_mixer_stop(audio->voice);
 }
 
-void pntr_app_platform_update_delta_time(pntr_app* app) {
+bool pntr_app_platform_update_delta_time(pntr_app* app) {
     // Nothing, using retro_frame_time_cb() instead.
+    return true;
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {

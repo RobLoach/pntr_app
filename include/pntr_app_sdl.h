@@ -73,7 +73,6 @@ typedef struct pntr_app_sdl_platform {
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* texture;
-    uint64_t pntr_app_sdl_start;
     uint64_t timerLastTime;
 } pntr_app_sdl_platform;
 
@@ -237,14 +236,16 @@ void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
     }
 
     if (app->screen == NULL) {
-        //SDL_RenderClear(platform->renderer);
+        SDL_RenderClear(platform->renderer);
+        SDL_RenderPresent(platform->renderer);
         return;
     }
 
     if (platform->texture == NULL) {
         platform->texture = SDL_CreateTexture(platform->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, app->screen->width, app->screen->height);
         if (platform->texture == NULL) {
-            //SDL_RenderClear(platform->renderer);
+            SDL_RenderClear(platform->renderer);
+            SDL_RenderPresent(platform->renderer);
             return;
         }
         SDL_SetTextureBlendMode(platform->texture, SDL_BLENDMODE_BLEND);
@@ -253,7 +254,8 @@ void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
 
     // Update the Texture
     if (SDL_LockTexture(platform->texture, NULL, &pixels, &pitch) != 0) {
-        //SDL_RenderClear(platform->renderer);
+        SDL_RenderClear(platform->renderer);
+        SDL_RenderPresent(platform->renderer);
         return;
     }
 
@@ -300,10 +302,6 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-    if (app->fps > 0) {
-        platform->pntr_app_sdl_start = SDL_GetPerformanceCounter();
-    }
-
     pntr_app_event pntrEvent;
     SDL_Event event;
 
@@ -410,9 +408,9 @@ bool pntr_app_render(pntr_app* app) {
 
     // Limit the FPS
     if (app->fps > 0) {
-        uint64_t end = SDL_GetPerformanceCounter();
-        float elapsedMS = (end - platform->pntr_app_sdl_start) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
-        SDL_Delay((1.0f / app->fps) * 1000.0f - elapsedMS);
+        uint64_t end = SDL_GetTicks64();
+        float elapsedMS = (end - platform->timerLastTime) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
+        //SDL_Delay((1.0f / app->fps) * 1000.0f - elapsedMS);
     }
 
     return true;
@@ -639,16 +637,25 @@ void pntr_stop_sound(pntr_sound* sound) {
     #endif
 }
 
-void pntr_app_platform_update_delta_time(pntr_app* app) {
+#include <stdio.h>
+bool pntr_app_platform_update_delta_time(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
-        return;
+        return false;
     }
 
     pntr_app_sdl_platform* platform = app->platform;
 
     uint64_t now = SDL_GetTicks64();
-    app->deltaTime = (now - platform->timerLastTime) / 1000.0f;
-    platform->timerLastTime = now;
+    uint64_t delta = now - platform->timerLastTime;
+
+    // Calculate if it's time to update
+    if (app->fps <= 0 || (delta > (1000.0f / (float)app->fps))) {
+        platform->timerLastTime = now;
+        app->deltaTime = delta / 1000.0f;
+        return true;
+    }
+
+    return false;
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {

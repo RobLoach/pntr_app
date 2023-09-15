@@ -461,11 +461,13 @@ void pntr_app_close(pntr_app* app);
 
 
 /**
- * Asks the platform to update the delta time.
+ * Asks the platform to update the delta time, and indicates if it's time to run an update.
+ *
+ * @return True of false depending on if it's time to run an update frame.
  *
  * @internal
  */
-void pntr_app_platform_update_delta_time(pntr_app* app);
+bool pntr_app_platform_update_delta_time(pntr_app* app);
 
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
@@ -566,10 +568,11 @@ void pntr_app_emscripten_update_loop(void* application) {
     }
 
     // Run the update function.
-    pntr_app_platform_update_delta_time(app);
-    if (app->update(app, app->screen) == false) {
-        emscripten_cancel_main_loop();
-        return;
+    if (pntr_app_platform_update_delta_time(app)) {
+        if (app->update(app, app->screen) == false) {
+            emscripten_cancel_main_loop();
+            return;
+        }
     }
 
     // Render
@@ -625,9 +628,10 @@ int main(int argc, char* argv[]) {
                 }
 
                 // Update
-                pntr_app_platform_update_delta_time(&app);
-                if (!app.update(&app, app.screen)) {
-                    break;
+                if (pntr_app_platform_update_delta_time(&app)) {
+                    if (!app.update(&app, app.screen)) {
+                        break;
+                    }
                 }
 
                 // Render
