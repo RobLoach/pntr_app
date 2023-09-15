@@ -406,13 +406,6 @@ bool pntr_app_render(pntr_app* app) {
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
     pntr_app_render_surface(app, platform);
 
-    // Limit the FPS
-    if (app->fps > 0) {
-        uint64_t end = SDL_GetTicks64();
-        float elapsedMS = (end - platform->timerLastTime) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
-        //SDL_Delay((1.0f / app->fps) * 1000.0f - elapsedMS);
-    }
-
     return true;
 }
 

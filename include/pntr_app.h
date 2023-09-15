@@ -852,7 +852,7 @@ PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button 
  * @param height The desired height of the screen.
  */
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
-    if (width <= 0 || height <= 0) {
+    if (width <= 0 || height <= 0 || app == NULL) {
         return false;
     }
 
