@@ -230,17 +230,30 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
 }
 
 void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
+    void* pixels;
+    int pitch;
+    if (platform->renderer == NULL) {
+        return;
+    }
+
+    if (app->screen == NULL) {
+        //SDL_RenderClear(platform->renderer);
+        return;
+    }
 
     if (platform->texture == NULL) {
         platform->texture = SDL_CreateTexture(platform->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, app->screen->width, app->screen->height);
+        if (platform->texture == NULL) {
+            //SDL_RenderClear(platform->renderer);
+            return;
+        }
         SDL_SetTextureBlendMode(platform->texture, SDL_BLENDMODE_BLEND);
         SDL_SetTextureScaleMode(platform->texture, SDL_ScaleModeBest);
     }
 
     // Update the Texture
-    void* pixels;
-    int pitch;
     if (SDL_LockTexture(platform->texture, NULL, &pixels, &pitch) != 0) {
+        //SDL_RenderClear(platform->renderer);
         return;
     }
 
@@ -365,13 +378,19 @@ bool pntr_app_events(pntr_app* app) {
             break;
 
             case SDL_WINDOWEVENT: {
-                if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
-                    if (platform->texture == NULL) {
-                        SDL_DestroyTexture(platform->texture);
-                        platform->texture = NULL;
+                switch (event.window.event) {
+                    case SDL_WINDOWEVENT_RESIZED:
+                    case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    case SDL_WINDOWEVENT_EXPOSED: {
+                        if (platform->texture != NULL) {
+                            SDL_DestroyTexture(platform->texture);
+                            platform->texture = NULL;
+                        }
                     }
+                    break;
                 }
             }
+            break;
         }
     }
 
