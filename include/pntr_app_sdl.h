@@ -630,7 +630,6 @@ void pntr_stop_sound(pntr_sound* sound) {
     #endif
 }
 
-#include <stdio.h>
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
