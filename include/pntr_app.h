@@ -326,6 +326,12 @@ struct pntr_app {
     bool mouseButtonsDown[PNTR_APP_MOUSE_BUTTON_LAST];
     bool mouseButtonsDownLast[PNTR_APP_MOUSE_BUTTON_LAST];
     bool mouseButtonsChanged;
+
+    // Command Line Arguments
+    int argc;
+    char** argv;
+    void* argFileData;
+    unsigned int argFileDataSize;
 };
 
 typedef void pntr_sound;
@@ -422,6 +428,19 @@ PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_butto
 PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title);
+PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
+
+/**
+ * When the application is passed a file to load, this will retrieve the file argument's file data.
+ *
+ * @note This function can only be called after Init(). The memory is owned by pntr_app, so do not free it.
+ *
+ * @param app The application to act on.
+ * @param size A pointer to an unsigned int that will represent the size in bytes of the memory buffer.
+ *
+ * @return A memory buffer for the file data that was passed in.
+ */
+PNTR_APP_API void* pntr_app_file_data(pntr_app* app, unsigned int* size);
 
 /**
  * Platform callback to initialize the platform.
@@ -468,8 +487,6 @@ void pntr_app_close(pntr_app* app);
  * @internal
  */
 bool pntr_app_platform_update_delta_time(pntr_app* app);
-
-PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
 
 #ifdef __cplusplus
@@ -592,6 +609,9 @@ void pntr_app_emscripten_update_loop(void* application) {
 int main(int argc, char* argv[]) {
     pntr_app app = PNTR_APP_MAIN(argc, argv);
 
+    app.argc = argc;
+    app.argv = argv;
+
     app.screen = pntr_gen_image_color(app.width, app.height, PNTR_BLACK);
     if (app.screen == NULL) {
         app.init = NULL;
@@ -650,8 +670,8 @@ int main(int argc, char* argv[]) {
     // Tell the platform to close.
     pntr_app_close(&app);
 
-    // Clear up any user data.
     pntr_unload_image(app.screen);
+    pntr_unload_memory(app.argFileData);
 
     // Return an error state if update was nullified.
     return (app.update == NULL) ? 1 : 0;
@@ -858,7 +878,7 @@ PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button 
  * @param height The desired height of the screen.
  */
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
-    if (width <= 0 || height <= 0 || app == NULL) {
+    if (app == NULL || width <= 0 || height <= 0) {
         return false;
     }
 
@@ -876,6 +896,23 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
     app->height = app->screen->height;
 
     return true;
+}
+
+void* pntr_app_file_data(pntr_app* app, unsigned int* size) {
+    if (app == NULL) {
+        return NULL;
+    }
+
+    // Load the file data if needed.
+    if (app->argFileData == NULL) {
+        app->argFileData = pntr_load_file(app->argv[1], &app->argFileDataSize);
+    }
+
+    if (size != NULL) {
+        *size = app->argFileDataSize;
+    }
+
+    return app->argFileData;
 }
 
 #ifdef __cplusplus

@@ -322,6 +322,7 @@ void retro_get_system_info(struct retro_system_info *info) {
 
     info->library_version  = "0.0.1";
     info->need_fullpath    = false;
+    // TODO: Add valid_extensions to PNTR_APP_MAIN()
     info->valid_extensions = NULL; // Anything is fine, we don't care.
 }
 
@@ -815,16 +816,6 @@ void retro_frame_time_cb(retro_usec_t usec) {
 }
 
 bool retro_load_game(const struct retro_game_info *info) {
-    // TODO: retro_load_game: Send the entire data buffer to somewhere?
-    int argc = 1;
-    char* argv[2] = {
-        "pntr_app",
-        info != NULL ? (char*)info->path : NULL
-    };
-    if (info != NULL && info->path != NULL) {
-        argc++;
-    }
-
     // Pixel Format
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt)) {
@@ -836,16 +827,26 @@ bool retro_load_game(const struct retro_game_info *info) {
     struct retro_keyboard_callback keyboardCallback;
     keyboardCallback.callback = pntr_app_libretro_keyboard_callback;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback)) {
-        log_cb(RETRO_LOG_INFO, "Failed to set keyboard callback.\n");
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to set keyboard callback.\n");
         return false;
     }
 
     // Set the audio callback.
 	struct retro_audio_callback retro_audio = { retro_audio_cb, audio_set_state };
 	if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &retro_audio)) {
-        log_cb(RETRO_LOG_INFO, "Failed to set audio callback.\n");
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to set audio callback.\n");
         // Don't quit if audio is not supported.
         //return false;
+    }
+
+    // Build the command line arguments.
+    int argc = 1;
+    char* argv[2] = {
+        "pntr_app",
+        info != NULL ? (char*)info->path : NULL
+    };
+    if (info != NULL && info->path != NULL) {
+        argc++;
     }
 
     // Get the pntr_app definition.
@@ -857,13 +858,19 @@ bool retro_load_game(const struct retro_game_info *info) {
         return false;
     }
 
+    // Set up the command line arguments
+    app->argc = argc;
+    app->argv = argv;
+    app->argFileData = (void*)info->data;
+    app->argFileDataSize = (unsigned int)info->size;
+
     // Set up the frame time callback.
     struct retro_frame_time_callback retro_frame_time = {
         retro_frame_time_cb,
         1000000 / app->fps
     };
     if (!environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &retro_frame_time)) {
-        log_cb(RETRO_LOG_INFO, "Failed to set frame time callback.\n");
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to set frame time callback.\n");
     }
 
     // Initialize the libretro platform.

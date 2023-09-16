@@ -274,8 +274,6 @@ void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
             SDL_RenderPresent(platform->renderer);
             return;
         }
-        SDL_SetTextureBlendMode(platform->texture, SDL_BLENDMODE_BLEND);
-        SDL_SetTextureScaleMode(platform->texture, SDL_ScaleModeBest);
     }
 
     // Update the Texture
@@ -435,7 +433,7 @@ bool pntr_app_init(pntr_app* app) {
     }
 
     // Window and Renderer
-    if (SDL_CreateWindowAndRenderer(app->width, app->height, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE, &platform->window, &platform->renderer) == -1) {
+    if (SDL_CreateWindowAndRenderer(app->width * 2, app->height * 2, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE, &platform->window, &platform->renderer) == -1) {
         SDL_Quit();
         pntr_unload_memory(platform);
         app->platform = NULL;
@@ -455,8 +453,6 @@ bool pntr_app_init(pntr_app* app) {
         app->platform = NULL;
         return false;
     }
-    SDL_SetTextureBlendMode(platform->texture, SDL_BLENDMODE_BLEND);
-    SDL_SetTextureScaleMode(platform->texture, SDL_ScaleModeBest);
 
     // GamePads
     for (int i = 0; i < 4; i++) {

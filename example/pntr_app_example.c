@@ -13,6 +13,8 @@ typedef struct AppData {
     pntr_sound* sound;
     pntr_sound* music;
     float velocity;
+
+    pntr_image* image;
 } AppData;
 
 bool Init(pntr_app* app) {

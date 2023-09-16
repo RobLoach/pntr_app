@@ -82,32 +82,35 @@ EMSCRIPTEN
 
 ``` c
 pntr_app Main(int argc, char* argv[]);
-pntr_sound* pntr_load_sound(const char* fileName);
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
-void pntr_unload_sound(pntr_sound* sound);
-void pntr_play_sound(pntr_sound* sound, bool loop);
-void pntr_stop_sound(pntr_sound* sound);
-void* pntr_app_userdata(pntr_app* app);
-void pntr_app_set_userdata(pntr_app* app, void* userData);
-int pntr_app_width(pntr_app* app);
-int pntr_app_height(pntr_app* app);
-float pntr_app_delta_time(pntr_app* app);
-bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
-bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
-bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
-bool pntr_app_key_up(pntr_app* app, pntr_app_key key);
-bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
-bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
-bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
-bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
-int pntr_app_mouse_x(pntr_app* app);
-int pntr_app_mouse_y(pntr_app* app);
-int pntr_app_mouse_delta_x(pntr_app* app);
-int pntr_app_mouse_delta_y(pntr_app* app);
-bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
-bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
-bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
-bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
+PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName);
+PNTR_APP_API pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
+PNTR_APP_API void pntr_unload_sound(pntr_sound* sound);
+PNTR_APP_API void pntr_play_sound(pntr_sound* sound, bool loop);
+PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
+PNTR_APP_API void* pntr_app_userdata(pntr_app* app);
+PNTR_APP_API void pntr_app_set_userdata(pntr_app* app, void* userData);
+PNTR_APP_API int pntr_app_width(pntr_app* app);
+PNTR_APP_API int pntr_app_height(pntr_app* app);
+PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
+PNTR_APP_API bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
+PNTR_APP_API bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
+PNTR_APP_API bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
+PNTR_APP_API bool pntr_app_key_up(pntr_app* app, pntr_app_key key);
+PNTR_APP_API bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+PNTR_APP_API bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+PNTR_APP_API int pntr_app_mouse_x(pntr_app* app);
+PNTR_APP_API int pntr_app_mouse_y(pntr_app* app);
+PNTR_APP_API int pntr_app_mouse_delta_x(pntr_app* app);
+PNTR_APP_API int pntr_app_mouse_delta_y(pntr_app* app);
+PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
+PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
+PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
+PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
+PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title);
+PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
+PNTR_APP_API void* pntr_app_file_data(pntr_app* app, unsigned int* size);
 ```
 
 ## Build
