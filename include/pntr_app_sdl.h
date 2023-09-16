@@ -185,7 +185,7 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
         case SDLK_F8: return PNTR_APP_KEY_F8;
         case SDLK_F9: return PNTR_APP_KEY_F9;
         case SDLK_F10: return PNTR_APP_KEY_F10;
-        case SDLK_F11: return PNTR_APP_KEY_F11;
+        //case SDLK_F11: return PNTR_APP_KEY_F11; // Reserved for fullscreen
         case SDLK_F12: return PNTR_APP_KEY_F12;
         case SDLK_F13: return PNTR_APP_KEY_F13;
         case SDLK_F14: return PNTR_APP_KEY_F14;
@@ -369,6 +369,23 @@ bool pntr_app_events(pntr_app* app) {
                 // Escape key quits.
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     return false;
+                }
+
+                // Fullscreen
+                if (event.key.keysym.sym == SDLK_F11) {
+                    if (event.type == SDL_KEYUP) {
+                        uint32_t windowFlags = SDL_GetWindowFlags(platform->window);
+                        if ((windowFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP) {
+                            SDL_SetWindowFullscreen(platform->window, 0);
+                        }
+                        else {
+                            SDL_SetWindowFullscreen(platform->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                        }
+                        break;
+                    }
+                    else {
+                        break;
+                    }
                 }
 
                 pntrEvent.key = pntr_app_sdl_key(event.key.keysym.sym);

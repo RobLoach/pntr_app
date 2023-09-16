@@ -102,6 +102,14 @@ bool pntr_app_events(pntr_app* app) {
 
     // Keys
     for (event.key = PNTR_APP_KEY_FIRST; event.key < PNTR_APP_KEY_LAST; event.key++) {
+        // Toggle Fullscreen
+        if (event.key == PNTR_APP_KEY_F11) {
+            if (IsKeyReleased(event.key)) {
+                ToggleFullscreen();
+            }
+            continue;
+        }
+
         if (IsKeyPressed(event.key)) {
             event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
             pntr_app_process_event(app, &event);
