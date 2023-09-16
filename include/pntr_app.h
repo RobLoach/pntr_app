@@ -332,6 +332,7 @@ struct pntr_app {
     char** argv;
     void* argFileData;
     unsigned int argFileDataSize;
+    bool argFileDataUnloadOnExit;
 };
 
 typedef void pntr_sound;
@@ -437,10 +438,11 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
  *
  * @param app The application to act on.
  * @param size A pointer to an unsigned int that will represent the size in bytes of the memory buffer.
+ * @param unloadOnExit Whether or not pntr_app should clear the memory on exit. This is useful if another system will be taking ownership of the data.
  *
  * @return A memory buffer for the file data that was passed in.
  */
-PNTR_APP_API void* pntr_app_file_data(pntr_app* app, unsigned int* size);
+PNTR_APP_API void* pntr_app_file_data(pntr_app* app, unsigned int* size, bool unloadOnExit);
 
 /**
  * Platform callback to initialize the platform.
@@ -670,8 +672,12 @@ int main(int argc, char* argv[]) {
     // Tell the platform to close.
     pntr_app_close(&app);
 
+    // Unload any other associated memory
     pntr_unload_image(app.screen);
-    pntr_unload_memory(app.argFileData);
+    if (app.argFileDataUnloadOnExit) {
+        pntr_unload_memory(app.argFileData);
+        app.argFileData = NULL;
+    }
 
     // Return an error state if update was nullified.
     return (app.update == NULL) ? 1 : 0;
@@ -898,7 +904,7 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
     return true;
 }
 
-void* pntr_app_file_data(pntr_app* app, unsigned int* size) {
+void* pntr_app_file_data(pntr_app* app, unsigned int* size, bool unloadOnExit) {
     if (app == NULL) {
         return NULL;
     }
@@ -910,6 +916,10 @@ void* pntr_app_file_data(pntr_app* app, unsigned int* size) {
 
     if (size != NULL) {
         *size = app->argFileDataSize;
+    }
+
+    if (app->argFileData != NULL) {
+        app->argFileDataUnloadOnExit = unloadOnExit;
     }
 
     return app->argFileData;
