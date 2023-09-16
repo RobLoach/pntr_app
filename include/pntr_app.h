@@ -919,7 +919,7 @@ void* pntr_app_file_data(pntr_app* app, unsigned int* size, bool unloadOnExit) {
     }
 
     if (app->argFileData != NULL) {
-        app->argfileDataUnloadOnExit = unloadOnExit;
+        app->argFileDataUnloadOnExit = unloadOnExit;
     }
 
     return app->argFileData;
