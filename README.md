@@ -110,7 +110,7 @@ PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_b
 PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title);
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
-PNTR_APP_API void* pntr_app_file_data(pntr_app* app, unsigned int* size);
+PNTR_APP_API void* pntr_app_file_data(pntr_app* app, unsigned int* size, bool unloadOnExit);
 ```
 
 ## Build
