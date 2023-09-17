@@ -39,14 +39,9 @@ bool pntr_app_render(pntr_app* app) {
     pntr_app_platform_minifb* platform = (pntr_app_platform_minifb*)app->platform;
 
     // Render the screen buffer
-    int state = mfb_update_ex(platform->window, app->screen->data, app->screen->width, app->screen->height);
+    mfb_update_state state = mfb_update_ex(platform->window, app->screen->data, app->screen->width, app->screen->height);
 
-    // Quit if minifb asks to close
-    if (state < 0) {
-        return false;
-    }
-
-    return true;
+    return state == STATE_OK;
 }
 
 void pntr_app_minifb_resize(struct mfb_window *window, int width, int height) {
@@ -74,8 +69,6 @@ void pntr_app_minifb_keyboard(struct mfb_window *window, mfb_key key, mfb_key_mo
 void pntr_app_minifb_mouse_btn(struct mfb_window *window, mfb_mouse_button button, mfb_key_mod mod, bool isPressed) {
     pntr_app* app = (pntr_app*)mfb_get_user_data(window);
 
-    // TODO: MiniFB: Port the mouse coordinates to in-game coordinates mfb_get_window_width() and mfb_get_window_height()
-
     pntr_app_event event;
     event.type = isPressed ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
     event.mouseButton = pntr_app_minifb_mouse_button(button);
@@ -87,9 +80,11 @@ void pntr_app_minifb_mouse_btn(struct mfb_window *window, mfb_mouse_button butto
     }
 }
 
-// Use wisely this event. It can be sent too often
 void pntr_app_minifb_mouse_move(struct mfb_window *window, int x, int y) {
     pntr_app* app = (pntr_app*)mfb_get_user_data(window);
+
+    // TODO: MiniFB: Port the mouse coordinates to in-game coordinates mfb_get_window_width() and mfb_get_window_height()
+    // TODO: MiniFB: Don't do this in the mouse_move callback
 
     pntr_app_event event;
     event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
@@ -98,7 +93,6 @@ void pntr_app_minifb_mouse_move(struct mfb_window *window, int x, int y) {
     pntr_app_process_event(app, &event);
 }
 
-// Mouse wheel
 void pntr_app_minifb_mouse_scroll(struct mfb_window *window, mfb_key_mod mod, float deltaX, float deltaY) {
     pntr_app* app = (pntr_app*)mfb_get_user_data(window);
 
@@ -119,7 +113,6 @@ void pntr_app_minifb_mouse_scroll(struct mfb_window *window, mfb_key_mod mod, fl
 
     pntr_app_process_event(app, &event);
 }
-
 
 bool pntr_app_init(pntr_app* app) {
     if (app == NULL) {
@@ -161,7 +154,6 @@ bool pntr_app_init(pntr_app* app) {
     return true;
 }
 
-#include <stdio.h>
 void pntr_app_close(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return;
