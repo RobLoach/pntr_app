@@ -54,8 +54,10 @@ void Event(pntr_app* app, pntr_app_event* event) {
         }
         break;
 
-        default:
+        default: {
             // Nothing
+        }
+        break;
     }
 }
 
