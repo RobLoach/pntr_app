@@ -100,6 +100,24 @@ if (PNTR_APP_BUILD_EXAMPLE_RAYLIB OR EMSCRIPTEN)
     )
 endif()
 
+# minifb
+if (PNTR_APP_BUILD_EXAMPLE_MINIFB)
+    find_package(minifb QUIET)
+    add_executable(pntr_app_example_minifb
+        pntr_app_example.c
+    )
+    target_compile_definitions(pntr_app_example_minifb PUBLIC PNTR_APP_MINIFB)
+
+    # Platform Updates
+    set_property(TARGET pntr_app_example_minifb PROPERTY C_STANDARD 99)
+
+    target_link_libraries(pntr_app_example_minifb PUBLIC
+        pntr
+        pntr_app
+        minifb
+    )
+endif()
+
 # CLI
 if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
     add_executable(pntr_app_example_cli pntr_app_example.c)

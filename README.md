@@ -9,6 +9,7 @@ Build [pntr](https://github.com/robloach/pntr) applications with the same code f
     - [SDL](https://www.libsdl.org/)
     - Web with [Emscripten](https://emscripten.org/)
     - [libretro](https://www.libretro.com/) and RetroArch
+    - [minifb][https://github.com/emoon/minifb]
     - Command Line Interfaces with [termbox2](https://github.com/termbox/termbox2)
 - Software rendering with [pntr](https://github.com/robloach/pntr)
 - Audio (*.wav* or *.ogg*)
@@ -74,6 +75,7 @@ When compiling, define one of the following to determine which platform you are 
 PNTR_APP_SDL
 PNTR_APP_RAYLIB
 PNTR_APP_LIBRETRO
+PNTR_APP_MINIFB
 PNTR_APP_CLI
 EMSCRIPTEN
 ```
