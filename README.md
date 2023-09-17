@@ -126,6 +126,13 @@ cmake -B build
 cmake --build build
 ```
 
+You can disable building some examples by using...
+
+``` bash
+cmake -B build -DPNTR_APP_BUILD_EXAMPLE_SDL=false -DPNTR_APP_BUILD_EXAMPLE_RAYLIB=false
+cmake --build build
+```
+
 ### libretro
 
 To build the libretro core, use `make`. Depends on [libretro-common](https://github.com/libretro/libretro-common).
