@@ -88,9 +88,9 @@ if (PNTR_APP_BUILD_EXAMPLE_RAYLIB OR EMSCRIPTEN)
     endif()
 
     if (APPLE AND NOT EMSCRIPTEN)
-        target_link_libraries(pntr_app_example_raylib "-framework IOKit")
-        target_link_libraries(pntr_app_example_raylib "-framework Cocoa")
-        target_link_libraries(pntr_app_example_raylib "-framework OpenGL")
+        target_link_libraries(pntr_app_example_raylib PUBLIC "-framework IOKit")
+        target_link_libraries(pntr_app_example_raylib PUBLIC "-framework Cocoa")
+        target_link_libraries(pntr_app_example_raylib PUBLIC "-framework OpenGL")
     endif()
 
     target_link_libraries(pntr_app_example_raylib PUBLIC
