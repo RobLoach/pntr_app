@@ -83,13 +83,32 @@ void pntr_app_minifb_mouse_btn(struct mfb_window *window, mfb_mouse_button butto
 void pntr_app_minifb_mouse_move(struct mfb_window *window, int x, int y) {
     pntr_app* app = (pntr_app*)mfb_get_user_data(window);
 
-    // TODO: MiniFB: Port the mouse coordinates to in-game coordinates mfb_get_window_width() and mfb_get_window_height()
     // TODO: MiniFB: Don't do this in the mouse_move callback
 
     pntr_app_event event;
     event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-    event.mouseX = x;
-    event.mouseY = y;
+
+    // Find the aspect ratio.
+    float aspect = (float)app->screen->width / (float)app->screen->height;
+    if (aspect <= 0) {
+        aspect = (float)app->screen->height / (float)app->screen->width;
+    }
+
+    // Calculate the optimal width/height to display in the screen size.
+    int height = mfb_get_window_height(window);
+    int width = height * aspect;
+    if (width > mfb_get_window_width(window)) {
+        height = mfb_get_window_width(window) / aspect;
+        width = mfb_get_window_width(window);
+    }
+
+    // Draw the texture in the middle of the screen.
+    int outRectx = (mfb_get_window_width(window) - width) / 2;
+    int outRecty = (mfb_get_window_height(window) - height) / 2;
+
+    event.mouseX = (x - outRectx) * app->screen->width / width;
+    event.mouseY = (y - outRecty) * app->screen->height / height;
+
     pntr_app_process_event(app, &event);
 }
 
