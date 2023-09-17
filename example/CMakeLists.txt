@@ -103,6 +103,8 @@ endif()
 # minifb
 if (PNTR_APP_BUILD_EXAMPLE_MINIFB)
     find_package(minifb QUIET)
+    find_package(raudio REQUIRED)
+
     add_executable(pntr_app_example_minifb
         pntr_app_example.c
     )
@@ -115,6 +117,8 @@ if (PNTR_APP_BUILD_EXAMPLE_MINIFB)
         pntr
         pntr_app
         minifb
+        #raudio
+        m
     )
 endif()
 

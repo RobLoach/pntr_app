@@ -5,6 +5,8 @@ typedef struct pntr_app_platform_minifb {
     struct mfb_timer *timer;
 } pntr_app_platform_minifb;
 
+#include "extensions/pntr_app_raudio.h"
+
 pntr_app_mouse_button pntr_app_minifb_mouse_button(mfb_mouse_button button) {
     switch (button) {
         case MOUSE_LEFT: return PNTR_APP_MOUSE_BUTTON_LEFT;
@@ -170,6 +172,9 @@ bool pntr_app_init(pntr_app* app) {
     // Set up the app platform
     app->platform = platform;
 
+    // Audio
+    pntr_app_raudio_init();
+
     return true;
 }
 
@@ -181,34 +186,11 @@ void pntr_app_close(pntr_app* app) {
     pntr_app_platform_minifb* platform = (pntr_app_platform_minifb*)app->platform;
 
     mfb_timer_destroy(platform->timer);
+
+    pntr_app_raudio_close();
+
     pntr_unload_memory(platform);
-
     app->platform = NULL;
-}
-
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
-    // TODO: MiniFB: Add audio support for MiniFB
-    (void)fileName;
-    (void)data;
-    (void)dataSize;
-    return NULL;
-}
-
-void pntr_unload_sound(pntr_sound* sound) {
-    if (sound == NULL) {
-        return;
-    }
-
-    pntr_unload_memory(sound);
-}
-
-void pntr_play_sound(pntr_sound* sound, bool loop) {
-    (void)sound;
-    (void)loop;
-}
-
-void pntr_stop_sound(pntr_sound* sound) {
-    (void)sound;
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
