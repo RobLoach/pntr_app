@@ -11,13 +11,12 @@ EM_JS(pntr_sound*, pntr_load_sound_from_memory, (const char* fileName, unsigned 
 });
 
 EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
-    if (sound && this.pntr_sounds[sound]) {
+    if (this.pntr_sounds[sound]) {
         this.pntr_sounds[sound].loop = loop;
         this.pntr_sounds[sound].play();
     } else {
-        console.log('play: no sound', sound);
+        console.log('play: sound not loaded', sound);
     }
-
 })
 
 EM_JS(void, pntr_stop_sound, (pntr_sound* sound), {
@@ -36,6 +35,12 @@ EM_JS(void, pntr_app_init_js, (const char* title, int width, int height), {
     canvas.width = width;
     canvas.height = height;
     this.pntr_sounds = [];
+    this.ctx = canvas.getContext('2d')
+});
+
+EM_JS(void, pntr_app_render_js, (void* bufferPtr, int width, int height), {
+    const screen = new Uint8ClampedArray(HEAPU8.slice(bufferPtr, bufferPtr + (width * height * 4)));
+    this.ctx.putImageData(new ImageData(screen, width, height), 0, 0);
 });
 
 
@@ -47,6 +52,10 @@ bool pntr_app_render(pntr_app* app) {
     if (app == NULL || app->screen == NULL) {
         return false;
     }
+
+    pntr_image* screen = app->screen;
+    pntr_app_render_js((void*)screen->data, screen->width, screen->height);
+    return true;
 }
 
 bool pntr_app_init(pntr_app* app) {
