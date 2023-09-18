@@ -533,6 +533,8 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
     #include "pntr_app_raylib.h"
 #elif defined(PNTR_APP_LIBRETRO)
     #include "pntr_app_libretro.h"
+#elif defined(PNTR_APP_WEB)
+    #include "pntr_app_web.h"
 #elif defined(PNTR_APP_CLI)
     #include "pntr_app_cli.h"
 #else

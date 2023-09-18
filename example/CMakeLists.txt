@@ -71,7 +71,7 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
 endif()
 
 # raylib or Emscripten
-if (PNTR_APP_BUILD_EXAMPLE_RAYLIB OR EMSCRIPTEN)
+if (PNTR_APP_BUILD_EXAMPLE_RAYLIB)
     find_package(raylib QUIET)
     add_executable(pntr_app_example_raylib
         pntr_app_example.c
@@ -106,4 +106,14 @@ if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
     target_link_libraries(pntr_app_example_cli PUBLIC pntr pntr_app)
     target_compile_definitions(pntr_app_example_cli PUBLIC PNTR_APP_CLI)
     set_property(TARGET pntr_app_example_cli PROPERTY C_STANDARD 99)
+endif()
+
+
+# WEB
+if (PNTR_APP_BUILD_EXAMPLE_WEB AND EMSCRIPTEN)
+    add_executable(pntr_app_example_web pntr_app_example.c)
+    target_link_libraries(pntr_app_example_web PUBLIC pntr pntr_app)
+    target_compile_definitions(pntr_app_example_web PUBLIC PNTR_APP_WEB)
+    set_property(TARGET pntr_app_example_web PROPERTY C_STANDARD 99)
+    set_target_properties(pntr_app_example_web PROPERTIES SUFFIX ".html")
 endif()
