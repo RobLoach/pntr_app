@@ -3,6 +3,7 @@
 typedef struct pntr_app_platform_minifb {
     struct mfb_window* window;
     struct mfb_timer *timer;
+    void* audioSystem;
 } pntr_app_platform_minifb;
 
 pntr_app_mouse_button pntr_app_minifb_mouse_button(mfb_mouse_button button) {
@@ -170,6 +171,8 @@ bool pntr_app_init(pntr_app* app) {
     // Set up the app platform
     app->platform = platform;
 
+    platform->audioSystem = pntr_app_audio_init();
+
     return true;
 }
 
@@ -180,6 +183,7 @@ void pntr_app_close(pntr_app* app) {
 
     pntr_app_platform_minifb* platform = (pntr_app_platform_minifb*)app->platform;
 
+    pntr_app_audio_close(platform->audioSystem);
     mfb_timer_destroy(platform->timer);
     pntr_unload_memory(platform);
 
