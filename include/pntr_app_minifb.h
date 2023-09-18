@@ -186,31 +186,6 @@ void pntr_app_close(pntr_app* app) {
     app->platform = NULL;
 }
 
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
-    // TODO: MiniFB: Add audio support for MiniFB
-    (void)fileName;
-    (void)data;
-    (void)dataSize;
-    return NULL;
-}
-
-void pntr_unload_sound(pntr_sound* sound) {
-    if (sound == NULL) {
-        return;
-    }
-
-    pntr_unload_memory(sound);
-}
-
-void pntr_play_sound(pntr_sound* sound, bool loop) {
-    (void)sound;
-    (void)loop;
-}
-
-void pntr_stop_sound(pntr_sound* sound) {
-    (void)sound;
-}
-
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     pntr_app_platform_minifb* platform = (pntr_app_platform_minifb*)app->platform;
     app->deltaTime = (float)mfb_timer_delta(platform->timer);
