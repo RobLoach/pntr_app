@@ -434,15 +434,14 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
 /**
  * When the application is passed a file to load, this will retrieve the file argument's file data.
  *
- * @note This function can only be called after Init(). The memory is owned by pntr_app, so do not free it.
+ * @note This function can only be called during or after \c init().
  *
  * @param app The application to act on.
  * @param size A pointer to an unsigned int that will represent the size in bytes of the memory buffer.
- * @param unloadOnExit Whether or not pntr_app should clear the memory on exit. This is useful if another system will be taking ownership of the data.
  *
- * @return A memory buffer for the file data that was passed in.
+ * @return A memory buffer for the file data that was passed in. This must be cleared with pntr_unload_file() afterwards.
  */
-PNTR_APP_API void* pntr_app_file_data(pntr_app* app, unsigned int* size, bool unloadOnExit);
+PNTR_APP_API void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
 
 /**
  * Platform callback to initialize the platform.
@@ -906,25 +905,32 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
     return true;
 }
 
-void* pntr_app_file_data(pntr_app* app, unsigned int* size, bool unloadOnExit) {
+void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     if (app == NULL) {
         return NULL;
     }
 
-    // Load the file data if needed.
-    if (app->argFileData == NULL) {
-        app->argFileData = pntr_load_file(app->argv[1], &app->argFileDataSize);
-    }
-
-    if (size != NULL) {
-        *size = app->argFileDataSize;
-    }
-
     if (app->argFileData != NULL) {
-        app->argFileDataUnloadOnExit = unloadOnExit;
+        // Copy the memory as an output, as the application is now responsible to unload it.
+        void* output = pntr_load_memory(app->argFileDataSize);
+        pntr_memory_copy(output, app->argFileData, app->argFileDataSize);
+        if (size != NULL) {
+            *size = app->argFileDataSize;
+        }
+        return output;
     }
 
-    return app->argFileData;
+    // TODO: pntr_app_load_arg_file: Parse the argv correctly so that it grabs an actual file path.
+    if (app->argv[1] != NULL) {
+        unsigned int loadedSize;
+        void* output = pntr_load_file(app->argv[1], &loadedSize);
+        if (size != NULL) {
+            *size = loadedSize;
+        }
+        return output;
+    }
+
+    return NULL;
 }
 
 #ifdef __cplusplus
