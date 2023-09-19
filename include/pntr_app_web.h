@@ -2,45 +2,66 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
-EM_JS(pntr_sound*, pntr_load_sound_from_memory, (const char* fileName, unsigned char* data, unsigned int dataSize), {
-    const bytes = HEAPU8.slice(data, data + dataSize);
-    console.log('load', bytes);
+
+// this is cheap/simple but magic-bytes is better
+// https://github.com/konsumer/emscripten_browser_sound/blob/main/browser_sound.h#L50-L64
+
+EM_JS(pntr_sound*, pntr_load_sound_from_memory, (const char* fileNamePtr, unsigned char* dataPtr, unsigned int dataSize), {
+    const data = HEAPU8.slice(dataPtr, dataPtr + dataSize);
+    const filename = UTF8ToString(fileNamePtr);
+    
+    let type = "application/octet-stream";
+
+    if (filename.endsWith('.ogg')) {
+        type='audio/ogg';
+    }
+    if (filename.endsWith('.wav')) {
+        type='audio/wav';
+    }
+    if (filename.endsWith('.wav')) {
+        type='audio/mp3';
+    }
+
     const sound = new Audio();
-    this.pntr_sounds.push(sound);
-    sound.src = URL.createObjectURL(new Blob([bytes]));
-    return this.pntr_sounds.length - 1;
+    sound.src = URL.createObjectURL(new Blob([data], { type }));
+    Module.pntr_sounds = Module.pntr_sounds || [];
+    Module.pntr_sounds.push(sound);
+    return Module.pntr_sounds.length - 1;
 });
 
 EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
-    if (this.pntr_sounds[sound]) {
-        this.pntr_sounds[sound].loop = loop;
-        this.pntr_sounds[sound].play();
+    if (Module.pntr_sounds[sound]) {
+        Module.pntr_sounds[sound].loop = loop;
+        Module.pntr_sounds[sound].play();
     } else {
-        console.log('play: sound not loaded', sound);
+        console.log('play: sound not loaded', {sound, pntr_sounds: Module.pntr_sound})
     }
 })
 
 EM_JS(void, pntr_stop_sound, (pntr_sound* sound), {
-    this.pntr_sounds[sound].pause();
-    this.pntr_sounds[sound].currentTime = 0;
+    if (Module.pntr_sounds[sound]) {
+        Module.pntr_sounds[sound].pause();
+        Module.pntr_sounds[sound].currentTime = 0;
+    }
 })
 
 EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
-    this.pntr_sounds[sound].pause();
-    this.pntr_sounds[sound].currentTime = 0;
-    revokeObjectURL(this.pntr_sounds[sound].src);
+    if (Module.pntr_sounds[sound]) {
+        Module.pntr_sounds[sound].pause();
+        Module.pntr_sounds[sound].currentTime = 0;
+        revokeObjectURL(Module.pntr_sounds[sound].src);
+    }
 })
 
 EM_JS(void, pntr_app_init_js, (const char* title, int width, int height), {
     document.title = UTF8ToString(title);
     canvas.width = width;
     canvas.height = height;
-    this.pntr_sounds = [];
     this.ctx = canvas.getContext('2d')
 });
 
 EM_JS(void, pntr_app_render_js, (void* bufferPtr, int width, int height), {
-    const screen = new Uint8ClampedArray(HEAPU8.slice(bufferPtr, bufferPtr + (width * height * 4)));
+    const screen = new Uint8ClampedArray(HEAPU8.subarray(bufferPtr, bufferPtr + (width * height * 4)));
     this.ctx.putImageData(new ImageData(screen, width, height), 0, 0);
 });
 
