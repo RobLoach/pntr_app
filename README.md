@@ -75,7 +75,7 @@ PNTR_APP_SDL
 PNTR_APP_RAYLIB
 PNTR_APP_LIBRETRO
 PNTR_APP_CLI
-EMSCRIPTEN
+PNTR_APP_WEB
 ```
 
 ## API
@@ -157,7 +157,7 @@ Build for the web with [Emscripten](https://emscripten.org/) and raylib. Depends
 ``` bash
 emcmake cmake -B build -DPNTR_APP_BUILD_EXAMPLE_SDL=false -DPNTR_APP_BUILD_EXAMPLE_RAYLIB=false -DPNTR_APP_BUILD_EXAMPLE_WEB=true
 emmake make -C build
-emrun build/example/pntr_app_example_web.html
+emrun build/example/index.html
 ```
 
 ## License

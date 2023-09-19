@@ -1,5 +1,6 @@
 #ifdef EMSCRIPTEN
 #include <emscripten.h>
+#include <emscripten/html5.h>
 
 EM_JS(pntr_sound*, pntr_load_sound_from_memory, (const char* fileName, unsigned char* data, unsigned int dataSize), {
     const bytes = HEAPU8.slice(data, data + dataSize);
@@ -58,11 +59,39 @@ bool pntr_app_render(pntr_app* app) {
     return true;
 }
 
+int pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent *keyEvent, void *userData) {
+    pntr_app* app = (pntr_app*)userData;
+    if (app == NULL || app->event == NULL) {
+        return 0;
+    }
+
+    // Build the key event.
+    pntr_app_event event;
+    event.type = (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
+
+    // TODO: keyCode is deprecated, so do some string checkings?
+    event.key = keyEvent->keyCode;
+    if (event.key <= 0) {
+        return 0;
+    }
+
+    // Invoke the event
+    pntr_app_process_event(app, &event);
+
+    // Return false as we're taking over the event.
+    return 1;
+}
+
 bool pntr_app_init(pntr_app* app) {
     if (app == NULL) {
         return false;
     }
     pntr_app_init_js(app->title, app->width, app->height);
+
+    // Keyboard
+    emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, app, true, pntr_app_emscripten_key);
+    emscripten_set_keyup_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, app, true, pntr_app_emscripten_key);
+
     return true;
 }
 
