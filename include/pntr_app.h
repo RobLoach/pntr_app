@@ -53,6 +53,8 @@ extern "C" {
 // pntr configuration
 #if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO)
     #define PNTR_PIXELFORMAT_ARGB
+#elif defined(PNTR_APP_MINIFB)
+    #define PNTR_PIXELFORMAT_ARGB
 #endif
 
 // pntr.h
@@ -532,10 +534,12 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
     #include "pntr_app_raylib.h"
 #elif defined(PNTR_APP_LIBRETRO)
     #include "pntr_app_libretro.h"
+#elif defined(PNTR_APP_MINIFB)
+    #include "pntr_app_minifb.h"
 #elif defined(PNTR_APP_CLI)
     #include "pntr_app_cli.h"
 #else
-    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, or PNTR_APP_LIBRETRO."
+    #warning "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_MINIFB, or PNTR_APP_LIBRETRO."
 #endif
 
 #ifdef __cplusplus
