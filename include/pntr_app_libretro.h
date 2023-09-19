@@ -861,7 +861,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     // Set up the command line arguments
     app->argc = argc;
     app->argv = argv;
-    app->argFileData = info != NULL ? (char*)info->path : NULL;
+    app->argFileData = info != NULL ? (char*)info->data : NULL;
     app->argFileDataSize = info != NULL ? (unsigned int)info->size : 0;
     app->argFileDataUnloadOnExit = false; // libretro owns this data
 
