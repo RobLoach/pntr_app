@@ -139,7 +139,19 @@ bool pntr_app_init(pntr_app* app) {
 void pntr_app_close(pntr_app* app) {
 }
 
+EM_JS(int, pntr_app_emscripten_get_delta_time, (), {
+    if (!this.lastUpdate) {
+        this.lastUpdate = performance.now();
+        this.now = this.lastUpdate;
+    }
+    now = performance.now();
+    const dt = now - this.lastUpdate;
+    this.lastUpdate = now;
+    return dt;
+});
+
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
+    app->deltaTime = pntr_app_emscripten_get_delta_time() / 1000.0f;
     return true;
 }
 
