@@ -28,7 +28,6 @@ bool Init(pntr_app* app) {
     appData->velocity = 60.0f;
     appData->sound = pntr_load_sound("resources/sound.wav");
     appData->music = pntr_load_sound("resources/music.ogg");
-
     pntr_play_sound(appData->music, true);
 
     pntr_app_set_title(app, "pntr_app: Examples");
