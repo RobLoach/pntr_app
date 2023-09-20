@@ -745,8 +745,13 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             app->gamepadButtonsChanged = true;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE:
-            event->mouseDeltaX = app->mouseDeltaX = app->mouseX - event->mouseX;
-            event->mouseDeltaX = app->mouseDeltaY = app->mouseY - event->mouseY;
+            event->mouseDeltaX = app->mouseX - event->mouseX;
+            event->mouseDeltaX = app->mouseY - event->mouseY;
+            if (event->mouseDeltaX == 0 && event->mouseDeltaY == 0) {
+                return;
+            }
+            app->mouseDeltaX = event->mouseDeltaX;
+            app->mouseDeltaY = event->mouseDeltaY;
             app->mouseX = event->mouseX;
             app->mouseY = event->mouseY;
             break;
