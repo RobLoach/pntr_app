@@ -101,10 +101,10 @@ bool pntr_app_render(pntr_app* app) {
     return true;
 }
 
-int pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent *keyEvent, void *userData) {
+EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent *keyEvent, void *userData) {
     pntr_app* app = (pntr_app*)userData;
     if (app == NULL || app->event == NULL) {
-        return 0;
+        return EM_FALSE;
     }
 
     // Build the key event.
@@ -114,14 +114,14 @@ int pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent 
     // TODO: keyCode is deprecated, so do some string checkings?
     event.key = keyEvent->keyCode;
     if (event.key <= 0) {
-        return 0;
+        return EM_FALSE;
     }
 
     // Invoke the event
     pntr_app_process_event(app, &event);
 
     // Return false as we're taking over the event.
-    return 1;
+    return EM_TRUE;
 }
 
 int pntr_app_emscripten_mouse_button_from_emscripten(unsigned short button) {
