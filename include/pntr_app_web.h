@@ -9,47 +9,67 @@
 EM_JS(pntr_sound*, pntr_load_sound_from_memory, (const char* fileNamePtr, unsigned char* dataPtr, unsigned int dataSize), {
     const data = HEAPU8.slice(dataPtr, dataPtr + dataSize);
     const filename = UTF8ToString(fileNamePtr);
-    
+
     let type = "application/octet-stream";
 
     if (filename.endsWith('.ogg')) {
         type='audio/ogg';
     }
-    if (filename.endsWith('.wav')) {
+    else if (filename.endsWith('.wav')) {
         type='audio/wav';
     }
-    if (filename.endsWith('.wav')) {
-        type='audio/mp3';
+    else {
+        return 0;
     }
 
-    const sound = new Audio();
-    sound.src = URL.createObjectURL(new Blob([data], { type }));
+    const audio = new Audio();
+    audio.src = URL.createObjectURL(new Blob([data], { type }));
     Module.pntr_sounds = Module.pntr_sounds || [];
-    Module.pntr_sounds.push(sound);
-    return Module.pntr_sounds.length - 1;
+    Module.pntr_sounds.push(audio);
+
+    // Return the length instead of length - 1, as 0 or NULL is how to depict a failed load.
+    return Module.pntr_sounds.length;
 });
 
 EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
-    if (Module.pntr_sounds[sound]) {
-        Module.pntr_sounds[sound].loop = loop;
-        Module.pntr_sounds[sound].play();
-    } else {
-        console.log('play: sound not loaded', {sound, pntr_sounds: Module.pntr_sound})
+    const audio = Module.pntr_sounds[sound - 1];
+    if (!audio) {
+        console.log('play: sound not loaded', {sound, pntr_sounds: Module.pntr_sound});
+        return;
+    }
+
+    audio.loop = loop;
+    let result = audio.play();
+
+    if (result !== undefined) {
+        // If it couldn't play the audio because of the autoplay policy, try to play it again after waiting a bit.
+        // https://developer.mozilla.org/en-US/docs/Web/Media/Autoplay_guide#example_handling_play_failures
+        result.catch((error) => {
+            if (error.name === "NotAllowedError") {
+                setTimeout(function() {
+                    audio.pause();
+                    audio.currentTime = 0;
+                    pntr_play_sound(sound, loop);
+                }, 500);
+            }
+        });
     }
 })
 
 EM_JS(void, pntr_stop_sound, (pntr_sound* sound), {
-    if (Module.pntr_sounds[sound]) {
-        Module.pntr_sounds[sound].pause();
-        Module.pntr_sounds[sound].currentTime = 0;
+    const audio = Module.pntr_sounds[sound - 1];
+    if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
     }
 })
 
 EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
-    if (Module.pntr_sounds[sound]) {
-        Module.pntr_sounds[sound].pause();
-        Module.pntr_sounds[sound].currentTime = 0;
-        revokeObjectURL(Module.pntr_sounds[sound].src);
+    const audio = Module.pntr_sounds[sound - 1];
+    if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+        revokeObjectURL(audio.src);
     }
 })
 
