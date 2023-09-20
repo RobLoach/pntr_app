@@ -229,7 +229,7 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 }
 
 void pntr_app_set_title(pntr_app* app, const char* title) {
-    pntr_app_init_js(app->title, app->width, app->height);
+    pntr_app_init_js(title, app->width, app->height);
 }
 
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
