@@ -81,6 +81,7 @@ void Close(pntr_app* app) {
 
 void Event(pntr_app* app, pntr_app_event* event) {
     AppData* appData = (AppData*)pntr_app_userdata(app);
+    char message[255];
 
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN: {
@@ -90,7 +91,8 @@ void Event(pntr_app* app, pntr_app_event* event) {
 
             pntr_play_sound(appData->sound, false);
 
-            printf("Key Pressed: %c\n", (char)event->key);
+            sprintf(message, "Key Pressed: %c", (char)event->key);
+            pntr_app_log(PNTR_APP_LOG_INFO, message);
 
             if (event->key == PNTR_APP_KEY_G) {
                 pntr_app_set_size(app, 700, 400);
@@ -102,12 +104,14 @@ void Event(pntr_app* app, pntr_app_event* event) {
             if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = false;
             }
-            printf("Key Released: %c\n", (char)event->key);
+            sprintf(message, "Key Released: %c", (char)event->key);
+            pntr_app_log(PNTR_APP_LOG_INFO, message);
         }
         break;
 
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL: {
-            printf("Wheel: %d\n", event->mouseWheel);
+            sprintf(message, "Wheel: %d", event->mouseWheel);
+            pntr_app_log(PNTR_APP_LOG_INFO, message);
         }
         break;
 
@@ -123,7 +127,8 @@ void Event(pntr_app* app, pntr_app_event* event) {
                 case PNTR_APP_MOUSE_BUTTON_LAST:
                 case PNTR_APP_MOUSE_BUTTON_UNKNOWN: button = "unknown"; break;
             }
-            printf("Mouse Button %s: %s\n", buttonDown, button);
+            sprintf(message, "Mouse Button %s: %s", buttonDown, button);
+            pntr_app_log(PNTR_APP_LOG_INFO, message);
 
             if (event->type == PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN) {
                 if (event->mouseButton == PNTR_APP_MOUSE_BUTTON_LEFT) {
@@ -138,18 +143,21 @@ void Event(pntr_app* app, pntr_app_event* event) {
         break;
 
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            printf("Mouse Move: (%d, %d) | (%d, %d)\n", event->mouseX, event->mouseY, event->mouseDeltaX, event->mouseDeltaY);
+            sprintf(message, "Mouse Move: (%d, %d) | (%d, %d)", event->mouseX, event->mouseY, event->mouseDeltaX, event->mouseDeltaY);
+            pntr_app_log(PNTR_APP_LOG_INFO, message);
         }
         break;
 
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP:
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN: {
-            printf("Gamepad: %d. Button: %d %s\n", event->gamepad, event->gamepadButton, event->type == PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN ? "Pressed" : "Released");
+            sprintf(message, "Gamepad: %d. Button: %d %s", event->gamepad, event->gamepadButton, event->type == PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN ? "Pressed" : "Released");
+            pntr_app_log(PNTR_APP_LOG_INFO, message);
         }
         break;
 
         default: {
-            printf("Unknown event: %d\n", event->type);
+            sprintf(message, "Unknown event: %d", event->type);
+            pntr_app_log(PNTR_APP_LOG_INFO, message);
         }
         break;
     }

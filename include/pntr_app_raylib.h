@@ -23,6 +23,21 @@
     #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
 #endif
 
+#ifndef PNTR_APP_LOG
+    void pntr_app_raylib_log(pntr_app_log_type type, const char* message) {
+        TraceLogLevel logLevel;
+        switch (type) {
+            case PNTR_APP_LOG_INFO: logLevel = LOG_INFO; break;
+            case PNTR_APP_LOG_WARNING: logLevel = LOG_WARNING; break;
+            case PNTR_APP_LOG_ERROR: logLevel = LOG_ERROR; break;
+            case PNTR_APP_LOG_DEBUG: logLevel = LOG_DEBUG; break;
+        }
+
+        TraceLog(logLevel, message);
+    }
+    #define PNTR_APP_LOG pntr_app_raylib_log
+#endif
+
 typedef struct pntr_sound_raylib {
     Sound sound;
     bool loop;

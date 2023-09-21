@@ -289,6 +289,32 @@ static void fallback_log(enum retro_log_level level, const char *fmt, ...) {
     va_end(va);
 }
 
+#ifndef PNTR_APP_LOG
+    void pntr_app_libretro_log(pntr_app_log_type type, const char* message) {
+        #ifdef NDEBUG
+        if (type == PNTR_APP_LOG_DEBUG) {
+            return;
+        }
+        #endif
+
+        enum retro_log_level logLevel;
+        switch (type) {
+            case PNTR_APP_LOG_INFO: logLevel = RETRO_LOG_INFO; break;
+            case PNTR_APP_LOG_WARNING: logLevel = RETRO_LOG_WARN; break;
+            case PNTR_APP_LOG_ERROR: logLevel = RETRO_LOG_ERROR; break;
+            case PNTR_APP_LOG_DEBUG: logLevel = RETRO_LOG_INFO; break;
+        }
+
+        if (log_cb != NULL) {
+            log_cb(logLevel, "%s\n", message);
+        }
+        else {
+            fallback_log(logLevel, "%s\n", message);
+        }
+    }
+    #define PNTR_APP_LOG pntr_app_libretro_log
+#endif
+
 void retro_init(void) {
     // Nothing.
 }

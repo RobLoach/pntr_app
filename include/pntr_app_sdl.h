@@ -68,6 +68,26 @@
     #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) pntr_app_sdl_save_file(fileName, data, bytesToWrite)
 #endif
 
+#ifndef PNTR_APP_LOG
+    void pntr_app_sdl_log(pntr_app_log_type type, const char* message) {
+        switch (type) {
+            case PNTR_APP_LOG_INFO:
+                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+            break;
+            case PNTR_APP_LOG_WARNING:
+                SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+            break;
+            case PNTR_APP_LOG_ERROR:
+                SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+            break;
+            case PNTR_APP_LOG_DEBUG:
+                SDL_LogDebug(SDL_LOG_CATEGORY_APPLICATION, "%s", message);
+            break;
+        }
+    }
+    #define PNTR_APP_LOG pntr_app_sdl_log
+#endif
+
 typedef struct pntr_app_sdl_platform {
     SDL_GameController* gameControllers[PNTR_APP_MAX_GAMEPADS];
     SDL_Window* window;
