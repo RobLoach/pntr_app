@@ -256,6 +256,18 @@ typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP
 } pntr_app_event_type;
 
+/**
+ * Priority level for logging.
+ *
+ * @see pntr_app_log()
+ */
+typedef enum pntr_app_log_type {
+    PNTR_APP_LOG_DEBUG = 0,
+    PNTR_APP_LOG_INFO,
+    PNTR_APP_LOG_WARNING,
+    PNTR_APP_LOG_ERROR
+} pntr_app_log_type;
+
 typedef struct pntr_app_event {
     /**
      * The type of the event that has been pushed.
@@ -412,6 +424,15 @@ PNTR_APP_API int pntr_app_height(pntr_app* app);
  */
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
 
+/**
+ * Log a message.
+ *
+ * @param type The type of message to be logged.
+ * @param message The message.
+ *
+ * @see pntr_app_log_type
+ */
+PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message);
 PNTR_APP_API bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
@@ -547,6 +568,10 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #define PNTR_APP_PNTR_H "pntr.h"
 #endif
 #include PNTR_APP_PNTR_H
+
+#ifndef PNTR_APP_LOG
+    #include <stdio.h> // printf(), sprintf()
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -929,6 +954,27 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     }
 
     return NULL;
+}
+
+PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message) {
+#ifdef PNTR_APP_LOG
+    PNTR_APP_LOG(type, message);
+#else
+    switch (type) {
+        case PNTR_APP_LOG_ERROR:
+            fprintf(stderr, "%s\n", message);
+        break;
+        case PNTR_APP_LOG_DEBUG:
+            // Skip debug messages if NDEBUG is defined.
+            #ifndef NDEBUG
+                printf("%s\n", message);
+            #endif
+        break;
+        default:
+            printf("%s\n", message);
+        break;
+    }
+#endif
 }
 
 #ifdef __cplusplus
