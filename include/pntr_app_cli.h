@@ -14,6 +14,10 @@
 
 #include <stdio.h>
 
+#ifndef PNTR_APP_CLI_LOG_FILE
+#define PNTR_APP_CLI_LOG_FILE "log.txt"
+#endif
+
 typedef struct pntr_app_cli_platform {
     int mouseX;
     int mouseY;
@@ -262,6 +266,13 @@ bool pntr_app_init(pntr_app* app) {
 void pntr_app_close(pntr_app* app) {
     tb_shutdown();
 
+    // Display the log
+    const char* log = pntr_load_file_text(PNTR_APP_CLI_LOG_FILE);
+    if (log != NULL) {
+        printf("%s\n", log);
+        pntr_unload_memory((void*)log);
+    }
+
     if (app == NULL) {
         return;
     }
@@ -335,3 +346,48 @@ bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
 
     return true;
 }
+
+#ifndef PNTR_APP_LOG
+    void pntr_app_cli_log(pntr_app_log_type type, const char* message) {
+        #ifdef NDEBUG
+            if (type == PNTR_APP_LOG_DEBUG) {
+                return;
+            }
+        #endif
+
+        // Write to a log file if using Termbox2
+        if (global.initialized) {
+            // Add the message to the end of the log file.
+            FILE* logFile = fopen(PNTR_APP_CLI_LOG_FILE, "a");
+            if (logFile != NULL) {
+                const char* logType;
+                switch (type) {
+                    case PNTR_APP_LOG_INFO: logType = "INFO"; break;
+                    case PNTR_APP_LOG_WARNING: logType = "WARN"; break;
+                    case PNTR_APP_LOG_ERROR: logType = "ERROR"; break;
+                    case PNTR_APP_LOG_DEBUG: logType = "DEBUG"; break;
+                }
+                fprintf(logFile, "[%s] %s\n", logType, message);
+                fclose(logFile);
+                return;
+            }
+        }
+
+        // Termbox isn't running, so output to the console normally.
+        switch (type) {
+            case PNTR_APP_LOG_ERROR:
+                fprintf(stderr, "%s\n", message);
+            break;
+            case PNTR_APP_LOG_DEBUG:
+                // Skip debug messages if NDEBUG is defined.
+                #ifndef NDEBUG
+                    printf("%s\n", message);
+                #endif
+            break;
+            default:
+                printf("%s\n", message);
+            break;
+        }
+    }
+    #define PNTR_APP_LOG pntr_app_cli_log
+#endif
