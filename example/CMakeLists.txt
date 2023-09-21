@@ -109,7 +109,7 @@ if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
 endif()
 
 
-# WEB
+# Emscripten
 if (PNTR_APP_BUILD_EXAMPLE_WEB AND EMSCRIPTEN)
     add_executable(pntr_app_example_web pntr_app_example.c)
     target_link_libraries(pntr_app_example_web PUBLIC pntr pntr_app)
