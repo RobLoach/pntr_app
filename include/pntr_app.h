@@ -737,10 +737,16 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             app->keysChanged = true;
             break;
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN:
+            if (app->gamepadButtonsDown[event->gamepad][event->gamepadButton]) {
+                return;
+            }
             app->gamepadButtonsDown[event->gamepad][event->gamepadButton] = true;
             app->gamepadButtonsChanged = true;
             break;
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP:
+            if (!app->gamepadButtonsDown[event->gamepad][event->gamepadButton]) {
+                return;
+            }
             app->gamepadButtonsDown[event->gamepad][event->gamepadButton] = false;
             app->gamepadButtonsChanged = true;
             break;

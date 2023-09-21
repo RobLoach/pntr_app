@@ -86,8 +86,108 @@ EM_JS(void, pntr_app_render_js, (void* bufferPtr, int width, int height), {
     this.ctx.putImageData(new ImageData(screen, width, height), 0, 0);
 });
 
+/**
+ * Ports an emscripten gamepad button mapping to pntr.
+ *
+ * @see https://w3c.github.io/gamepad/#remapping
+ */
+pntr_app_gamepad_button pntr_app_emscripten_gamepad_button(int button) {
+    // TODO: emscripten: Determine the correct gamepad mappings? This is an Xbox controller.
+    // TODO: Emscripten: Adopt a "standard" mapping? https://w3c.github.io/gamepad/#remapping
+    switch (button) {
+        case 0: return PNTR_APP_GAMEPAD_BUTTON_A;
+        case 1: return PNTR_APP_GAMEPAD_BUTTON_B;
+        case 2: return PNTR_APP_GAMEPAD_BUTTON_X;
+        case 3: return PNTR_APP_GAMEPAD_BUTTON_Y;
+        case 4: return PNTR_APP_GAMEPAD_BUTTON_LEFT_SHOULDER;
+        case 5: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_SHOULDER;
+        case 6: return PNTR_APP_GAMEPAD_BUTTON_SELECT;
+        case 7: return PNTR_APP_GAMEPAD_BUTTON_START;
+        case 8: return PNTR_APP_GAMEPAD_BUTTON_MENU;
+        case 9: return PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB;
+        case 10: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
+        case 11: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
+        case 12: return PNTR_APP_GAMEPAD_BUTTON_UP;
+        case 13: return PNTR_APP_GAMEPAD_BUTTON_DOWN;
+        case 14: return PNTR_APP_GAMEPAD_BUTTON_RIGHT;
+        case 15: return PNTR_APP_GAMEPAD_BUTTON_LEFT;
+    }
+
+    return PNTR_APP_GAMEPAD_BUTTON_UNKNOWN;
+}
+
+/**
+ * Process the given gamepad event.
+ */
+void pntr_app_emscripten_gamepad_event(pntr_app* app, EmscriptenGamepadEvent* ge, pntr_app_event* event) {
+    // Buttons
+    for (int i = 0; i < ge->numButtons; i++) {
+        event->gamepadButton = pntr_app_emscripten_gamepad_button(i);
+        if (event->gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
+            event->type = (ge->digitalButton[i] == EM_TRUE) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+            pntr_app_process_event(app, event);
+        }
+    }
+
+    // Axis
+    #define PNTR_APP_EMSCRIPTEN_GAMEPAD_AXIS_THRESHOLD 0.6
+    if (ge->numAxes >= 2) {
+        // Left
+        event->gamepadButton = PNTR_APP_GAMEPAD_BUTTON_LEFT;
+        event->type = (ge->axis[0] <= -PNTR_APP_EMSCRIPTEN_GAMEPAD_AXIS_THRESHOLD) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+        pntr_app_process_event(app, event);
+
+        // Right
+        event->gamepadButton = PNTR_APP_GAMEPAD_BUTTON_RIGHT;
+        event->type = (ge->axis[0] >= PNTR_APP_EMSCRIPTEN_GAMEPAD_AXIS_THRESHOLD) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+        pntr_app_process_event(app, event);
+
+        // Up
+        event->gamepadButton = PNTR_APP_GAMEPAD_BUTTON_UP;
+        event->type = (ge->axis[1] <= -PNTR_APP_EMSCRIPTEN_GAMEPAD_AXIS_THRESHOLD) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+        pntr_app_process_event(app, event);
+
+        // Down
+        event->gamepadButton = PNTR_APP_GAMEPAD_BUTTON_DOWN;
+        event->type = (ge->axis[1] >= PNTR_APP_EMSCRIPTEN_GAMEPAD_AXIS_THRESHOLD) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+        pntr_app_process_event(app, event);
+    }
+
+    // TODO: Emscripten: Support Triggers on Axis 2/3, D-Pad on Axis 6/7
+}
+
+/**
+ * Input: Process Gamepad events.
+ *
+ * @see https://emscripten.org/docs/api_reference/html5.h.html#gamepad
+ */
+void pntr_app_emscripten_gamepad(pntr_app* app) {
+    // Ask the browser if Gamepad API is supported.
+    EMSCRIPTEN_RESULT res = emscripten_sample_gamepad_data();
+    if (res != EMSCRIPTEN_RESULT_SUCCESS) {
+        return;
+    }
+
+    // Loop through every available gamepad.
+    pntr_app_event event;
+    int numGamepads =  emscripten_get_num_gamepads();
+    for (event.gamepad = 0; event.gamepad < numGamepads && event.gamepad < PNTR_APP_MAX_GAMEPADS; event.gamepad++) {
+        EmscriptenGamepadEvent ge;
+
+        // Get the active state from the gamepad.
+        if (emscripten_get_gamepad_status(event.gamepad, &ge) != EMSCRIPTEN_RESULT_SUCCESS) {
+            continue;
+        }
+
+        // Process the gamepad events for the given gamepad.
+        pntr_app_emscripten_gamepad_event(app, &ge, &event);
+    }
+}
 
 bool pntr_app_events(pntr_app* app) {
+    // Most emscripten events are handled through callbacks, except for Gamepads.
+    pntr_app_emscripten_gamepad(app);
+
     return true;
 }
 
