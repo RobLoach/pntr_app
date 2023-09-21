@@ -424,6 +424,14 @@ PNTR_APP_API int pntr_app_height(pntr_app* app);
  */
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
 
+/**
+ * Log a message.
+ *
+ * @param type The type of message to be logged.
+ * @param message The message.
+ *
+ * @see pntr_app_log_type
+ */
 PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message);
 PNTR_APP_API bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
