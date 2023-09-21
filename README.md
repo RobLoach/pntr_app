@@ -156,7 +156,7 @@ emmake make platform=emscripten
 Build for the web with [Emscripten](https://emscripten.org/) and raylib. Depends on [emsdk](https://emscripten.org/docs/tools_reference/emsdk.html).
 
 ``` bash
-emcmake cmake -B build -DPNTR_APP_BUILD_EXAMPLE_SDL=false -DPNTR_APP_BUILD_EXAMPLE_RAYLIB=false -DPNTR_APP_BUILD_EXAMPLE_WEB=true
+emcmake cmake -B build -DPNTR_APP_BUILD_EXAMPLE_RAYLIB=false -DPNTR_APP_BUILD_EXAMPLE_WEB=true
 emmake make -C build
 emrun build/example/index.html
 ```
