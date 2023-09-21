@@ -47,8 +47,8 @@ EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
         result.catch((error) => {
             if (error.name === "NotAllowedError") {
                 setTimeout(function() {
-                    audio.pause();
-                    audio.currentTime = 0;
+                    // Current time is in seconds, so we skip forward half a second.
+                    audio.currentTime += 0.5;
                     pntr_play_sound(sound, loop);
                 }, 500);
             }
