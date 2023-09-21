@@ -2,6 +2,30 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
+#ifndef PNTR_APP_LOG
+    #include <emscripten/console.h> // emscripten_console_log(), emscripten_console_warn(), etc.
+
+    /**
+     * Outputs to the console using emscripten's console.h.
+     */
+    void pntr_app_emscripten_log(pntr_app_log_type type, const char* message) {
+        switch (type) {
+            case PNTR_APP_LOG_INFO:
+                emscripten_console_log(message);
+            break;
+            case PNTR_APP_LOG_WARNING:
+                emscripten_console_warn(message);
+            break;
+            case PNTR_APP_LOG_ERROR:
+                emscripten_console_error(message);
+            break;
+            case PNTR_APP_LOG_DEBUG:
+                emscripten_dbg(message);
+            break;
+        }
+    }
+    #define PNTR_APP_LOG pntr_app_emscripten_log
+#endif
 
 // this is cheap/simple but magic-bytes is better
 // https://github.com/konsumer/emscripten_browser_sound/blob/main/browser_sound.h#L50-L64
