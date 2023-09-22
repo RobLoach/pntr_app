@@ -100,11 +100,11 @@ bool Update(pntr_app* app, pntr_image* screen) {
     AppData* appData = (AppData*)pntr_app_userdata(app);
 
     // Clear the screen
-    pntr_clear_background(screen, PNTR_WHITE);
+    pntr_clear_background(screen, PNTR_BLACK);
 
     // Draw some text
-    pntr_draw_text(screen, appData->font, "pntr_app", 8, 4, PNTR_BLACK);
-    pntr_draw_text(screen, appData->font, "Tests Passed", 1, 13, PNTR_BLACK);
+    pntr_draw_text(screen, appData->font, "pntr_app", 7, 4, PNTR_WHITE);
+    pntr_draw_text(screen, appData->font, "Tests Passed", 1, 13, PNTR_WHITE);
 
     // Finish running after one loop
     if (appData->timePassed != 0) {
