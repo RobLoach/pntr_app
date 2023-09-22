@@ -1,6 +1,7 @@
 #include <stdlib.h> // realloc
 
 // Termbox2
+#ifndef PNTR_APP_DISABLE_TERMBOX
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
@@ -11,6 +12,7 @@
 #define TB_IMPL
 #include "external/termbox2.h"
 #pragma GCC diagnostic pop
+#endif
 
 #include <stdio.h>
 
@@ -25,6 +27,14 @@ typedef struct pntr_app_cli_platform {
     bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
     bool termbox;
 } pntr_app_cli_platform;
+
+bool pntr_app_cli_termbox() {
+    #ifndef PNTR_APP_DISABLE_TERMBOX
+        return global.initialized;
+    #else
+        return false;
+    #endif
+}
 
 bool pntr_app_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
@@ -52,6 +62,7 @@ bool pntr_app_events(pntr_app* app) {
         }
     }
 
+    #ifndef PNTR_APP_DISABLE_TERMBOX
     struct tb_event ev;
 
     // Delay for an input event, for maintain the FPS.
@@ -184,6 +195,7 @@ bool pntr_app_events(pntr_app* app) {
         }
         break;
     }
+    #endif
 
     return true;
 }
@@ -197,6 +209,7 @@ bool pntr_app_render(pntr_app* app) {
     }
 
     pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    (void)platform;
     pntr_image* screen = app->screen;
 
     #ifdef PNTR_APP_CLI_REVERSE_CHARACTERS
@@ -216,9 +229,11 @@ bool pntr_app_render(pntr_app* app) {
     }
 
     // Clear the terminal
-    if (!platform->termbox) {
-        send_clear();
-    }
+    #ifndef PNTR_APP_DISABLE_TERMBOX
+        if (pntr_app_cli_termbox()) {
+            send_clear();
+        }
+    #endif
 
     // Output the characters to the terminal
     for (int y = 0; y < app->height; y++) {
@@ -226,21 +241,25 @@ bool pntr_app_render(pntr_app* app) {
             unsigned char pixelIntensity = grayscaleImage[y * app->width + x];
             int char_index = (int)pixelIntensity * (charactersLen - 1) / 255;
 
+            #ifndef PNTR_APP_DISABLE_TERMBOX
             // TODO: Have it set the background/foreground color
             tb_set_cell(x, y, (uint32_t)characters[char_index], TB_WHITE, TB_BLACK); //TB_BLACK, TB_WHITE);
+            #endif
 
-            if (!platform->termbox) {
+            if (!pntr_app_cli_termbox()) {
                 printf("%c", characters[char_index]);
             }
         }
 
-        if (!platform->termbox) {
+        if (!pntr_app_cli_termbox()) {
             printf("\n");
         }
     }
 
+    #ifndef PNTR_APP_DISABLE_TERMBOX
     // Present the characters
     tb_present();
+    #endif
 
     pntr_unload_memory(grayscaleImage);
 
@@ -253,18 +272,20 @@ bool pntr_app_init(pntr_app* app) {
     }
 
     app->platform = pntr_load_memory(sizeof(pntr_app_cli_platform));
-    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    //pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
 
-    //platform->termbox = tb_init_file("TermTox failure test") == TB_OK;
-    platform->termbox = tb_init() == TB_OK;
-
-    tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
+    #ifndef PNTR_APP_DISABLE_TERMBOX
+        tb_init();
+        tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
+    #endif
 
     return true;
 }
 
 void pntr_app_close(pntr_app* app) {
+    #ifndef PNTR_APP_DISABLE_TERMBOX
     tb_shutdown();
+    #endif
 
     // Display the log
     const char* log = pntr_load_file_text(PNTR_APP_CLI_LOG_FILE);
@@ -282,35 +303,14 @@ void pntr_app_close(pntr_app* app) {
 }
 
 pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
-    (void)fileName;
-    if (data == NULL || dataSize <= 0) {
-        return NULL;
-    }
-
-    pntr_sound* sound = (pntr_sound*)pntr_load_memory(sizeof(char));
-    if (sound == NULL) {
-        pntr_unload_file(data);
-        return NULL;
-    }
-
-    // TODO: Audio support for the Command line interface?
-    // We just free the memory as there is no CLI audio right now.
-    pntr_unload_file(data);
-
-    // Save the path within the sound.
-    return sound;
+    return NULL;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
-    if (sound == NULL) {
-        return;
-    }
-
-    pntr_unload_memory(sound);
+    (void)sound;
 }
 
 void pntr_play_sound(pntr_sound* sound, bool loop) {
-    // Do nothing.
     (void)sound;
     (void)loop;
 }
@@ -327,9 +327,11 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
-    // Nothing.
-    (void)app;
-    (void)title;
+    if (app == NULL) {
+        return;
+    }
+
+    app->title = title;
 }
 
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
@@ -356,7 +358,7 @@ bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
         #endif
 
         // Write to a log file if using Termbox2
-        if (global.initialized) {
+        if (pntr_app_cli_termbox()) {
             // Add the message to the end of the log file.
             FILE* logFile = fopen(PNTR_APP_CLI_LOG_FILE, "a");
             if (logFile != NULL) {
