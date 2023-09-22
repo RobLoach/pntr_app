@@ -454,6 +454,14 @@ PNTR_APP_API const char* pntr_app_title(pntr_app* app);
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
 
 /**
+ * Sets the application's window icon.
+ *
+ * @param app The application to act on.
+ * @param icon The icon for the image.
+ */
+PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
+
+/**
  * When the application is passed a file to load, this will retrieve the file argument's file data.
  *
  * @note This function can only be called during or after \c init().

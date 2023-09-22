@@ -1092,6 +1092,12 @@ PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     app->title = title;
 }
 
+PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
+    // Nothing.
+    (void)app;
+    (void)icon;
+}
+
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     if (app == NULL || app->platform == NULL) {
         return false;

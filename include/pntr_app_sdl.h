@@ -689,6 +689,23 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
     return false;
 }
 
+PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
+    if (app == NULL || icon == NULL || app->platform == NULL) {
+        return;
+    }
+
+    pntr_app_sdl_platform* platform = app->platform;
+    if (platform->window == NULL) {
+        return;
+    }
+
+    SDL_Surface* sdlIcon = SDL_CreateRGBSurfaceWithFormatFrom(icon->data, icon->width, icon->height, 4, icon->pitch, SDL_PIXELFORMAT_ARGB8888);
+    if (sdlIcon != NULL) {
+        SDL_SetWindowIcon(platform->window, sdlIcon);
+        SDL_FreeSurface(sdlIcon);
+    }
+}
+
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     if (app == NULL || title == NULL || app->platform == NULL) {
         return;
