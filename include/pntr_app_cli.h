@@ -25,16 +25,7 @@ typedef struct pntr_app_cli_platform {
     int mouseY;
     bool keysEnabled[PNTR_APP_KEY_LAST];
     bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
-    bool termbox;
 } pntr_app_cli_platform;
-
-bool pntr_app_cli_termbox() {
-    #ifndef PNTR_APP_DISABLE_TERMBOX
-        return global.initialized;
-    #else
-        return false;
-    #endif
-}
 
 bool pntr_app_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
@@ -229,10 +220,8 @@ bool pntr_app_render(pntr_app* app) {
     }
 
     // Clear the terminal
-    #ifndef PNTR_APP_DISABLE_TERMBOX
-        if (pntr_app_cli_termbox()) {
-            send_clear();
-        }
+    #ifdef PNTR_APP_DISABLE_TERMBOX
+        printf("\e[1;1H\e[2J");
     #endif
 
     // Output the characters to the terminal
@@ -242,23 +231,21 @@ bool pntr_app_render(pntr_app* app) {
             int char_index = (int)pixelIntensity * (charactersLen - 1) / 255;
 
             #ifndef PNTR_APP_DISABLE_TERMBOX
-            // TODO: Have it set the background/foreground color
-            tb_set_cell(x, y, (uint32_t)characters[char_index], TB_WHITE, TB_BLACK); //TB_BLACK, TB_WHITE);
-            #endif
-
-            if (!pntr_app_cli_termbox()) {
+                // TODO: Have it set the background/foreground color
+                tb_set_cell(x, y, (uint32_t)characters[char_index], TB_WHITE, TB_BLACK); //TB_BLACK, TB_WHITE);
+            #else
                 printf("%c", characters[char_index]);
-            }
+            #endif
         }
 
-        if (!pntr_app_cli_termbox()) {
+        #ifdef PNTR_APP_DISABLE_TERMBOX
             printf("\n");
-        }
+        #endif
     }
 
     #ifndef PNTR_APP_DISABLE_TERMBOX
-    // Present the characters
-    tb_present();
+        // Present the characters
+        tb_present();
     #endif
 
     pntr_unload_memory(grayscaleImage);
@@ -277,6 +264,12 @@ bool pntr_app_init(pntr_app* app) {
     #ifndef PNTR_APP_DISABLE_TERMBOX
         tb_init();
         tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
+
+        // Clear out the logging file.
+        FILE* file = fopen(PNTR_APP_CLI_LOG_FILE, "w");
+        if (file != NULL) {
+            fclose(file);
+        }
     #endif
 
     return true;
@@ -284,15 +277,15 @@ bool pntr_app_init(pntr_app* app) {
 
 void pntr_app_close(pntr_app* app) {
     #ifndef PNTR_APP_DISABLE_TERMBOX
-    tb_shutdown();
-    #endif
+        tb_shutdown();
 
-    // Display the log
-    const char* log = pntr_load_file_text(PNTR_APP_CLI_LOG_FILE);
-    if (log != NULL) {
-        printf("%s\n", log);
-        pntr_unload_memory((void*)log);
-    }
+        // Display the log
+        const char* log = pntr_load_file_text(PNTR_APP_CLI_LOG_FILE);
+        if (log != NULL) {
+            printf("%s\n", log);
+            pntr_unload_memory((void*)log);
+        }
+    #endif
 
     if (app == NULL) {
         return;
@@ -303,6 +296,9 @@ void pntr_app_close(pntr_app* app) {
 }
 
 pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
+    (void)fileName;
+    (void)data;
+    (void)dataSize;
     return NULL;
 }
 
@@ -321,7 +317,7 @@ void pntr_stop_sound(pntr_sound* sound) {
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     // TODO: Make CLI delta time get the actual delta time.
-    app->deltaTime = (float)app->fps / 1000.0f;
+    app->deltaTime = 1.0f / (float)app->fps;
 
     return true;
 }
@@ -358,7 +354,7 @@ bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
         #endif
 
         // Write to a log file if using Termbox2
-        if (pntr_app_cli_termbox()) {
+        #ifndef PNTR_APP_DISABLE_TERMBOX
             // Add the message to the end of the log file.
             FILE* logFile = fopen(PNTR_APP_CLI_LOG_FILE, "a");
             if (logFile != NULL) {
@@ -373,7 +369,7 @@ bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
                 fclose(logFile);
                 return;
             }
-        }
+        #endif
 
         // Termbox isn't running, so output to the console normally.
         switch (type) {
