@@ -389,6 +389,10 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+    if (app != NULL) {
+        app->title = title;
+    }
+
     SetWindowTitle(title);
 }
 

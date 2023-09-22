@@ -1,6 +1,7 @@
 #include <stdlib.h> // realloc
 
 // Termbox2
+#ifndef PNTR_APP_DISABLE_TERMBOX
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
@@ -11,6 +12,7 @@
 #define TB_IMPL
 #include "external/termbox2.h"
 #pragma GCC diagnostic pop
+#endif
 
 #include <stdio.h>
 
@@ -23,7 +25,6 @@ typedef struct pntr_app_cli_platform {
     int mouseY;
     bool keysEnabled[PNTR_APP_KEY_LAST];
     bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
-    bool termbox;
 } pntr_app_cli_platform;
 
 bool pntr_app_events(pntr_app* app) {
@@ -52,6 +53,7 @@ bool pntr_app_events(pntr_app* app) {
         }
     }
 
+    #ifndef PNTR_APP_DISABLE_TERMBOX
     struct tb_event ev;
 
     // Delay for an input event, for maintain the FPS.
@@ -184,6 +186,7 @@ bool pntr_app_events(pntr_app* app) {
         }
         break;
     }
+    #endif
 
     return true;
 }
@@ -197,6 +200,7 @@ bool pntr_app_render(pntr_app* app) {
     }
 
     pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    (void)platform;
     pntr_image* screen = app->screen;
 
     #ifdef PNTR_APP_CLI_REVERSE_CHARACTERS
@@ -216,9 +220,9 @@ bool pntr_app_render(pntr_app* app) {
     }
 
     // Clear the terminal
-    if (!platform->termbox) {
-        send_clear();
-    }
+    #ifdef PNTR_APP_DISABLE_TERMBOX
+        printf("\e[1;1H\e[2J");
+    #endif
 
     // Output the characters to the terminal
     for (int y = 0; y < app->height; y++) {
@@ -226,21 +230,23 @@ bool pntr_app_render(pntr_app* app) {
             unsigned char pixelIntensity = grayscaleImage[y * app->width + x];
             int char_index = (int)pixelIntensity * (charactersLen - 1) / 255;
 
-            // TODO: Have it set the background/foreground color
-            tb_set_cell(x, y, (uint32_t)characters[char_index], TB_WHITE, TB_BLACK); //TB_BLACK, TB_WHITE);
-
-            if (!platform->termbox) {
+            #ifndef PNTR_APP_DISABLE_TERMBOX
+                // TODO: Have it set the background/foreground color
+                tb_set_cell(x, y, (uint32_t)characters[char_index], TB_WHITE, TB_BLACK); //TB_BLACK, TB_WHITE);
+            #else
                 printf("%c", characters[char_index]);
-            }
+            #endif
         }
 
-        if (!platform->termbox) {
+        #ifdef PNTR_APP_DISABLE_TERMBOX
             printf("\n");
-        }
+        #endif
     }
 
-    // Present the characters
-    tb_present();
+    #ifndef PNTR_APP_DISABLE_TERMBOX
+        // Present the characters
+        tb_present();
+    #endif
 
     pntr_unload_memory(grayscaleImage);
 
@@ -253,25 +259,33 @@ bool pntr_app_init(pntr_app* app) {
     }
 
     app->platform = pntr_load_memory(sizeof(pntr_app_cli_platform));
-    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    //pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
 
-    //platform->termbox = tb_init_file("TermTox failure test") == TB_OK;
-    platform->termbox = tb_init() == TB_OK;
+    #ifndef PNTR_APP_DISABLE_TERMBOX
+        tb_init();
+        tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
 
-    tb_set_input_mode(TB_INPUT_ESC | TB_INPUT_MOUSE);
+        // Clear out the logging file.
+        FILE* file = fopen(PNTR_APP_CLI_LOG_FILE, "w");
+        if (file != NULL) {
+            fclose(file);
+        }
+    #endif
 
     return true;
 }
 
 void pntr_app_close(pntr_app* app) {
-    tb_shutdown();
+    #ifndef PNTR_APP_DISABLE_TERMBOX
+        tb_shutdown();
 
-    // Display the log
-    const char* log = pntr_load_file_text(PNTR_APP_CLI_LOG_FILE);
-    if (log != NULL) {
-        printf("%s\n", log);
-        pntr_unload_memory((void*)log);
-    }
+        // Display the log
+        const char* log = pntr_load_file_text(PNTR_APP_CLI_LOG_FILE);
+        if (log != NULL) {
+            printf("%s\n", log);
+            pntr_unload_memory((void*)log);
+        }
+    #endif
 
     if (app == NULL) {
         return;
@@ -283,34 +297,16 @@ void pntr_app_close(pntr_app* app) {
 
 pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
     (void)fileName;
-    if (data == NULL || dataSize <= 0) {
-        return NULL;
-    }
-
-    pntr_sound* sound = (pntr_sound*)pntr_load_memory(sizeof(char));
-    if (sound == NULL) {
-        pntr_unload_file(data);
-        return NULL;
-    }
-
-    // TODO: Audio support for the Command line interface?
-    // We just free the memory as there is no CLI audio right now.
-    pntr_unload_file(data);
-
-    // Save the path within the sound.
-    return sound;
+    (void)data;
+    (void)dataSize;
+    return NULL;
 }
 
 void pntr_unload_sound(pntr_sound* sound) {
-    if (sound == NULL) {
-        return;
-    }
-
-    pntr_unload_memory(sound);
+    (void)sound;
 }
 
 void pntr_play_sound(pntr_sound* sound, bool loop) {
-    // Do nothing.
     (void)sound;
     (void)loop;
 }
@@ -321,15 +317,17 @@ void pntr_stop_sound(pntr_sound* sound) {
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     // TODO: Make CLI delta time get the actual delta time.
-    app->deltaTime = (float)app->fps / 1000.0f;
+    app->deltaTime = 1.0f / (float)app->fps;
 
     return true;
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
-    // Nothing.
-    (void)app;
-    (void)title;
+    if (app == NULL) {
+        return;
+    }
+
+    app->title = title;
 }
 
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
@@ -356,7 +354,7 @@ bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
         #endif
 
         // Write to a log file if using Termbox2
-        if (global.initialized) {
+        #ifndef PNTR_APP_DISABLE_TERMBOX
             // Add the message to the end of the log file.
             FILE* logFile = fopen(PNTR_APP_CLI_LOG_FILE, "a");
             if (logFile != NULL) {
@@ -371,7 +369,7 @@ bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
                 fclose(logFile);
                 return;
             }
-        }
+        #endif
 
         // Termbox isn't running, so output to the console normally.
         switch (type) {
