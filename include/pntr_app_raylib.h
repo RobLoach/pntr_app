@@ -46,7 +46,6 @@ typedef struct pntr_sound_raylib {
 #define PNTR_APP_RAYLIB_MAX_SOUNDS 100
 
 typedef struct pntr_app_raylib_platform {
-    Image screenImage;
     Texture screenTexture;
     pntr_sound_raylib* sounds[PNTR_APP_RAYLIB_MAX_SOUNDS];
 } pntr_app_raylib_platform;
@@ -389,7 +388,26 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+    if (app != NULL) {
+        app->title = title;
+    }
+
     SetWindowTitle(title);
+}
+
+PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
+    if (app == NULL || icon == NULL) {
+        return;
+    }
+
+    Image image;
+    image.data = icon->data;
+    image.width = icon->width;
+    image.height = icon->height;
+    image.mipmaps = 1;
+    image.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+
+    SetWindowIcon(image);
 }
 
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {

@@ -1085,9 +1085,17 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+    if (app == NULL) {
+        return;
+    }
+
+    app->title = title;
+}
+
+PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
     // Nothing.
     (void)app;
-    (void)title;
+    (void)icon;
 }
 
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {

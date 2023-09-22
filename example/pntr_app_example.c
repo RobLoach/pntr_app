@@ -31,6 +31,7 @@ bool Init(pntr_app* app) {
     pntr_play_sound(appData->music, true);
 
     pntr_app_set_title(app, "pntr_app: Examples");
+    pntr_app_set_icon(app, appData->logo);
 
     return true;
 }

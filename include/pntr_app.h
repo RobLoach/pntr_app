@@ -450,7 +450,16 @@ PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_butto
 PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title);
+PNTR_APP_API const char* pntr_app_title(pntr_app* app);
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
+
+/**
+ * Sets the application's window icon.
+ *
+ * @param app The application to act on.
+ * @param icon The icon for the image.
+ */
+PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 
 /**
  * When the application is passed a file to load, this will retrieve the file argument's file data.
@@ -988,6 +997,14 @@ PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message) {
         break;
     }
 #endif
+}
+
+PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
+    if (app == NULL) {
+        return NULL;
+    }
+
+    return app->title;
 }
 
 #ifdef __cplusplus
