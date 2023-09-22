@@ -694,6 +694,7 @@ PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
         return;
     }
 
+    app->title = title;
     pntr_app_sdl_platform* platform = app->platform;
     if (platform->window == NULL) {
         return;
