@@ -63,6 +63,7 @@ EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
     }
 
     audio.loop = loop;
+    audio.currentTime = 0;
     let result = audio.play();
 
     if (result !== undefined) {
@@ -71,8 +72,7 @@ EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
         result.catch((error) => {
             if (error.name === "NotAllowedError") {
                 setTimeout(function() {
-                    // Current time is in seconds, so we skip forward half a second.
-                    audio.currentTime += 0.5;
+                    // TODO: Figure out a clean way to handle delayed sounds with currentTime.
                     pntr_play_sound(sound, loop);
                 }, 500);
             }
