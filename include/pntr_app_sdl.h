@@ -248,6 +248,9 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
     return PNTR_APP_KEY_INVALID;
 }
 
+// Random Number Generator
+#include "extensions/pntr_app_random_stdlib.h"
+
 SDL_Rect pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_Rect* outRect) {
     // Find the aspect ratio.
     float aspect = (float)screen->width / (float)screen->height;
@@ -427,6 +430,15 @@ bool pntr_app_events(pntr_app* app) {
                         }
                     }
                     break;
+                }
+            }
+            break;
+
+            case SDL_DROPFILE: {
+                pntrEvent.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
+                pntrEvent.fileDropped = event.drop.file;
+                if (pntrEvent.fileDropped != NULL) {
+                    pntr_app_process_event(app, &pntrEvent);
                 }
             }
             break;

@@ -185,6 +185,17 @@ bool pntr_app_events(pntr_app* app) {
         }
     }
 
+    // File Dropped
+    if (IsFileDropped()) {
+        event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
+        FilePathList droppedFiles = LoadDroppedFiles();
+        for (int i = 0; i < droppedFiles.count; i++) {
+            event.fileDropped = droppedFiles.paths[i];
+            pntr_app_process_event(app, &event);
+        }
+        UnloadDroppedFiles(droppedFiles);
+    }
+
     return true;
 }
 
@@ -380,6 +391,18 @@ void pntr_stop_sound(pntr_sound* sound) {
     pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
     audio->loop = false;
     PlaySound(audio->sound);
+}
+
+PNTR_APP_API inline int pntr_app_random(int min, int max) {
+    return GetRandomValue(min, max);
+}
+
+PNTR_APP_API inline void pntr_app_random_seed(unsigned int seed) {
+    // When raylib initializes, it seeds the random number generator for us.
+    // We will not need to call SetRandomSeed() again because of that.
+    if (seed != 0) {
+        SetRandomSeed(seed);
+    }
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {

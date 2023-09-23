@@ -243,6 +243,7 @@ typedef enum pntr_app_mouse_button {
  * A list of events that are passed through pntr_app::event.
  *
  * @see pntr_app::event
+ * @see pntr_app_event
  */
 typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_UNKNOWN = 0,
@@ -253,7 +254,14 @@ typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_MOUSE_MOVE,
     PNTR_APP_EVENTTYPE_MOUSE_WHEEL,
     PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN,
-    PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP
+    PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP,
+
+    /**
+     * Evoked when a file is drag and dropped onto the application.
+     *
+     * @see pntr_app_event::fileDropped
+     */
+    PNTR_APP_EVENTTYPE_FILE_DROPPED
 } pntr_app_event_type;
 
 /**
@@ -295,6 +303,13 @@ typedef struct pntr_app_event {
 
     pntr_app_gamepad_button gamepadButton;
     int gamepad;
+
+    /**
+     * When a file is drag and dropped on the application, this contains the path to the file.
+     *
+     * @see PNTR_APP_EVENTTYPE_DRAG_AND_DROP
+     */
+    const char* fileDropped;
 } pntr_app_event;
 
 typedef struct pntr_app pntr_app;
@@ -425,6 +440,25 @@ PNTR_APP_API int pntr_app_height(pntr_app* app);
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
 
 /**
+ * Get a random value between min and max (both included)
+ *
+ * @param min The minimum value.
+ * @param max The maximum value.
+ *
+ * @return A random integer between the min and max values.
+ */
+PNTR_APP_API int pntr_app_random(int min, int max);
+
+/**
+ * Sets the random number generator seed.
+ *
+ * @note This is automatically called when the application is loading.
+ *
+ * @param seed The seed to use for the random number generator. If set to 0, will let the platform decide which seed to use.
+ */
+PNTR_APP_API void pntr_app_random_seed(unsigned int seed);
+
+/**
  * Log a message.
  *
  * @param type The type of message to be logged.
@@ -519,6 +553,10 @@ void pntr_app_close(pntr_app* app);
  */
 bool pntr_app_platform_update_delta_time(pntr_app* app);
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
+
+#ifdef PNTR_ENABLE_VARGS
+PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
+#endif
 
 #ifdef __cplusplus
 }
@@ -659,6 +697,8 @@ int main(int argc, char* argv[]) {
         pntr_unload_image(app.screen);
         return 1;
     }
+
+    pntr_app_random_seed(0);
 
     // Call the init callback.
     if (app.init != NULL) {
@@ -998,6 +1038,22 @@ PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message) {
     }
 #endif
 }
+
+#ifdef PNTR_ENABLE_VARGS
+PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...) {
+    #ifndef PNTR_APP_LOG_EX_STRING_LENGTH
+    #define PNTR_APP_LOG_EX_STRING_LENGTH 256
+    #endif
+    char output[PNTR_APP_LOG_EX_STRING_LENGTH];
+
+    va_list arg_ptr;
+    va_start(arg_ptr, message);
+    vsprintf(output, message, arg_ptr);
+    va_end(arg_ptr);
+
+    pntr_app_log(type, output);
+}
+#endif
 
 PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     if (app == NULL) {

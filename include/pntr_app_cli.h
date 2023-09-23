@@ -27,6 +27,9 @@ typedef struct pntr_app_cli_platform {
     bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
 } pntr_app_cli_platform;
 
+// Random Number Generator
+#include "extensions/pntr_app_random_stdlib.h"
+
 bool pntr_app_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
