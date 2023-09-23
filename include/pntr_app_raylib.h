@@ -382,6 +382,18 @@ void pntr_stop_sound(pntr_sound* sound) {
     PlaySound(audio->sound);
 }
 
+PNTR_APP_API inline int pntr_app_random(int min, int max) {
+    return GetRandomValue(min, max);
+}
+
+PNTR_APP_API inline void pntr_app_random_seed(unsigned int seed) {
+    // When raylib initializes, it seeds the random number generator for us.
+    // We will not need to call SetRandomSeed() again because of that.
+    if (seed != 0) {
+        SetRandomSeed(seed);
+    }
+}
+
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     app->deltaTime = GetFrameTime();
     return true;

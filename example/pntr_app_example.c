@@ -98,6 +98,11 @@ void Event(pntr_app* app, pntr_app_event* event) {
             if (event->key == PNTR_APP_KEY_G) {
                 pntr_app_set_size(app, 700, 400);
             }
+
+            if (event->key == PNTR_APP_KEY_R) {
+                sprintf(message, "Random: %d", pntr_app_random(10, 100));
+                pntr_app_log(PNTR_APP_LOG_INFO, message);
+            }
         }
         break;
 

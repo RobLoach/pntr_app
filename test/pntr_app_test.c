@@ -82,6 +82,21 @@ bool Init(pntr_app* app) {
         ASSERT(pntr_app_key_pressed(app, PNTR_APP_KEY_A));
     }
 
+    // pntr_app_random()
+    {
+        for (int i = 0; i < 1000; i++) {
+            int randomValue = pntr_app_random(5000, 10000);
+            ASSERT(randomValue >= 5000);
+            ASSERT(randomValue <= 10000);
+        }
+    }
+
+    // pntr_app_random_seed()
+    {
+        pntr_app_random_seed(0);
+        pntr_app_random_seed(50);
+    }
+
     // Set up the application data.
     AppData* appData = pntr_load_memory(sizeof(AppData));
     pntr_app_set_userdata(app, appData);

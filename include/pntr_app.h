@@ -425,6 +425,25 @@ PNTR_APP_API int pntr_app_height(pntr_app* app);
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
 
 /**
+ * Get a random value between min and max (both included)
+ *
+ * @param min The minimum value.
+ * @param max The maximum value.
+ *
+ * @return A random integer between the min and max values.
+ */
+PNTR_APP_API int pntr_app_random(int min, int max);
+
+/**
+ * Sets the random number generator seed.
+ *
+ * @note This is automatically called when the application is loading.
+ *
+ * @param seed The seed to use for the random number generator. If set to 0, will let the platform decide which seed to use.
+ */
+PNTR_APP_API void pntr_app_random_seed(unsigned int seed);
+
+/**
  * Log a message.
  *
  * @param type The type of message to be logged.
@@ -657,6 +676,8 @@ int main(int argc, char* argv[]) {
         pntr_unload_image(app.screen);
         return 1;
     }
+
+    pntr_app_random_seed(0);
 
     // Call the init callback.
     if (app.init != NULL) {
