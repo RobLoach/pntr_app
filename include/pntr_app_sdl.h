@@ -430,6 +430,15 @@ bool pntr_app_events(pntr_app* app) {
                 }
             }
             break;
+
+            case SDL_DROPFILE: {
+                pntrEvent.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
+                pntrEvent.fileDropped = event.drop.file;
+                if (pntrEvent.fileDropped != NULL) {
+                    pntr_app_process_event(app, &pntrEvent);
+                }
+            }
+            break;
         }
     }
 

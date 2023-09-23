@@ -243,6 +243,7 @@ typedef enum pntr_app_mouse_button {
  * A list of events that are passed through pntr_app::event.
  *
  * @see pntr_app::event
+ * @see pntr_app_event
  */
 typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_UNKNOWN = 0,
@@ -253,7 +254,14 @@ typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_MOUSE_MOVE,
     PNTR_APP_EVENTTYPE_MOUSE_WHEEL,
     PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN,
-    PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP
+    PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP,
+
+    /**
+     * Evoked when a file is drag and dropped onto the application.
+     *
+     * @see pntr_app_event::fileDropped
+     */
+    PNTR_APP_EVENTTYPE_FILE_DROPPED
 } pntr_app_event_type;
 
 /**
@@ -295,6 +303,13 @@ typedef struct pntr_app_event {
 
     pntr_app_gamepad_button gamepadButton;
     int gamepad;
+
+    /**
+     * When a file is drag and dropped on the application, this contains the path to the file.
+     *
+     * @see PNTR_APP_EVENTTYPE_DRAG_AND_DROP
+     */
+    const char* fileDropped;
 } pntr_app_event;
 
 typedef struct pntr_app pntr_app;
