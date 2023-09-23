@@ -97,8 +97,13 @@ EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
     }
 })
 
-EM_JS(void, pntr_app_init_js, (const char* title, int width, int height), {
-    document.title = UTF8ToString(title);
+/**
+ * pntr_app_init_js: Initializes the canvas context.
+ *
+ * @param width The desired width of the context.
+ * @param height The desired height of the context.
+ */
+EM_JS(void, pntr_app_init_js, (int width, int height), {
     canvas.width = width;
     canvas.height = height;
     this.ctx = canvas.getContext('2d');
@@ -330,7 +335,12 @@ bool pntr_app_init(pntr_app* app) {
     if (app == NULL) {
         return false;
     }
-    pntr_app_init_js(app->title, app->width, app->height);
+
+    // Initialize the context
+    pntr_app_init_js(app->width, app->height);
+
+    // Window title
+    pntr_app_set_title(app, app->title);
 
     // Keyboard
     emscripten_set_keydown_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, app, true, pntr_app_emscripten_key);
@@ -373,11 +383,16 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
 }
 
 void pntr_app_set_title(pntr_app* app, const char* title) {
-    pntr_app_init_js(title, app->width, app->height);
+    if (app == NULL) {
+        app->title = title;
+    }
+
+    emscripten_set_window_title(title);
 }
 
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
-    pntr_app_init_js(app->title, width, height);
+    pntr_app_init_js(width, height);
+
     return true;
 }
 
