@@ -105,9 +105,23 @@ EM_JS(void, pntr_app_init_js, (const char* title, int width, int height), {
     specialHTMLTargets["!canvas"] = canvas;
 });
 
-EM_JS(void, pntr_app_render_js, (void* bufferPtr, int width, int height), {
-    const screen = new Uint8ClampedArray(HEAPU8.subarray(bufferPtr, bufferPtr + (width * height * 4)));
-    this.ctx.putImageData(new ImageData(screen, width, height), 0, 0);
+/**
+ * pntr_app_render_js: Renders the given pixel data onto the emscripten canvas context.
+ *
+ * @param data Pointer to the pixel data.
+ * @param dataSize The size of the pixel data.
+ * @param width The width of the image.
+ * @param height The height of the image.
+ */
+EM_JS(void, pntr_app_render_js, (void* data, int dataSize, int width, int height), {
+    // Grab the image context.
+    const image = this.ctx.getImageData(0, 0, width, height);
+
+    // Set the pixel data with in the image.
+    image.data.set(HEAPU8.subarray(data, data + dataSize));
+
+    // Put the image onto the canvas context.
+    this.ctx.putImageData(image, 0, 0);
 });
 
 /**
@@ -220,8 +234,7 @@ bool pntr_app_render(pntr_app* app) {
         return false;
     }
 
-    pntr_image* screen = app->screen;
-    pntr_app_render_js((void*)screen->data, screen->width, screen->height);
+    pntr_app_render_js((void*)app->screen->data, app->screen->pitch * app->screen->height, app->screen->width, app->screen->height);
     return true;
 }
 
