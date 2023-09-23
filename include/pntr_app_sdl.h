@@ -516,8 +516,6 @@ bool pntr_app_init(pntr_app* app) {
     platform->timerLastTime = SDL_GetTicks64();
     //platform->timerLastTime = SDL_GetPerformanceCounter();
 
-    pntr_app_random_seed((unsigned int)platform->timerLastTime);
-
     return true;
 }
 
