@@ -2,6 +2,7 @@
 
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
+#define PNTR_ENABLE_VARGS
 #define PNTR_DISABLE_MATH
 #include "pntr_app.h"
 
@@ -92,8 +93,7 @@ void Event(pntr_app* app, pntr_app_event* event) {
 
             pntr_play_sound(appData->sound, false);
 
-            sprintf(message, "Key Pressed: %c", (char)event->key);
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Key Pressed: %c", (char)event->key);
 
             if (event->key == PNTR_APP_KEY_G) {
                 pntr_app_set_size(app, 700, 400);
@@ -105,14 +105,12 @@ void Event(pntr_app* app, pntr_app_event* event) {
             if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = false;
             }
-            sprintf(message, "Key Released: %c", (char)event->key);
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Key Released: %c", (char)event->key);
         }
         break;
 
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL: {
-            sprintf(message, "Wheel: %d", event->mouseWheel);
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Wheel: %d", event->mouseWheel);
         }
         break;
 
@@ -128,8 +126,7 @@ void Event(pntr_app* app, pntr_app_event* event) {
                 case PNTR_APP_MOUSE_BUTTON_LAST:
                 case PNTR_APP_MOUSE_BUTTON_UNKNOWN: button = "unknown"; break;
             }
-            sprintf(message, "Mouse Button %s: %s", buttonDown, button);
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Mouse Button %s: %s", buttonDown, button);
 
             if (event->type == PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN) {
                 if (event->mouseButton == PNTR_APP_MOUSE_BUTTON_LEFT) {
@@ -144,21 +141,18 @@ void Event(pntr_app* app, pntr_app_event* event) {
         break;
 
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            sprintf(message, "Mouse Move: (%d, %d) | (%d, %d)", event->mouseX, event->mouseY, event->mouseDeltaX, event->mouseDeltaY);
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Mouse Move: (%d, %d) | (%d, %d)", event->mouseX, event->mouseY, event->mouseDeltaX, event->mouseDeltaY);
         }
         break;
 
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP:
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN: {
-            sprintf(message, "Gamepad: %d. Button: %d %s", event->gamepad, event->gamepadButton, event->type == PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN ? "Pressed" : "Released");
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Gamepad: %d. Button: %d %s", event->gamepad, event->gamepadButton, event->type == PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN ? "Pressed" : "Released");
         }
         break;
 
         default: {
-            sprintf(message, "Unknown event: %d", event->type);
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Unknown event: %d", event->type);
         }
         break;
     }
