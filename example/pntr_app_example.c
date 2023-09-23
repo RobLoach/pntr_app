@@ -156,6 +156,12 @@ void Event(pntr_app* app, pntr_app_event* event) {
         }
         break;
 
+        case PNTR_APP_EVENTTYPE_FILE_DROPPED: {
+            sprintf(message, "File Dropped: %s", event->fileDropped);
+            pntr_app_log(PNTR_APP_LOG_INFO, message);
+        }
+        break;
+
         default: {
             sprintf(message, "Unknown event: %d", event->type);
             pntr_app_log(PNTR_APP_LOG_INFO, message);
