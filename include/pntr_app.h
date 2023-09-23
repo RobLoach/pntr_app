@@ -554,6 +554,10 @@ void pntr_app_close(pntr_app* app);
 bool pntr_app_platform_update_delta_time(pntr_app* app);
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
 
+#ifdef PNTR_ENABLE_VARGS
+PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
@@ -1021,6 +1025,22 @@ PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message) {
     }
 #endif
 }
+
+#ifdef PNTR_ENABLE_VARGS
+PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...) {
+    #ifndef PNTR_APP_LOG_EX_STRING_LENGTH
+    #define PNTR_APP_LOG_EX_STRING_LENGTH 256
+    #endif
+    char output[PNTR_APP_LOG_EX_STRING_LENGTH];
+
+    va_list arg_ptr;
+    va_start(arg_ptr, message);
+    vsprintf(output, message, arg_ptr);
+    va_end(arg_ptr);
+
+    pntr_app_log(type, output);
+}
+#endif
 
 PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     if (app == NULL) {
