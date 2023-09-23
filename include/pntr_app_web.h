@@ -352,11 +352,26 @@ bool pntr_app_init(pntr_app* app) {
     emscripten_set_mousemove_callback("!canvas", app, true, pntr_app_emscripten_mouse);
     emscripten_set_wheel_callback("!canvas", app, true, pntr_app_emscripten_mouse_wheel);
 
+    // TODO: emscripten: Register on file drop events for PNTR_APP_EVENT_TYPE_FILE_DROPPED support.
+
     return true;
 }
 
 void pntr_app_close(pntr_app* app) {
     // TODO: Close the context, and delete the canvas.
+}
+
+PNTR_APP_API int pntr_app_random(int min, int max) {
+    return (int)((emscripten_random() * (float)(max - min)) + (float)min);
+}
+
+PNTR_APP_API void pntr_app_random_seed(unsigned int seed) {
+    if (seed == 0) {
+        int randomNumberSeed = pntr_app_random(1, 100);
+        for (int i = 0; i < randomNumberSeed; i++) {
+            pntr_app_random(0, 100);
+        }
+    }
 }
 
 EM_JS(int, pntr_app_emscripten_get_delta_time, (), {
