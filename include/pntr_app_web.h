@@ -441,7 +441,7 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
 }
 
 void pntr_app_set_title(pntr_app* app, const char* title) {
-    if (app == NULL) {
+    if (app != NULL) {
         app->title = title;
     }
 
