@@ -384,13 +384,11 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
                 newUint[str.length] = '\0';
                 return newUint;
             };
-            const fileName_uint8Arr = strToBuffer(fileName);
-            const fileName_data_ptr = Module._pntr_app_emscripten_load_memory(fileName.length + 1);
-            const fileName_data_on_heap = new Uint8Array(Module.HEAPU8.buffer, fileName_data_ptr, fileName.length + 1);
-            fileName_data_on_heap.set(fileName_uint8Arr);
+
+            const fileName_data_ptr = stringToNewUTF8(fileName);
 
             // Save the file, and invoke the event.
-            const res = Module._pntr_app_emscripten_file_dropped(app, fileName_data_on_heap.byteOffset, data_on_heap.byteOffset, uint8Arr.length);
+            const res = Module._pntr_app_emscripten_file_dropped(app, fileName_data_ptr, data_on_heap.byteOffset, uint8Arr.length);
 
             // Clean up the filename and data buffer.
             Module._pntr_app_emscripten_unload_memory(fileName_data_ptr);
