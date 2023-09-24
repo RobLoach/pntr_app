@@ -201,6 +201,7 @@ void pntr_app_emscripten_gamepad_event(pntr_app* app, EmscriptenGamepadEvent* ge
  */
 void pntr_app_emscripten_gamepad(pntr_app* app) {
     // Ask the browser if Gamepad API is supported.
+    // TODO: Cache the GamePad data so that it doesn't need to request this every frame.
     EMSCRIPTEN_RESULT res = emscripten_sample_gamepad_data();
     if (res != EMSCRIPTEN_RESULT_SUCCESS) {
         return;
