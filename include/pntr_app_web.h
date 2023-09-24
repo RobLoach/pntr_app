@@ -394,7 +394,7 @@ bool pntr_app_init(pntr_app* app) {
     emscripten_set_mousemove_callback("!canvas", app, true, pntr_app_emscripten_mouse);
     emscripten_set_wheel_callback("!canvas", app, true, pntr_app_emscripten_mouse_wheel);
 
-    // TODO: emscripten: Register on file drop events for PNTR_APP_EVENT_TYPE_FILE_DROPPED support.
+    // File Drop
     pntr_app_emscripten_init_filedropped((void*)app);
 
     return true;
