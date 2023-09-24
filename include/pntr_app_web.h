@@ -358,18 +358,44 @@ EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_unload_memory(void* ptr) {
 
 EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
     canvas.fileDropped = function(e) {
+        // Retrieve data about the selected file, along with the app.
         let app = e.target.app;
         let fileName = e.target.files[0].name;
 
+        // Read data from the file.
         const file_reader = new FileReader();
         file_reader.onload = (event) => {
+            // Set up the data buffer on the heap.
             const uint8Arr = new Uint8Array(event.target.result);
             const num_bytes = uint8Arr.length * uint8Arr.BYTES_PER_ELEMENT;
-            const data_ptr = Module.ccall('pntr_app_emscripten_load_memory', 'number', ['number'], [num_bytes]);
+            const data_ptr = Module._pntr_app_emscripten_load_memory(num_bytes);
             const data_on_heap = new Uint8Array(Module.HEAPU8.buffer, data_ptr, num_bytes);
             data_on_heap.set(uint8Arr);
-            const res = Module.ccall('pntr_app_emscripten_file_dropped', 'number', ['number', 'string', 'number', 'number'], [app, fileName, data_on_heap.byteOffset, uint8Arr.length]);
-            Module.ccall('pntr_app_emscripten_unload_memory', 'null', ['number'], [data_ptr]);
+
+            // Set up the filename argument on the heap.
+            const strToBuffer = function (str) {
+                // Leave room for the null escaped character.
+                let arrayBuffer = new ArrayBuffer(str.length + 1);
+                let newUint = new Uint8Array(arrayBuffer);
+                newUint.forEach((_, i) => {
+                    newUint[i] = str.charCodeAt(i);
+                });
+
+                // Null escape the string.
+                newUint[str.length] = '\0';
+                return newUint;
+            };
+            const fileName_uint8Arr = strToBuffer(fileName);
+            const fileName_data_ptr = Module._pntr_app_emscripten_load_memory(fileName.length + 1);
+            const fileName_data_on_heap = new Uint8Array(Module.HEAPU8.buffer, fileName_data_ptr, fileName.length + 1);
+            fileName_data_on_heap.set(fileName_uint8Arr);
+
+            // Save the file, and invoke the event.
+            const res = Module._pntr_app_emscripten_file_dropped(app, fileName_data_on_heap.byteOffset, data_on_heap.byteOffset, uint8Arr.length);
+
+            // Clean up the filename and data buffer.
+            Module._pntr_app_emscripten_unload_memory(fileName_data_ptr);
+            Module._pntr_app_emscripten_unload_memory(data_ptr);
         };
         file_reader.readAsArrayBuffer(e.target.files[0]);
     };
