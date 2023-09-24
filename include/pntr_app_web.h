@@ -358,7 +358,7 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
         return buff_ptr;
     };
     canvas.addEventListener('dragover', e => e.preventDefault());
-    canvas.addEventListener("drop", e => {
+    canvas.addEventListener('drop', e => {
         e.preventDefault();
         for (const file of e.dataTransfer.files) {
             const reader = new FileReader();
