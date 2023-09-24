@@ -251,6 +251,20 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
 
     // TODO: keyCode is deprecated, so do some string checkings?
     event.key = keyEvent->keyCode;
+
+    // Individual clean up of keys.
+    switch (event.key) {
+        case 13: event.key = PNTR_APP_KEY_ENTER; break;
+        case 18: event.key = PNTR_APP_KEY_RIGHT; break;
+        case 38: event.key = PNTR_APP_KEY_UP; break;
+        case 37: event.key = PNTR_APP_KEY_LEFT; break;
+        case 40: event.key = PNTR_APP_KEY_DOWN; break;
+        case 16: event.key = PNTR_APP_KEY_LEFT_SHIFT; break;
+        case 17: event.key = PNTR_APP_KEY_LEFT_CONTROL; break;
+        case 18: event.key = PNTR_APP_KEY_LEFT_ALT; break;
+        case 9: event.key = PNTR_APP_KEY_TAB; break;
+    }
+    
     if (event.key <= 0) {
         return EM_FALSE;
     }
