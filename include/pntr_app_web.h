@@ -367,9 +367,8 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
         file_reader.onload = (event) => {
             // Set up the data buffer on the heap.
             const uint8Arr = new Uint8Array(event.target.result);
-            const num_bytes = uint8Arr.length * uint8Arr.BYTES_PER_ELEMENT;
-            const data_ptr = Module._pntr_app_emscripten_load_memory(num_bytes);
-            const data_on_heap = new Uint8Array(Module.HEAPU8.buffer, data_ptr, num_bytes);
+            const data_ptr = Module._pntr_app_emscripten_load_memory(uint8Arr.byteLength);
+            const data_on_heap = new Uint8Array(Module.HEAPU8.buffer, data_ptr, uint8Arr.byteLength);
             data_on_heap.set(uint8Arr);
 
             // Set up the filename argument on the heap.
