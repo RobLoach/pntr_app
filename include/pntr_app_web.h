@@ -362,7 +362,7 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
         e.preventDefault();
         for (const file of e.dataTransfer.files) {
             const reader = new FileReader();
-            reader.addEventListener("load", e => {
+            reader.addEventListener('load', e => {
                 const bytes = new Uint8Array(event.target.result);
                 const data_ptr = Module._pntr_app_emscripten_load_memory(bytes.byteLength);
                 Module.HEAPU8.set(bytes, data_ptr);
