@@ -15,7 +15,6 @@ typedef struct AppData {
     pntr_sound* music;
     float velocity;
 
-    pntr_image* image;
     pntr_image* droppedImage;
 } AppData;
 
@@ -24,6 +23,7 @@ bool Init(pntr_app* app) {
     pntr_app_set_userdata(app, appData);
 
     appData->logo = pntr_load_image("resources/logo.png");
+    appData->droppedImage = NULL;
     appData->font = pntr_load_font_default();
     appData->spacePressed = false;
     appData->x = 0;

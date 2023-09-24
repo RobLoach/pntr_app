@@ -16,6 +16,9 @@
 
 #include <stdio.h>
 
+// Random Number Generator
+#include "extensions/pntr_app_random_stdlib.h"
+
 #ifndef PNTR_APP_CLI_LOG_FILE
 #define PNTR_APP_CLI_LOG_FILE "log.txt"
 #endif
@@ -26,9 +29,6 @@ typedef struct pntr_app_cli_platform {
     bool keysEnabled[PNTR_APP_KEY_LAST];
     bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
 } pntr_app_cli_platform;
-
-// Random Number Generator
-#include "extensions/pntr_app_random_stdlib.h"
 
 bool pntr_app_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
