@@ -16,6 +16,7 @@ typedef struct AppData {
     float velocity;
 
     pntr_image* image;
+    pntr_image* droppedImage;
 } AppData;
 
 bool Init(pntr_app* app) {
@@ -67,6 +68,10 @@ bool Update(pntr_app* app, pntr_image* screen) {
 
     pntr_draw_circle(screen, pntr_app_mouse_x(app), pntr_app_mouse_y(app), 5, PNTR_BLACK);
 
+    if (appData->droppedImage != NULL) {
+        pntr_draw_image(screen, appData->droppedImage, 10, 10);
+    }
+
     return true;
 }
 
@@ -77,6 +82,7 @@ void Close(pntr_app* app) {
     pntr_unload_font(appData->font);
     pntr_unload_sound(appData->sound);
     pntr_unload_sound(appData->music);
+    pntr_unload_image(appData->droppedImage);
 
     pntr_unload_memory(appData);
 }
@@ -159,6 +165,12 @@ void Event(pntr_app* app, pntr_app_event* event) {
         case PNTR_APP_EVENTTYPE_FILE_DROPPED: {
             sprintf(message, "File Dropped: %s", event->fileDropped);
             pntr_app_log(PNTR_APP_LOG_INFO, message);
+
+            if (appData->droppedImage != NULL) {
+                pntr_unload_image(appData->droppedImage);
+            }
+
+            appData->droppedImage = pntr_load_image(event->fileDropped);
         }
         break;
 

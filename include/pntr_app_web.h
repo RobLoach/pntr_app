@@ -361,26 +361,16 @@ EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_unload_memory(void* ptr) {
 EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
     canvas.fileDropped = function(e) {
         let app = e.target.app;
-        let fileName = e.target.files[0];
+        let fileName = e.target.files[0].name;
 
         const file_reader = new FileReader();
         file_reader.onload = (event) => {
-            console.log('file_reader-onload');
-            console.log(event);
-            console.log("Creating Array");
             const uint8Arr = new Uint8Array(event.target.result);
             const num_bytes = uint8Arr.length * uint8Arr.BYTES_PER_ELEMENT;
-            //const data_ptr = Module._pntr_load_memory(num_bytes);
-            console.log("pntr_app_emscripten_load_memory");
             const data_ptr = Module.ccall('pntr_app_emscripten_load_memory', 'number', ['number'], [num_bytes]);
-            console.log('Data: ', data_ptr);
             const data_on_heap = new Uint8Array(Module.HEAPU8.buffer, data_ptr, num_bytes);
             data_on_heap.set(uint8Arr);
-            console.log("pntr_app_emscripten_file_dropped");
             const res = Module.ccall('pntr_app_emscripten_file_dropped', 'number', ['number', 'string', 'number', 'number'], [app, fileName, data_on_heap.byteOffset, uint8Arr.length]);
-            console.log(res);
-            //Module._pntr_unload_memory(data_ptr);
-            console.log("pntr_app_emscripten_unload_memory");
             Module.ccall('pntr_app_emscripten_unload_memory', 'null', ['number'], [data_ptr]);
         };
         file_reader.readAsArrayBuffer(e.target.files[0]);
