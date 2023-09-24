@@ -239,6 +239,62 @@ bool pntr_app_render(pntr_app* app) {
     return true;
 }
 
+pntr_app_key pntr_app_emscripten_key_from_event(const struct EmscriptenKeyboardEvent *keyEvent) {
+    // TODO: emscripten: which/keyCode is deprecated? Do some string checkings instead.
+    switch (keyEvent->which) {
+        case 13: return PNTR_APP_KEY_ENTER;
+        case 39: return PNTR_APP_KEY_RIGHT;
+        case 38: return PNTR_APP_KEY_UP;
+        case 37: return PNTR_APP_KEY_LEFT;
+        case 40: return PNTR_APP_KEY_DOWN;
+        case 16: return PNTR_APP_KEY_LEFT_SHIFT;
+        case 17: return PNTR_APP_KEY_LEFT_CONTROL;
+        case 18: return PNTR_APP_KEY_LEFT_ALT;
+        case 9: return PNTR_APP_KEY_TAB;
+        case 192: return PNTR_APP_KEY_GRAVE_ACCENT;
+        case 96: return PNTR_APP_KEY_KP_0;
+        case 97: return PNTR_APP_KEY_KP_1;
+        case 98: return PNTR_APP_KEY_KP_2;
+        case 99: return PNTR_APP_KEY_KP_3;
+        case 100: return PNTR_APP_KEY_KP_4;
+        case 101: return PNTR_APP_KEY_KP_5;
+        case 102: return PNTR_APP_KEY_KP_6;
+        case 103: return PNTR_APP_KEY_KP_7;
+        case 104: return PNTR_APP_KEY_KP_8;
+        case 105: return PNTR_APP_KEY_KP_9;
+        case 173: return PNTR_APP_KEY_MINUS;
+        case 61: return PNTR_APP_KEY_EQUAL;
+        case 220: return PNTR_APP_KEY_BACKSLASH;
+        case 219: return PNTR_APP_KEY_LEFT_BRACKET;
+        case 221: return PNTR_APP_KEY_RIGHT_BRACKET;
+        case 222: return PNTR_APP_KEY_APOSTROPHE;
+        case 191: return PNTR_APP_KEY_SLASH;
+        case 190: return PNTR_APP_KEY_PERIOD;
+        case 188: return PNTR_APP_KEY_COMMA;
+        case 93: return PNTR_APP_KEY_MENU;
+        case 111: return PNTR_APP_KEY_KP_DIVIDE;
+        case 106: return PNTR_APP_KEY_KP_MULTIPLY;
+        case 109: return PNTR_APP_KEY_KP_SUBTRACT;
+        case 107: return PNTR_APP_KEY_KP_ADD;
+        case 112: return PNTR_APP_KEY_F1;
+        case 113: return PNTR_APP_KEY_F2;
+        case 114: return PNTR_APP_KEY_F3;
+        case 115: return PNTR_APP_KEY_F4;
+        case 116: return PNTR_APP_KEY_F5;
+        case 117: return PNTR_APP_KEY_F6;
+        case 118: return PNTR_APP_KEY_F7;
+        case 119: return PNTR_APP_KEY_F8;
+        case 120: return PNTR_APP_KEY_F9;
+        case 121: return PNTR_APP_KEY_F10;
+        case 122: return PNTR_APP_KEY_F11;
+        case 123: return PNTR_APP_KEY_F12;
+        case 144: return PNTR_APP_KEY_NUM_LOCK;
+        case 110: return PNTR_APP_KEY_KP_DECIMAL;
+    }
+
+    return keyEvent->which;
+}
+
 EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent *keyEvent, void *userData) {
     pntr_app* app = (pntr_app*)userData;
     if (app == NULL || app->event == NULL) {
@@ -248,22 +304,8 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
     // Build the key event.
     pntr_app_event event;
     event.type = (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
+    event.key = pntr_app_emscripten_key_from_event(keyEvent);
 
-    // TODO: keyCode is deprecated, so do some string checkings?
-    event.key = keyEvent->keyCode;
-
-    // Individual clean up of keys.
-    switch (event.key) {
-        case 13: event.key = PNTR_APP_KEY_ENTER; break;
-        case 18: event.key = PNTR_APP_KEY_RIGHT; break;
-        case 38: event.key = PNTR_APP_KEY_UP; break;
-        case 37: event.key = PNTR_APP_KEY_LEFT; break;
-        case 40: event.key = PNTR_APP_KEY_DOWN; break;
-        case 16: event.key = PNTR_APP_KEY_LEFT_SHIFT; break;
-        case 17: event.key = PNTR_APP_KEY_LEFT_CONTROL; break;
-        case 9: event.key = PNTR_APP_KEY_TAB; break;
-    }
-    
     if (event.key <= 0) {
         return EM_FALSE;
     }
