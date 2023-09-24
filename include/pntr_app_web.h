@@ -375,6 +375,13 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
     });
 });
 
+/**
+ * pntr_app_emscripten_get_time: Retrieves the high performance timer.
+ */
+EM_JS(unsigned int, pntr_app_emscripten_get_time, (), {
+    return performance.now();
+});
+
 bool pntr_app_init(pntr_app* app) {
     if (app == NULL) {
         return false;
@@ -399,6 +406,10 @@ bool pntr_app_init(pntr_app* app) {
     // File Drop
     pntr_app_emscripten_init_filedropped((void*)app);
 
+    // Timer
+    app->deltaTime = 0;
+    app->deltaTimeCounter = pntr_app_emscripten_get_time();
+
     return true;
 }
 
@@ -419,21 +430,23 @@ PNTR_APP_API void pntr_app_random_seed(unsigned int seed) {
     }
 }
 
-EM_JS(int, pntr_app_emscripten_get_delta_time, (), {
-    if (!this.lastUpdate) {
-        this.lastUpdate = performance.now();
-        this.now = this.lastUpdate;
-    }
-    now = performance.now();
-    const dt = now - this.lastUpdate;
-    this.lastUpdate = now;
-    return dt;
-});
-
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
-    // TODO: emscripten: Have pntr_app_emscripten_get_delta_time() return `performance.now()`, and have math in C.
-    app->deltaTime = pntr_app_emscripten_get_delta_time() / 1000.0f;
-    return true;
+    if (app == NULL) {
+        return false;
+    }
+
+    unsigned int now = pntr_app_emscripten_get_time();
+    unsigned int delta = now - app->deltaTimeCounter;
+
+    // Check if it's time to run the update.
+    if (app->fps <= 0 || (delta > (1000.0f / (float)app->fps))) {
+        app->deltaTimeCounter = now;
+        app->deltaTime = (float)delta / 1000.0f;
+        return true;
+    }
+
+    // Not time to run an update yet.
+    return false;
 }
 
 PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {

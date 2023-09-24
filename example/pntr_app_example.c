@@ -23,6 +23,9 @@ bool Init(pntr_app* app) {
     pntr_app_set_userdata(app, appData);
 
     appData->logo = pntr_load_image("resources/logo.png");
+    if (appData->logo == NULL) {
+        pntr_app_log(PNTR_APP_LOG_ERROR, "Failed to load resources/logo.png");
+    }
     appData->droppedImage = NULL;
     appData->font = pntr_load_font_default();
     appData->spacePressed = false;

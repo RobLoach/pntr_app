@@ -694,7 +694,7 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
     // Calculate if it's time to update
     if (app->fps <= 0 || (delta > (1000.0f / (float)app->fps))) {
         platform->timerLastTime = now;
-        app->deltaTime = delta / 1000.0f;
+        app->deltaTime = (float)delta / 1000.0f;
         return true;
     }
 

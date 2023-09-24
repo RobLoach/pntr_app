@@ -330,6 +330,7 @@ struct pntr_app {
     pntr_image* screen;
     void* platform;
     float deltaTime;
+    unsigned int deltaTimeCounter;
 
     // Input state
 
