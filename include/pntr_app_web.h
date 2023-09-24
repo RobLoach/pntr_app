@@ -261,7 +261,6 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
         case 40: event.key = PNTR_APP_KEY_DOWN; break;
         case 16: event.key = PNTR_APP_KEY_LEFT_SHIFT; break;
         case 17: event.key = PNTR_APP_KEY_LEFT_CONTROL; break;
-        case 18: event.key = PNTR_APP_KEY_LEFT_ALT; break;
         case 9: event.key = PNTR_APP_KEY_TAB; break;
     }
     
