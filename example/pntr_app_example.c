@@ -146,7 +146,7 @@ void Event(pntr_app* app, pntr_app_event* event) {
         break;
 
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Mouse Move: (%d, %d) | (%d, %d)", event->mouseX, event->mouseY, event->mouseDeltaX, event->mouseDeltaY);
+            //pntr_app_log_ex(PNTR_APP_LOG_INFO, "Mouse Move: (%d, %d) | (%d, %d)", event->mouseX, event->mouseY, event->mouseDeltaX, event->mouseDeltaY);
         }
         break;
 
