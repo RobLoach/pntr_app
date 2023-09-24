@@ -335,10 +335,8 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
  * @see https://stackoverflow.com/questions/69935188/open-a-file-in-emscripten-using-browser-file-selector-dialogue
  */
 EMSCRIPTEN_KEEPALIVE int pntr_app_emscripten_file_dropped(void* app, const char* fileName, void *buffer, size_t size) {
-  pntr_app_log(PNTR_APP_LOG_INFO, "pntr_app_emscripten_file_dropped!!!!!");
-
   if (!pntr_save_file(fileName, buffer, size)) {
-    pntr_app_log(PNTR_APP_LOG_INFO, "Failed to save uploaded file");
+    pntr_app_log(PNTR_APP_LOG_ERROR, "[pntr_app] Failed to save file");
     return 0;
   }
 
@@ -377,9 +375,9 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
     };
 
     const fileSelector = document.createElement('input');
-    fileSelector.setAttribute('type', 'file');
-    fileSelector.setAttribute('class', 'pntr_app_file_dropped');
-    fileSelector.setAttribute('onchange', 'canvas.fileDropped(event)');
+    fileSelector.type = 'file';
+    fileSelector.className = 'pntr_app_file_dropped';
+    fileSelector.addEventListener('change', canvas.fileDropped);
     fileSelector.app = app;
     canvas.parentNode.insertBefore(fileSelector, canvas.nextSibling)
 });
