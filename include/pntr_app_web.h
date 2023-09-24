@@ -367,6 +367,7 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
                 const data_ptr = Module._pntr_app_emscripten_load_memory(bytes.byteLength);
                 Module.HEAPU8.set(bytes, data_ptr);
                 Module._pntr_app_emscripten_file_dropped(app, stringToNewUTF8Local(file.name), data_ptr, bytes.byteLength);
+                Module._pntr_app_emscripten_unload_memory(data_ptr);
             });
             reader.readAsArrayBuffer(file);
         }
