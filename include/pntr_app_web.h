@@ -106,7 +106,8 @@ EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
 EM_JS(void, pntr_app_init_js, (int width, int height), {
     canvas.width = width;
     canvas.height = height;
-    this.ctx = canvas.getContext('2d');
+    Module.ctx = canvas.getContext('2d');
+    Module.screen = Module.ctx.getImageData(0, 0, width, height);
     specialHTMLTargets["!canvas"] = canvas;
 });
 
@@ -119,14 +120,8 @@ EM_JS(void, pntr_app_init_js, (int width, int height), {
  * @param height The height of the image.
  */
 EM_JS(void, pntr_app_render_js, (void* data, int dataSize, int width, int height), {
-    // Grab the image context.
-    const image = this.ctx.getImageData(0, 0, width, height);
-
-    // Set the pixel data with in the image.
-    image.data.set(HEAPU8.subarray(data, data + dataSize));
-
-    // Put the image onto the canvas context.
-    this.ctx.putImageData(image, 0, 0);
+    Module.screen.data.set(HEAPU8.subarray(data, data + dataSize));
+    Module.ctx.putImageData(Module.screen, 0, 0);
 });
 
 /**

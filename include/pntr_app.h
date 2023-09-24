@@ -714,7 +714,7 @@ int main(int argc, char* argv[]) {
     if (app.update != NULL) {
         #if defined(EMSCRIPTEN)
             // Set up the main loop.
-            emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, app.fps, 1);
+            emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, 0, 1);
         #else
             // Continue running when update returns TRUE.
             do {
