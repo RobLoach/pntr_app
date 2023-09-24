@@ -357,52 +357,25 @@ EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_unload_memory(void* ptr) {
 }
 
 EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
-    canvas.fileDropped = function(e) {
-        // Retrieve data about the selected file, along with the app.
-        let app = e.target.app;
-        let fileName = e.target.files[0].name;
-
-        // Read data from the file.
-        const file_reader = new FileReader();
-        file_reader.onload = (event) => {
-            // Set up the data buffer on the heap.
-            const uint8Arr = new Uint8Array(event.target.result);
-            const data_ptr = Module._pntr_app_emscripten_load_memory(uint8Arr.byteLength);
-            const data_on_heap = new Uint8Array(Module.HEAPU8.buffer, data_ptr, uint8Arr.byteLength);
-            data_on_heap.set(uint8Arr);
-
-            // Set up the filename argument on the heap.
-            const strToBuffer = function (str) {
-                // Leave room for the null escaped character.
-                let arrayBuffer = new ArrayBuffer(str.length + 1);
-                let newUint = new Uint8Array(arrayBuffer);
-                newUint.forEach((_, i) => {
-                    newUint[i] = str.charCodeAt(i);
-                });
-
-                // Null escape the string.
-                newUint[str.length] = '\0';
-                return newUint;
-            };
-
-            const fileName_data_ptr = stringToNewUTF8(fileName);
-
-            // Save the file, and invoke the event.
-            const res = Module._pntr_app_emscripten_file_dropped(app, fileName_data_ptr, data_on_heap.byteOffset, uint8Arr.length);
-
-            // Clean up the filename and data buffer.
-            Module._pntr_app_emscripten_unload_memory(fileName_data_ptr);
-            Module._pntr_app_emscripten_unload_memory(data_ptr);
-        };
-        file_reader.readAsArrayBuffer(e.target.files[0]);
+    const stringToNewUTF8Local = s => {
+        const buff_ptr = Module._pntr_app_emscripten_load_memory(s.length+1);
+        Module.HEAPU8.set((new TextEncoder()).encode(s + '\0'), buff_ptr);
+        return buff_ptr;
     };
-
-    const fileSelector = document.createElement('input');
-    fileSelector.type = 'file';
-    fileSelector.className = 'pntr_app_file_dropped';
-    fileSelector.addEventListener('change', canvas.fileDropped);
-    fileSelector.app = app;
-    canvas.parentNode.insertBefore(fileSelector, canvas.nextSibling)
+    canvas.addEventListener('dragover', e => e.preventDefault());
+    canvas.addEventListener("drop", e => {
+        e.preventDefault();
+        for (const file of e.dataTransfer.files) {
+            const reader = new FileReader();
+            reader.addEventListener("load", e => {
+                const bytes = new Uint8Array(event.target.result);
+                const data_ptr = Module._pntr_app_emscripten_load_memory(bytes.byteLength);
+                Module.HEAPU8.set(bytes, data_ptr);
+                Module._pntr_app_emscripten_file_dropped(app, stringToNewUTF8Local(file.name), data_ptr, bytes.byteLength);
+            });
+            reader.readAsArrayBuffer(file);
+        }
+    });
 });
 
 bool pntr_app_init(pntr_app* app) {
