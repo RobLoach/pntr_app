@@ -431,6 +431,7 @@ EM_JS(int, pntr_app_emscripten_get_delta_time, (), {
 });
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
+    // TODO: emscripten: Have pntr_app_emscripten_get_delta_time() return `performance.now()`, and have math in C.
     app->deltaTime = pntr_app_emscripten_get_delta_time() / 1000.0f;
     return true;
 }
