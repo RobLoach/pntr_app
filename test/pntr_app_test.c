@@ -2,6 +2,7 @@
 #define PNTR_ENABLE_DEFAULT_FONT
 #define PNTR_DISABLE_MATH
 #define PNTR_APP_DISABLE_TERMBOX
+#define PNTR_ENABLE_VARGS
 #include "pntr_app.h"
 
 typedef struct AppData {
@@ -14,8 +15,7 @@ typedef struct AppData {
 #define ASSERT(condition) do { \
     if ((bool)(condition) == false) { \
         char message[512]; \
-        sprintf(message, "%s:%d: error: expected \"%s\" to be true", __FILE__, __LINE__, #condition); \
-        pntr_app_log(PNTR_APP_LOG_ERROR, message); \
+        pntr_app_log_ex(PNTR_APP_LOG_ERROR, message, "%s:%d: error: expected \"%s\" to be true", __FILE__, __LINE__, #condition); \
         return false; \
     } \
 } while(0)

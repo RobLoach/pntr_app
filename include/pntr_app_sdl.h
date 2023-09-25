@@ -591,7 +591,7 @@ typedef struct pntr_sound_sdl {
     #endif
 } pntr_sound_sdl;
 
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
+pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
     if (data == NULL || dataSize <= 0) {
         return NULL;
     }

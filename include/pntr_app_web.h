@@ -30,22 +30,16 @@
 // this is cheap/simple but magic-bytes is better
 // https://github.com/konsumer/emscripten_browser_sound/blob/main/browser_sound.h#L50-L64
 
-EM_JS(pntr_sound*, pntr_load_sound_from_memory, (const char* fileNamePtr, unsigned char* dataPtr, unsigned int dataSize), {
+EM_JS(pntr_sound*, pntr_load_sound_from_memory, (pntr_app_sound_type type, unsigned char* dataPtr, unsigned int dataSize), {
+    // Get the sound's mime type.
+    let mimeType;
+    switch (type) {
+        case 1: mimeType = 'audio/wav'; break;
+        case 2: mimeType = 'audio/ogg'; break;
+        default: return 0;
+    }
+
     const data = HEAPU8.slice(dataPtr, dataPtr + dataSize);
-    const filename = UTF8ToString(fileNamePtr);
-
-    let type = "application/octet-stream";
-
-    if (filename.endsWith('.ogg')) {
-        type='audio/ogg';
-    }
-    else if (filename.endsWith('.wav')) {
-        type='audio/wav';
-    }
-    else {
-        return 0;
-    }
-
     const audio = new Audio();
     audio.src = URL.createObjectURL(new Blob([data], { type }));
     Module.pntr_sounds = Module.pntr_sounds || [];
@@ -263,7 +257,7 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
         case 17: event.key = PNTR_APP_KEY_LEFT_CONTROL; break;
         case 9: event.key = PNTR_APP_KEY_TAB; break;
     }
-    
+
     if (event.key <= 0) {
         return EM_FALSE;
     }

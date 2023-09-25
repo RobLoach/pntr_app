@@ -993,18 +993,6 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
     (void)code;
 }
 
-int _pntr_app_libretro_audiotype(const char* fileName) {
-    if (strstr(fileName, ".wav")) {
-        return AUDIO_MIXER_TYPE_WAV;
-    }
-
-    if (strstr(fileName, ".ogg")) {
-        return AUDIO_MIXER_TYPE_OGG;
-    }
-
-    return AUDIO_MIXER_TYPE_NONE;
-}
-
 /**
  * Internal structure to handle libretro audio.
  *
@@ -1015,22 +1003,22 @@ typedef struct pntr_sound_libretro {
     audio_mixer_voice_t* voice;
 } pntr_sound_libretro;
 
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
-    if (data == NULL || dataSize <= 0) {
-        return NULL;
+pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
+    if (data == NULL || dataSize <= 0 || type == PNTR_APP_SOUND_TYPE_UNKNOWN) {
+        return pntr_set_error(PNTR_ERROR_INVALID_ARGS);
     }
 
     // Load the sound.
     audio_mixer_sound_t* sound = NULL;
-    switch (_pntr_app_libretro_audiotype(fileName)) {
-        case AUDIO_MIXER_TYPE_WAV:
+    switch (type) {
+        case PNTR_APP_SOUND_TYPE_WAV:
             sound = audio_mixer_load_wav(data, dataSize, "audio", RESAMPLER_QUALITY_DONTCARE);
 
             // File data isn't required anymore for wavs.
             pntr_unload_file(data);
             data = NULL;
             break;
-        case AUDIO_MIXER_TYPE_OGG:
+        case PNTR_APP_SOUND_TYPE_OGG:
             sound = audio_mixer_load_ogg(data, dataSize);
             break;
     }

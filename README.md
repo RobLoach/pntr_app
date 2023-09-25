@@ -83,7 +83,7 @@ PNTR_APP_WEB
 ``` c
 pntr_app Main(int argc, char* argv[]);
 pntr_sound* pntr_load_sound(const char* fileName);
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
+pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize);
 void pntr_unload_sound(pntr_sound* sound);
 void pntr_play_sound(pntr_sound* sound, bool loop);
 void pntr_stop_sound(pntr_sound* sound);
