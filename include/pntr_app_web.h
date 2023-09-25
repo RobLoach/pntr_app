@@ -494,7 +494,7 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
     unsigned int delta = now - app->deltaTimeCounter;
 
     // Check if it's time to run the update.
-    if (app->fps <= 0 || (delta > (1000.0f / (float)app->fps))) {
+    if (app->fps <= 0 || (delta >= (1000 / app->fps))) {
         app->deltaTimeCounter = now;
         app->deltaTime = (float)delta / 1000.0f;
         return true;
