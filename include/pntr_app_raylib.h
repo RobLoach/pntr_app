@@ -313,12 +313,24 @@ void pntr_app_close(pntr_app* app) {
     CloseWindow();
 }
 
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
+pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
     if (data == NULL || dataSize <= 0) {
         return NULL;
     }
 
-    const char* fileExtension = GetFileExtension(fileName);
+    const char* fileExtension;
+    switch (type) {
+        case PNTR_APP_SOUND_TYPE_WAV:
+            fileExtension = ".wav";
+            break;
+        case PNTR_APP_SOUND_TYPE_OGG:
+            fileExtension = ".ogg";
+            break;
+        case PNTR_APP_SOUND_TYPE_UNKNOWN:
+            return pntr_set_error(PNTR_ERROR_NOT_SUPPORTED);
+            break;
+    }
+
     Wave wave = LoadWaveFromMemory(fileExtension, data, dataSize);
     pntr_unload_file(data);
     if (!IsWaveReady(wave)) {

@@ -298,8 +298,8 @@ void pntr_app_close(pntr_app* app) {
     app->platform = NULL;
 }
 
-pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize) {
-    (void)fileName;
+pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
+    (void)type;
     (void)data;
     (void)dataSize;
     return NULL;

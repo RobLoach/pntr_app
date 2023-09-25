@@ -264,6 +264,12 @@ typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_FILE_DROPPED
 } pntr_app_event_type;
 
+typedef enum pntr_app_sound_type {
+    PNTR_APP_SOUND_TYPE_UNKNOWN = 0,
+    PNTR_APP_SOUND_TYPE_WAV,
+    PNTR_APP_SOUND_TYPE_OGG
+} pntr_app_sound_type;
+
 /**
  * Priority level for logging.
  *
@@ -379,13 +385,15 @@ PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName);
  *
  * Will take ownership of the data and clear it when the sound is unloaded.
  *
- * @param fileName The original name of the file. Used to determine the type of sound from the file extension (.ogg, .wav, etc).
+ * @param type The type of sound that we'll be loading (PNTR_APP_SOUND_TYPE_WAV, PNTR_APP_SOUND_TYPE_WAV, etc).
  * @param data The file data.
  * @param dataSize The size of the data in memory.
  *
  * @return The loaded sound, or NULL on failure.
+ * @see PNTR_APP_SOUND_TYPE_WAV
+ * @see PNTR_APP_SOUND_TYPE_OGG
  */
-PNTR_APP_API pntr_sound* pntr_load_sound_from_memory(const char* fileName, unsigned char* data, unsigned int dataSize);
+PNTR_APP_API pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize);
 
 /**
  * Unload the given sound.
@@ -410,6 +418,11 @@ PNTR_APP_API void pntr_play_sound(pntr_sound* sound, bool loop);
  * @param sound The sound to stop playing.
  */
 PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
+
+/**
+ * Get the sound type of the given file from its file path.
+ */
+PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName);
 
 /**
  * Get the user data associated with the application.
@@ -760,14 +773,31 @@ int main(int argc, char* argv[]) {
 }
 #endif  // PNTR_APP_NO_ENTRY
 
+PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName) {
+    if (strstr(fileName, ".wav")) {
+        return PNTR_APP_SOUND_TYPE_WAV;
+    }
+
+    if (strstr(fileName, ".ogg")) {
+        return PNTR_APP_SOUND_TYPE_OGG;
+    }
+
+    return PNTR_APP_SOUND_TYPE_UNKNOWN;
+}
+
 PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName) {
+    pntr_app_sound_type type = pntr_app_get_file_sound_type(fileName);
+    if (type == PNTR_APP_SOUND_TYPE_UNKNOWN) {
+        return pntr_set_error(PNTR_ERROR_NOT_SUPPORTED);
+    }
+
     unsigned int bytesRead;
     unsigned char* data = pntr_load_file(fileName, &bytesRead);
     if (data == NULL) {
         return NULL;
     }
 
-    return pntr_load_sound_from_memory(fileName, data, bytesRead);
+    return pntr_load_sound_from_memory(type, data, bytesRead);
 }
 
 PNTR_APP_API inline void* pntr_app_userdata(pntr_app* app) {
