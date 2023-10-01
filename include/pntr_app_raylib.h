@@ -25,6 +25,68 @@
     #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
 #endif
 
+Image pntr_app_raylib_image(pntr_image* image);
+
+#ifndef PNTR_LOAD_IMAGE_FROM_MEMORY
+    pntr_image* pntr_app_raylib_load_image_from_memory(pntr_image_type type, const unsigned char *fileData, unsigned int dataSize) {
+        if (fileData == NULL) {
+            return NULL;
+        }
+
+        const char* fileType;
+        switch (type) {
+            case PNTR_IMAGE_TYPE_BMP:
+                type = ".bmp";
+                break;
+            case PNTR_IMAGE_TYPE_JPG:
+                type = ".jpg";
+                break;
+            case PNTR_IMAGE_TYPE_PNG:
+                type = ".png";
+                break;
+        }
+
+        Image image = LoadImageFromMemory(fileType, fileData, dataSize);
+        if (!IsImageReady(image)) {
+            return NULL;
+        }
+
+        pntr_image* output = pntr_image_from_pixelformat(image.data, image.width, image.height, PNTR_PIXELFORMAT_RGBA8888);
+        UnloadImage(image);
+        return output;
+    }
+    #define PNTR_LOAD_IMAGE_FROM_MEMORY pntr_app_raylib_load_image_from_memory
+#endif
+
+#ifndef PNTR_SAVE_IMAGE_TO_MEMORY
+    unsigned char* pntr_app_raylib_save_image_to_memory(pntr_image* image, pntr_image_type type, unsigned int* dataSize) {
+        if (image == NULL) {
+            return NULL;
+        }
+        const char* fileType;
+        switch (type) {
+            case PNTR_IMAGE_TYPE_BMP:
+                type = ".bmp";
+                break;
+            case PNTR_IMAGE_TYPE_JPG:
+                type = ".jpg";
+                break;
+            case PNTR_IMAGE_TYPE_PNG:
+                type = ".png";
+                break;
+        }
+
+        Image image = pntr_app_raylib_image(image);
+        int fileSize;
+        unsigned char* output = ExportImageToMemory(image, fileType, &fileSize);
+        if (dataSize != NULL) {
+            dataSize = (unsigned int)fileSize;
+        }
+        return output;
+    }
+    #define PNTR_SAVE_IMAGE_TO_MEMORY pntr_app_raylib_save_image_to_memory
+#endif
+
 #ifndef PNTR_APP_LOG
     void pntr_app_raylib_log(pntr_app_log_type type, const char* message) {
         TraceLogLevel logLevel;
@@ -54,16 +116,16 @@ typedef struct pntr_app_raylib_platform {
 
 pntr_app_raylib_platform* pntr_app_raylib_platform_instance;
 
-Image pntr_app_raylib_screen_image(pntr_app* app) {
+Image pntr_app_raylib_image(pntr_image* image) {
     Image output = { 0 };
-    if (app == NULL) {
+    if (image == NULL) {
         return output;
     }
 
     // Set up the raylib image to match the screen.
-    output.data = app->screen->data;
-    output.width = app->width;
-    output.height = app->height;
+    output.data = image->data;
+    output.width = image->width;
+    output.height = image->height;
     output.format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
     output.mipmaps = 1;
 
@@ -214,7 +276,7 @@ bool pntr_app_render(pntr_app* app) {
 
     // Update the texture with the latest from the pntr screen.
     if (!IsTextureReady(platform->screenTexture)) {
-        platform->screenTexture = LoadTextureFromImage(pntr_app_raylib_screen_image(app));
+        platform->screenTexture = LoadTextureFromImage(pntr_app_raylib_image(app->screen));
         if (!IsTextureReady(platform->screenTexture)) {
             TraceLog(LOG_ERROR, "pntr: Failed to resize screen texture");
             return false;
