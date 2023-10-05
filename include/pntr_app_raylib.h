@@ -164,6 +164,7 @@ bool pntr_app_events(pntr_app* app) {
 
         if (event.type != PNTR_APP_EVENTTYPE_UNKNOWN) {
             event.mouseButton = pntr_app_raylib_mouse_button(i);
+            pntr_app_raylib_fix_mouse_coordinates(app, &event);
             pntr_app_process_event(app, &event);
         }
     }
