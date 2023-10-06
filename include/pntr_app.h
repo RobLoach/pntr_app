@@ -491,6 +491,7 @@ PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, p
 PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
 PNTR_APP_API int pntr_app_mouse_x(pntr_app* app);
 PNTR_APP_API int pntr_app_mouse_y(pntr_app* app);
+PNTR_APP_API pntr_vector pntr_app_mouse_position(pntr_app* app);
 PNTR_APP_API int pntr_app_mouse_delta_x(pntr_app* app);
 PNTR_APP_API int pntr_app_mouse_delta_y(pntr_app* app);
 PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
@@ -956,6 +957,13 @@ PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, p
 
 PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
     return !app->gamepadButtonsDown[gamepad][button];
+}
+
+PNTR_APP_API pntr_vector pntr_app_mouse_position(pntr_app* app) {
+    return PNTR_CLITERAL(pntr_vector) {
+        .x = app->mouseX,
+        .y = app->mouseY
+    };
 }
 
 PNTR_APP_API int pntr_app_mouse_x(pntr_app* app) {
