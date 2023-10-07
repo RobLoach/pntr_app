@@ -1024,7 +1024,7 @@ pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char*
     }
 
     if (sound == NULL) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load audio data from %s\n", fileName);
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load audio data%s\n");
         pntr_unload_file(data);
         return NULL;
     }
