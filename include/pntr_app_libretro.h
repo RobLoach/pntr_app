@@ -295,9 +295,9 @@ static void fallback_log(enum retro_log_level level, const char *fmt, ...) {
 #ifndef PNTR_APP_LOG
     void pntr_app_libretro_log(pntr_app_log_type type, const char* message) {
         #ifdef NDEBUG
-        if (type == PNTR_APP_LOG_DEBUG) {
-            return;
-        }
+            if (type == PNTR_APP_LOG_DEBUG) {
+                return;
+            }
         #endif
 
         enum retro_log_level logLevel;

@@ -15,7 +15,7 @@ typedef struct AppData {
 #define ASSERT(condition) do { \
     if ((bool)(condition) == false) { \
         char message[512]; \
-        pntr_app_log_ex(PNTR_APP_LOG_ERROR, message, "%s:%d: error: expected \"%s\" to be true", __FILE__, __LINE__, #condition); \
+        pntr_app_log(PNTR_APP_LOG_ERROR, message, "%s:%d: error: expected \"%s\" to be true", __FILE__, __LINE__, #condition); \
         return false; \
     } \
 } while(0)

@@ -475,12 +475,16 @@ PNTR_APP_API void pntr_app_random_seed(unsigned int seed);
 /**
  * Log a message.
  *
- * @param type The type of message to be logged.
- * @param message The message.
+ * @param type The type of message to be logged. PNTR_APP_LOG_INFO, PNTR_APP_LOG_WARNING, PNTR_APP_LOG_ERROR, etc.
+ * @param message The message to display in the log.
+ * @param ... (optional) A list of printf-style arguments to pass into the message.
  *
  * @see pntr_app_log_type
+ * @see PNTR_APP_LOG_INFO
+ * @see PNTR_APP_LOG_WARNING
+ * @see PNTR_APP_LOG_ERROR
  */
-PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message);
+PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message, ...);
 PNTR_APP_API bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
@@ -568,10 +572,6 @@ void pntr_app_close(pntr_app* app);
 bool pntr_app_platform_update_delta_time(pntr_app* app);
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
 
-#ifdef PNTR_ENABLE_VARGS
-PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
-#endif
-
 #ifdef __cplusplus
 }
 #endif
@@ -631,6 +631,11 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #define PNTR_APP_PNTR_H "pntr.h"
 #endif
 #include PNTR_APP_PNTR_H
+
+#ifdef PNTR_ENABLE_VARGS
+    #include <stdarg.h> // va_list(), va_start(), va_arg(), va_end()
+    #include <stdio.h> // vsprintf()
+#endif
 
 #ifndef PNTR_APP_LOG
     #include <stdio.h> // printf(), sprintf()
@@ -1049,42 +1054,39 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     return NULL;
 }
 
-PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message) {
-#ifdef PNTR_APP_LOG
-    PNTR_APP_LOG(type, message);
-#else
-    switch (type) {
-        case PNTR_APP_LOG_ERROR:
-            fprintf(stderr, "%s\n", message);
-        break;
-        case PNTR_APP_LOG_DEBUG:
-            // Skip debug messages if NDEBUG is defined.
-            #ifndef NDEBUG
-                printf("%s\n", message);
-            #endif
-        break;
-        default:
-            printf("%s\n", message);
-        break;
-    }
-#endif
-}
+PNTR_APP_API void pntr_app_log(pntr_app_log_type type, const char* message, ...) {
+    #ifdef PNTR_ENABLE_VARGS
+        #ifndef PNTR_APP_LOG_STRING_LENGTH
+            #define PNTR_APP_LOG_STRING_LENGTH 256
+        #endif
+        char output[PNTR_APP_LOG_STRING_LENGTH];
 
-#ifdef PNTR_ENABLE_VARGS
-PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...) {
-    #ifndef PNTR_APP_LOG_EX_STRING_LENGTH
-    #define PNTR_APP_LOG_EX_STRING_LENGTH 256
+        va_list arg_ptr;
+        va_start(arg_ptr, message);
+        vsprintf(output, message, arg_ptr);
+        va_end(arg_ptr);
+        message = output;
     #endif
-    char output[PNTR_APP_LOG_EX_STRING_LENGTH];
 
-    va_list arg_ptr;
-    va_start(arg_ptr, message);
-    vsprintf(output, message, arg_ptr);
-    va_end(arg_ptr);
-
-    pntr_app_log(type, output);
+    #ifdef PNTR_APP_LOG
+        PNTR_APP_LOG(type, message);
+    #else
+        switch (type) {
+            case PNTR_APP_LOG_ERROR:
+                fprintf(stderr, "%s\n", message);
+            break;
+            case PNTR_APP_LOG_DEBUG:
+                // Skip debug messages if NDEBUG is defined.
+                #ifndef NDEBUG
+                    printf("%s\n", message);
+                #endif
+            break;
+            default:
+                printf("%s\n", message);
+            break;
+        }
+    #endif
 }
-#endif
 
 PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     if (app == NULL) {
