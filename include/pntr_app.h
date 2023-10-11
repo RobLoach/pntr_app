@@ -357,6 +357,7 @@ struct pntr_app {
     int mouseDeltaY;
     int mouseWheel;
     bool mouseWheelChanged;
+    bool mouseChanged;
     bool mouseButtonsDown[PNTR_APP_MOUSE_BUTTON_LAST];
     bool mouseButtonsDownLast[PNTR_APP_MOUSE_BUTTON_LAST];
     bool mouseButtonsChanged;
@@ -865,6 +866,7 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             app->mouseDeltaY = event->mouseDeltaY;
             app->mouseX = event->mouseX;
             app->mouseY = event->mouseY;
+            app->mouseChanged = true;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
             app->mouseWheel = event->mouseWheel;
@@ -923,6 +925,12 @@ void pntr_app_pre_events(pntr_app* app) {
             app->mouseButtonsDownLast[i] = app->mouseButtonsDown[i];
         }
         app->mouseButtonsChanged = false;
+    }
+
+    if (app->mouseChanged) {
+        app->mouseDeltaX = 0;
+        app->mouseDeltaY = 0;
+        app->mouseChanged = false;
     }
 }
 
