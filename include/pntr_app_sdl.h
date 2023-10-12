@@ -243,6 +243,8 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
         case SDLK_RCTRL: return PNTR_APP_KEY_RIGHT_CONTROL;
         case SDLK_RALT: return PNTR_APP_KEY_RIGHT_ALT;
         case SDLK_MENU: return PNTR_APP_KEY_MENU;
+        default:
+            return PNTR_APP_KEY_INVALID;
     }
 
     return PNTR_APP_KEY_INVALID;
@@ -251,7 +253,7 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
 // Random Number Generator
 #include "extensions/pntr_app_random_stdlib.h"
 
-SDL_Rect pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_Rect* outRect) {
+void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_Rect* outRect) {
     // Find the aspect ratio.
     float aspect = (float)screen->width / (float)screen->height;
     if (aspect <= 0) {
@@ -592,6 +594,7 @@ typedef struct pntr_sound_sdl {
 } pntr_sound_sdl;
 
 pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
+    (void)type;
     if (data == NULL || dataSize <= 0) {
         return NULL;
     }

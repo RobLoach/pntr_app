@@ -192,7 +192,7 @@ bool pntr_app_events(pntr_app* app) {
     if (IsFileDropped()) {
         event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
         FilePathList droppedFiles = LoadDroppedFiles();
-        for (int i = 0; i < droppedFiles.count; i++) {
+        for (unsigned int i = 0; i < droppedFiles.count; i++) {
             event.fileDropped = droppedFiles.paths[i];
             pntr_app_process_event(app, &event);
         }
