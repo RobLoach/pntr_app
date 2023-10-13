@@ -224,7 +224,7 @@ bool pntr_app_render(pntr_app* app) {
 
     // Clear the terminal
     #ifdef PNTR_APP_DISABLE_TERMBOX
-        printf("\e[1;1H\e[2J");
+        printf("\n");
     #endif
 
     // Output the characters to the terminal
