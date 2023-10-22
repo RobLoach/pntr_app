@@ -115,6 +115,7 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     pntr_app_event event;
+    event.app = app;
 
     // Keys
     for (event.key = PNTR_APP_KEY_FIRST; event.key < PNTR_APP_KEY_LAST; event.key++) {

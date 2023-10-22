@@ -37,6 +37,7 @@ bool pntr_app_events(pntr_app* app) {
 
     pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
     pntr_app_event event;
+    event.app = app;
 
     // Key Up
     event.type = PNTR_APP_EVENTTYPE_KEY_UP;

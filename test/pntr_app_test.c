@@ -74,6 +74,7 @@ bool Init(pntr_app* app) {
 
         // Force push a button.
         pntr_app_event e;
+        e.app = app;
         e.key = PNTR_APP_KEY_A;
         e.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
         pntr_app_process_event(app, &e);

@@ -203,6 +203,7 @@ void pntr_app_emscripten_gamepad(pntr_app* app) {
 
     // Loop through every available gamepad.
     pntr_app_event event;
+    event.app = app;
     int numGamepads =  emscripten_get_num_gamepads();
     for (event.gamepad = 0; event.gamepad < numGamepads && event.gamepad < PNTR_APP_MAX_GAMEPADS; event.gamepad++) {
         EmscriptenGamepadEvent ge;
@@ -297,6 +298,7 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
 
     // Build the key event.
     pntr_app_event event;
+    event.app = app;
     event.type = (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
     event.key = pntr_app_emscripten_key_from_event(keyEvent);
 
@@ -328,9 +330,11 @@ EM_BOOL pntr_app_emscripten_mouse_wheel(int eventType, const struct EmscriptenWh
     }
 
     pntr_app_event event;
+    event.app = app;
     event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
     event.mouseWheel = mouseEvent->deltaY > 0 ? 1 : -1;
     pntr_app_process_event(app, &event);
+
     return EM_TRUE;
 }
 
@@ -342,6 +346,7 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
 
     // Build the key event.
     pntr_app_event event;
+    event.app = app;
     switch (eventType) {
         case EMSCRIPTEN_EVENT_MOUSEDOWN: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN; break;
         case EMSCRIPTEN_EVENT_MOUSEUP: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP; break;
@@ -386,6 +391,7 @@ EMSCRIPTEN_KEEPALIVE int pntr_app_emscripten_file_dropped(void* app, const char*
   }
 
   pntr_app_event event;
+  event.app = app;
   event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
   event.fileDropped = fileName;
   pntr_app_process_event(app, &event);

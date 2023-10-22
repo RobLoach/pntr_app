@@ -517,6 +517,7 @@ bool pntr_app_events(pntr_app* app) {
 
     // Prepare a pntr event to push.
     pntr_app_event event;
+    event.app = app;
 
     // Mouse Move
     int16_t mouseX = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
@@ -684,6 +685,7 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
     }
 
     pntr_app_event event;
+    event.app = pntr_app_libretro;
     event.key = pntr_app_libretro_key(keycode);
     if (event.key != PNTR_APP_KEY_INVALID) {
         event.type = down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;

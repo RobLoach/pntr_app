@@ -282,7 +282,14 @@ typedef enum pntr_app_log_type {
     PNTR_APP_LOG_ERROR
 } pntr_app_log_type;
 
+typedef struct pntr_app pntr_app;
+
 typedef struct pntr_app_event {
+    /**
+     * The application associated with the event.
+     */
+    pntr_app* app;
+
     /**
      * The type of the event that has been pushed.
      */
@@ -317,8 +324,6 @@ typedef struct pntr_app_event {
      */
     const char* fileDropped;
 } pntr_app_event;
-
-typedef struct pntr_app pntr_app;
 
 /**
  * Application definition.

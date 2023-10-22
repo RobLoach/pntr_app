@@ -339,6 +339,7 @@ bool pntr_app_events(pntr_app* app) {
 
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
     pntr_app_event pntrEvent;
+    pntrEvent.app = app;
     SDL_Event event;
 
     while (SDL_PollEvent(&event) != 0) {
