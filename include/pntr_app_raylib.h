@@ -18,11 +18,19 @@
 #endif
 
 #ifndef PNTR_LOAD_FILE
-    #define PNTR_LOAD_FILE LoadFileData
+    #define PNTR_LOAD_FILE pntr_app_raylib_load_file
+    unsigned char* pntr_app_raylib_load_file(const char* fileName, unsigned int* bytesRead) {
+        int dataSize = 0;
+        unsigned char* output = LoadFileData(fileName, &dataSize);
+        if (bytesRead != NULL) {
+            *bytesRead = dataSize;
+        }
+        return output;
+    }
 #endif
 
 #ifndef PNTR_SAVE_FILE
-    #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
+    #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, (int)bytesToWrite)
 #endif
 
 #ifndef PNTR_APP_LOG
