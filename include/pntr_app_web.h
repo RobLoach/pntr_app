@@ -98,11 +98,11 @@ EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
  * @param height The desired height of the context.
  */
 EM_JS(void, pntr_app_init_js, (int width, int height), {
-    canvas.width = width;
-    canvas.height = height;
-    Module.ctx = canvas.getContext('2d');
+    Module.canvas.width = width;
+    Module.canvas.height = height;
+    Module.ctx = Module.canvas.getContext('2d');
     Module.screen = Module.ctx.getImageData(0, 0, width, height);
-    specialHTMLTargets["!canvas"] = canvas;
+    specialHTMLTargets["!canvas"] = Module.canvas;
 });
 
 /**
@@ -366,8 +366,8 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
         }
         break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            int canvasWidth = EM_ASM_INT({return canvas.clientWidth;});
-            int canvasHeight = EM_ASM_INT({return canvas.clientHeight;});
+            int canvasWidth = EM_ASM_INT({return Module.canvas.clientWidth;});
+            int canvasHeight = EM_ASM_INT({return Module.canvas.clientHeight;});
             event.mouseX = (float)mouseEvent->targetX / (float)canvasWidth * (float)app->width;
             event.mouseY = (float)mouseEvent->targetY / (float)canvasHeight * (float)app->height;
             pntr_app_process_event(app, &event);
@@ -413,8 +413,8 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
         Module.HEAPU8.set((new TextEncoder()).encode(s + '\0'), buff_ptr);
         return buff_ptr;
     };
-    canvas.addEventListener('dragover', e => e.preventDefault());
-    canvas.addEventListener('drop', e => {
+    Module.canvas.addEventListener('dragover', e => e.preventDefault());
+    Module.canvas.addEventListener('drop', e => {
         e.preventDefault();
         for (const file of e.dataTransfer.files) {
             const reader = new FileReader();
