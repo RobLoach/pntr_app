@@ -120,9 +120,6 @@ typedef struct pntr_app_libretro_platform {
     bool audioEnabled;
 } pntr_app_libretro_platform;
 
-// Random Number Generator
-#include "extensions/pntr_app_random_stdlib.h"
-
 pntr_app_gamepad_button pntr_app_libretro_gamepad_button(int button) {
     switch (button) {
         case RETRO_DEVICE_ID_JOYPAD_UP: return PNTR_APP_GAMEPAD_BUTTON_UP;
@@ -634,7 +631,8 @@ bool pntr_app_init(pntr_app* app) {
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
 
     // Random Number Generator
-    pntr_app_random_seed(0);
+    // TODO: libretro: Get the current time for the random seed.
+    pntr_app_random_seed(app, 0);
 
     return true;
 }

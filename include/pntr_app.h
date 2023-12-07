@@ -61,6 +61,9 @@ extern "C" {
 #endif
 #include PNTR_APP_PNTR_H
 
+// Random Number Generator
+#include "external/prand.h"
+
 #ifndef PNTR_APP_API
     #define PNTR_APP_API PNTR_API
 #endif
@@ -373,6 +376,9 @@ struct pntr_app {
     void* argFileData;
     unsigned int argFileDataSize;
     bool argFileDataUnloadOnExit;
+
+    // Random Number Generator
+    prand_t prand;
 };
 
 typedef void pntr_sound;
@@ -467,7 +473,7 @@ PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
  *
  * @return A random integer between the min and max values.
  */
-PNTR_APP_API int pntr_app_random(int min, int max);
+PNTR_APP_API int pntr_app_random(pntr_app* app, int min, int max);
 
 /**
  * Sets the random number generator seed.
@@ -476,7 +482,7 @@ PNTR_APP_API int pntr_app_random(int min, int max);
  *
  * @param seed The seed to use for the random number generator. If set to 0, will let the platform decide which seed to use.
  */
-PNTR_APP_API void pntr_app_random_seed(unsigned int seed);
+PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed);
 
 /**
  * Log a message.
@@ -642,6 +648,16 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
     #include <stdio.h> // printf(), sprintf()
 #endif
 
+// prand: Pseudo Random Number Generator
+#ifndef PRAND_MALLOC
+    #define PRAND_MALLOC(sz) PNTR_MALLOC(sz)
+#endif
+#ifndef PRAND_FREE
+    #define PRAND_FREE(obj) PNTR_FREE(obj)
+#endif
+#define PRAND_IMPLEMENTATION
+#include "external/prand.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -717,8 +733,6 @@ int main(int argc, char* argv[]) {
         pntr_unload_image(app.screen);
         return 1;
     }
-
-    pntr_app_random_seed(0);
 
     // Call the init callback.
     if (app.init != NULL) {
@@ -1105,6 +1119,14 @@ PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     }
 
     return app->title;
+}
+
+PNTR_APP_API inline int pntr_app_random(pntr_app* app, int min, int max) {
+    return prand_int(&app->prand, min, max);
+}
+
+PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed) {
+    prand_set_seed(&app->prand, seed);
 }
 
 #ifdef __cplusplus

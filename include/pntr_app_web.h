@@ -465,24 +465,14 @@ bool pntr_app_init(pntr_app* app) {
     app->deltaTime = 0;
     app->deltaTimeCounter = pntr_app_emscripten_get_time();
 
+    // Random Number Generator
+    pntr_app_random_seed(app, (unsigned int)(emscripten_random() * 0x7FFFFFFF));
+
     return true;
 }
 
 void pntr_app_close(pntr_app* app) {
     // TODO: Close the context, and delete the canvas.
-}
-
-PNTR_APP_API int pntr_app_random(int min, int max) {
-    return (int)((emscripten_random() * (float)(max - min)) + (float)min);
-}
-
-PNTR_APP_API void pntr_app_random_seed(unsigned int seed) {
-    if (seed == 0) {
-        int randomNumberSeed = pntr_app_random(1, 100);
-        for (int i = 0; i < randomNumberSeed; i++) {
-            pntr_app_random(0, 100);
-        }
-    }
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
