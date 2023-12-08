@@ -550,7 +550,15 @@ bool pntr_app_init(pntr_app* app);
  * @internal
  */
 bool pntr_app_events(pntr_app* app);
+
+/**
+ * @internal
+ */
 void pntr_app_pre_events(pntr_app* app);
+
+/**
+ * @internal
+ */
 void pntr_app_process_event(pntr_app* app, pntr_app_event* event);
 
 /**
@@ -578,6 +586,10 @@ void pntr_app_close(pntr_app* app);
  * @internal
  */
 bool pntr_app_platform_update_delta_time(pntr_app* app);
+
+/**
+ * @internal
+ */
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
 
 #ifdef PNTR_ENABLE_VARGS
