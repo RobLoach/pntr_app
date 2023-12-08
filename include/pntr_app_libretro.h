@@ -3,6 +3,7 @@
 #include <stdio.h>  // vfprintf
 #include <math.h>
 #include <stdlib.h>
+#include <time.h> // time()
 
 #ifndef PNTR_APP_LIBRETRO_H
 #define PNTR_APP_LIBRETRO_H "libretro.h"
@@ -631,8 +632,7 @@ bool pntr_app_init(pntr_app* app) {
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
 
     // Random Number Generator
-    // TODO: libretro: Get the current time for the random seed.
-    pntr_app_random_seed(app, 0);
+    pntr_app_random_seed(app, (unsigned int)time(NULL));
 
     return true;
 }
