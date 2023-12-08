@@ -12,6 +12,9 @@
     #include PNTR_APP_SDL_MIXER_H
 #endif
 
+// Random Number Generator
+#include <time.h> // time()
+
 #ifndef PNTR_FREE
     /**
      * Free the given memory pointer using SDL.
@@ -249,9 +252,6 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
 
     return PNTR_APP_KEY_INVALID;
 }
-
-// Random Number Generator
-#include "extensions/pntr_app_random_stdlib.h"
 
 void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_Rect* outRect) {
     // Find the aspect ratio.
@@ -527,6 +527,9 @@ bool pntr_app_init(pntr_app* app) {
     // Start the tick counter for the delta time.
     platform->timerLastTime = SDL_GetTicks64();
     //platform->timerLastTime = SDL_GetPerformanceCounter();
+
+    // Random Number Generator
+    pntr_app_random_seed(app, (unsigned int)time(NULL));
 
     return true;
 }

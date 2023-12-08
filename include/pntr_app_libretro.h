@@ -3,6 +3,7 @@
 #include <stdio.h>  // vfprintf
 #include <math.h>
 #include <stdlib.h>
+#include <time.h> // time()
 
 #ifndef PNTR_APP_LIBRETRO_H
 #define PNTR_APP_LIBRETRO_H "libretro.h"
@@ -119,9 +120,6 @@ typedef struct pntr_app_libretro_platform {
     int audioBufferSize;
     bool audioEnabled;
 } pntr_app_libretro_platform;
-
-// Random Number Generator
-#include "extensions/pntr_app_random_stdlib.h"
 
 pntr_app_gamepad_button pntr_app_libretro_gamepad_button(int button) {
     switch (button) {
@@ -634,7 +632,7 @@ bool pntr_app_init(pntr_app* app) {
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
 
     // Random Number Generator
-    pntr_app_random_seed(0);
+    pntr_app_random_seed(app, (unsigned int)time(NULL));
 
     return true;
 }

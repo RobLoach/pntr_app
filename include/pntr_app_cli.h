@@ -15,9 +15,7 @@
 #endif
 
 #include <stdio.h>
-
-// Random Number Generator
-#include "extensions/pntr_app_random_stdlib.h"
+#include <time.h> // time()
 
 #ifndef PNTR_APP_CLI_LOG_FILE
 #define PNTR_APP_CLI_LOG_FILE "log.txt"
@@ -275,6 +273,9 @@ bool pntr_app_init(pntr_app* app) {
             fclose(file);
         }
     #endif
+
+    // Random Number Generator
+    pntr_app_random_seed(app, (unsigned int)time(NULL));
 
     return true;
 }

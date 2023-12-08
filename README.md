@@ -113,6 +113,8 @@ bool pntr_app_set_size(pntr_app* app, int width, int height);
 void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 void* pntr_app_file_data(pntr_app* app, unsigned int* size);
 void pntr_app_log(int logLevel, const char* message);
+int pntr_app_random(pntr_app* app, int min, int max);
+void pntr_app_random_seed(pntr_app* app, unsigned int seed);
 ```
 
 ## Build

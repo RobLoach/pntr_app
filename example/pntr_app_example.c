@@ -109,7 +109,7 @@ void Event(pntr_app* app, pntr_app_event* event) {
             }
 
             if (event->key == PNTR_APP_KEY_R) {
-                sprintf(message, "Random: %d", pntr_app_random(10, 100));
+                sprintf(message, "Random: %d", pntr_app_random(app, 10, 100));
                 pntr_app_log(PNTR_APP_LOG_INFO, message);
             }
         }
