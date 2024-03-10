@@ -667,8 +667,8 @@ void pntr_play_sound(pntr_sound* sound, bool loop) {
     #else
         // TODO: Add sound looping to SDL Queue Audio.
         pntr_stop_sound(sound);
-        int success = SDL_QueueAudio(audio->deviceId, audio->audio_buf, audio->audio_len);
-        SDL_PauseAudioDevice(audio->deviceId, 0);
+        /*int success =*/ SDL_QueueAudio(audio->deviceId, audio->audio_buf, audio->audio_len);
+        SDL_PauseAudioDevice(audio->deviceId, loop ? 0 : 0);
     #endif
 }
 
