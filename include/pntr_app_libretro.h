@@ -483,7 +483,7 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
  *
  * @see RETRO_DEVICE_POINTER
  */
-int pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margin)
+float pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margin)
 {
 	float max         = (float)0x7fff;
 	float screenCoord = (((coord + max) / (max * 2.0f) ) * full) - margin;
@@ -495,7 +495,7 @@ int pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margi
 		screenCoord = (screenCoord > limit) ? limit : screenCoord;
 	}
 
-	return (int)(screenCoord + 0.5f);
+	return screenCoord + 0.5f;
 }
 
 bool pntr_app_events(pntr_app* app) {
