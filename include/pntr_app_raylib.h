@@ -44,14 +44,18 @@ Image pntr_app_raylib_image(pntr_image* image);
         const char* fileType;
         switch (type) {
             case PNTR_IMAGE_TYPE_BMP:
-                type = ".bmp";
+                fileType = ".bmp";
                 break;
             case PNTR_IMAGE_TYPE_JPG:
-                type = ".jpg";
+                fileType = ".jpg";
                 break;
             case PNTR_IMAGE_TYPE_PNG:
-                type = ".png";
+                fileType = ".png";
                 break;
+            case PNTR_IMAGE_TYPE_UNKNOWN:
+            default:
+                pntr_set_error(PNTR_ERROR_NOT_SUPPORTED);
+                return NULL;
         }
 
         Image image = LoadImageFromMemory(fileType, fileData, dataSize);
@@ -74,21 +78,25 @@ Image pntr_app_raylib_image(pntr_image* image);
         const char* fileType;
         switch (type) {
             case PNTR_IMAGE_TYPE_BMP:
-                type = ".bmp";
-                break;
+                pntr_set_error(PNTR_ERROR_NOT_SUPPORTED);
+                return NULL;
             case PNTR_IMAGE_TYPE_JPG:
-                type = ".jpg";
-                break;
+                pntr_set_error(PNTR_ERROR_NOT_SUPPORTED);
+                return NULL;
             case PNTR_IMAGE_TYPE_PNG:
-                type = ".png";
+                fileType = ".png";
                 break;
+            case PNTR_IMAGE_TYPE_UNKNOWN:
+            default:
+                pntr_set_error(PNTR_ERROR_NOT_SUPPORTED);
+                return NULL;
         }
 
-        Image image = pntr_app_raylib_image(image);
+        Image raylibImage = pntr_app_raylib_image(image);
         int fileSize;
-        unsigned char* output = ExportImageToMemory(image, fileType, &fileSize);
+        unsigned char* output = ExportImageToMemory(raylibImage, fileType, &fileSize);
         if (dataSize != NULL) {
-            dataSize = (unsigned int)fileSize;
+            *dataSize = (unsigned int)fileSize;
         }
         return output;
     }
