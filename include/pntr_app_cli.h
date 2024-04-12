@@ -15,9 +15,7 @@
 #endif
 
 #include <stdio.h>
-
-// Random Number Generator
-#include "extensions/pntr_app_random_stdlib.h"
+#include <time.h> // time()
 
 #ifndef PNTR_APP_CLI_LOG_FILE
 #define PNTR_APP_CLI_LOG_FILE "log.txt"
@@ -37,6 +35,7 @@ bool pntr_app_events(pntr_app* app) {
 
     pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
     pntr_app_event event;
+    event.app = app;
 
     // Key Up
     event.type = PNTR_APP_EVENTTYPE_KEY_UP;
@@ -224,7 +223,7 @@ bool pntr_app_render(pntr_app* app) {
 
     // Clear the terminal
     #ifdef PNTR_APP_DISABLE_TERMBOX
-        printf("\e[1;1H\e[2J");
+        printf("\n");
     #endif
 
     // Output the characters to the terminal
@@ -274,6 +273,9 @@ bool pntr_app_init(pntr_app* app) {
             fclose(file);
         }
     #endif
+
+    // Random Number Generator
+    pntr_app_random_seed(app, (unsigned int)time(NULL));
 
     return true;
 }

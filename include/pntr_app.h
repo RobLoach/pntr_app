@@ -61,6 +61,9 @@ extern "C" {
 #endif
 #include PNTR_APP_PNTR_H
 
+// Random Number Generator
+#include "external/prand.h"
+
 #ifndef PNTR_APP_API
     #define PNTR_APP_API PNTR_API
 #endif
@@ -282,7 +285,14 @@ typedef enum pntr_app_log_type {
     PNTR_APP_LOG_ERROR
 } pntr_app_log_type;
 
+typedef struct pntr_app pntr_app;
+
 typedef struct pntr_app_event {
+    /**
+     * The application associated with the event.
+     */
+    pntr_app* app;
+
     /**
      * The type of the event that has been pushed.
      */
@@ -297,10 +307,10 @@ typedef struct pntr_app_event {
      * PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN or PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP
      */
     pntr_app_mouse_button mouseButton;
-    int mouseX;
-    int mouseY;
-    int mouseDeltaX;
-    int mouseDeltaY;
+    float mouseX;
+    float mouseY;
+    float mouseDeltaX;
+    float mouseDeltaY;
 
     /**
      * When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be -1 when the mouse wheel is scrolling up, and 1 when scrolling down.
@@ -317,8 +327,6 @@ typedef struct pntr_app_event {
      */
     const char* fileDropped;
 } pntr_app_event;
-
-typedef struct pntr_app pntr_app;
 
 /**
  * Application definition.
@@ -351,12 +359,13 @@ struct pntr_app {
     bool gamepadButtonsDownLast[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
 
     // Mouse
-    int mouseX;
-    int mouseY;
-    int mouseDeltaX;
-    int mouseDeltaY;
+    float mouseX;
+    float mouseY;
+    float mouseDeltaX;
+    float mouseDeltaY;
     int mouseWheel;
     bool mouseWheelChanged;
+    bool mouseChanged;
     bool mouseButtonsDown[PNTR_APP_MOUSE_BUTTON_LAST];
     bool mouseButtonsDownLast[PNTR_APP_MOUSE_BUTTON_LAST];
     bool mouseButtonsChanged;
@@ -367,6 +376,9 @@ struct pntr_app {
     void* argFileData;
     unsigned int argFileDataSize;
     bool argFileDataUnloadOnExit;
+
+    // Random Number Generator
+    prand_t prand;
 };
 
 typedef void pntr_sound;
@@ -461,7 +473,7 @@ PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
  *
  * @return A random integer between the min and max values.
  */
-PNTR_APP_API int pntr_app_random(int min, int max);
+PNTR_APP_API int pntr_app_random(pntr_app* app, int min, int max);
 
 /**
  * Sets the random number generator seed.
@@ -470,7 +482,7 @@ PNTR_APP_API int pntr_app_random(int min, int max);
  *
  * @param seed The seed to use for the random number generator. If set to 0, will let the platform decide which seed to use.
  */
-PNTR_APP_API void pntr_app_random_seed(unsigned int seed);
+PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed);
 
 /**
  * Log a message.
@@ -489,10 +501,10 @@ PNTR_APP_API bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pn
 PNTR_APP_API bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
 PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
 PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
-PNTR_APP_API int pntr_app_mouse_x(pntr_app* app);
-PNTR_APP_API int pntr_app_mouse_y(pntr_app* app);
-PNTR_APP_API int pntr_app_mouse_delta_x(pntr_app* app);
-PNTR_APP_API int pntr_app_mouse_delta_y(pntr_app* app);
+PNTR_APP_API float pntr_app_mouse_x(pntr_app* app);
+PNTR_APP_API float pntr_app_mouse_y(pntr_app* app);
+PNTR_APP_API float pntr_app_mouse_delta_x(pntr_app* app);
+PNTR_APP_API float pntr_app_mouse_delta_y(pntr_app* app);
 PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
@@ -538,7 +550,15 @@ bool pntr_app_init(pntr_app* app);
  * @internal
  */
 bool pntr_app_events(pntr_app* app);
+
+/**
+ * @internal
+ */
 void pntr_app_pre_events(pntr_app* app);
+
+/**
+ * @internal
+ */
 void pntr_app_process_event(pntr_app* app, pntr_app_event* event);
 
 /**
@@ -566,6 +586,10 @@ void pntr_app_close(pntr_app* app);
  * @internal
  */
 bool pntr_app_platform_update_delta_time(pntr_app* app);
+
+/**
+ * @internal
+ */
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
 
 #ifdef PNTR_ENABLE_VARGS
@@ -635,6 +659,16 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #ifndef PNTR_APP_LOG
     #include <stdio.h> // printf(), sprintf()
 #endif
+
+// prand: Pseudo Random Number Generator
+#ifndef PRAND_MALLOC
+    #define PRAND_MALLOC(sz) PNTR_MALLOC(sz)
+#endif
+#ifndef PRAND_FREE
+    #define PRAND_FREE(obj) PNTR_FREE(obj)
+#endif
+#define PRAND_IMPLEMENTATION
+#include "external/prand.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -711,8 +745,6 @@ int main(int argc, char* argv[]) {
         pntr_unload_image(app.screen);
         return 1;
     }
-
-    pntr_app_random_seed(0);
 
     // Call the init callback.
     if (app.init != NULL) {
@@ -857,7 +889,7 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE:
             event->mouseDeltaX = app->mouseX - event->mouseX;
-            event->mouseDeltaX = app->mouseY - event->mouseY;
+            event->mouseDeltaY = app->mouseY - event->mouseY;
             if (event->mouseDeltaX == 0 && event->mouseDeltaY == 0) {
                 return;
             }
@@ -865,6 +897,7 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             app->mouseDeltaY = event->mouseDeltaY;
             app->mouseX = event->mouseX;
             app->mouseY = event->mouseY;
+            app->mouseChanged = true;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
             app->mouseWheel = event->mouseWheel;
@@ -924,6 +957,12 @@ void pntr_app_pre_events(pntr_app* app) {
         }
         app->mouseButtonsChanged = false;
     }
+
+    if (app->mouseChanged) {
+        app->mouseDeltaX = 0;
+        app->mouseDeltaY = 0;
+        app->mouseChanged = false;
+    }
 }
 
 PNTR_APP_API bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key) {
@@ -958,19 +997,19 @@ PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_ap
     return !app->gamepadButtonsDown[gamepad][button];
 }
 
-PNTR_APP_API int pntr_app_mouse_x(pntr_app* app) {
+PNTR_APP_API float pntr_app_mouse_x(pntr_app* app) {
     return app->mouseX;
 }
 
-PNTR_APP_API int pntr_app_mouse_y(pntr_app* app) {
+PNTR_APP_API float pntr_app_mouse_y(pntr_app* app) {
     return app->mouseY;
 }
 
-PNTR_APP_API int pntr_app_mouse_delta_x(pntr_app* app) {
+PNTR_APP_API float pntr_app_mouse_delta_x(pntr_app* app) {
     return app->mouseDeltaX;
 }
 
-PNTR_APP_API int pntr_app_mouse_delta_y(pntr_app* app) {
+PNTR_APP_API float pntr_app_mouse_delta_y(pntr_app* app) {
     return app->mouseDeltaY;
 }
 
@@ -1092,6 +1131,14 @@ PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     }
 
     return app->title;
+}
+
+PNTR_APP_API inline int pntr_app_random(pntr_app* app, int min, int max) {
+    return prand_int(&app->prand, min, max);
+}
+
+PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed) {
+    prand_set_seed(&app->prand, seed);
 }
 
 #ifdef __cplusplus

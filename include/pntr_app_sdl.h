@@ -12,6 +12,9 @@
     #include PNTR_APP_SDL_MIXER_H
 #endif
 
+// Random Number Generator
+#include <time.h> // time()
+
 #ifndef PNTR_FREE
     /**
      * Free the given memory pointer using SDL.
@@ -243,15 +246,14 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
         case SDLK_RCTRL: return PNTR_APP_KEY_RIGHT_CONTROL;
         case SDLK_RALT: return PNTR_APP_KEY_RIGHT_ALT;
         case SDLK_MENU: return PNTR_APP_KEY_MENU;
+        default:
+            return PNTR_APP_KEY_INVALID;
     }
 
     return PNTR_APP_KEY_INVALID;
 }
 
-// Random Number Generator
-#include "extensions/pntr_app_random_stdlib.h"
-
-SDL_Rect pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_Rect* outRect) {
+void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_Rect* outRect) {
     // Find the aspect ratio.
     float aspect = (float)screen->width / (float)screen->height;
     if (aspect <= 0) {
@@ -337,6 +339,7 @@ bool pntr_app_events(pntr_app* app) {
 
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
     pntr_app_event pntrEvent;
+    pntrEvent.app = app;
     SDL_Event event;
 
     while (SDL_PollEvent(&event) != 0) {
@@ -525,6 +528,9 @@ bool pntr_app_init(pntr_app* app) {
     platform->timerLastTime = SDL_GetTicks64();
     //platform->timerLastTime = SDL_GetPerformanceCounter();
 
+    // Random Number Generator
+    pntr_app_random_seed(app, (unsigned int)time(NULL));
+
     return true;
 }
 
@@ -592,6 +598,7 @@ typedef struct pntr_sound_sdl {
 } pntr_sound_sdl;
 
 pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
+    (void)type;
     if (data == NULL || dataSize <= 0) {
         return NULL;
     }
@@ -660,8 +667,8 @@ void pntr_play_sound(pntr_sound* sound, bool loop) {
     #else
         // TODO: Add sound looping to SDL Queue Audio.
         pntr_stop_sound(sound);
-        int success = SDL_QueueAudio(audio->deviceId, audio->audio_buf, audio->audio_len);
-        SDL_PauseAudioDevice(audio->deviceId, 0);
+        /*int success =*/ SDL_QueueAudio(audio->deviceId, audio->audio_buf, audio->audio_len);
+        SDL_PauseAudioDevice(audio->deviceId, loop ? 0 : 0);
     #endif
 }
 

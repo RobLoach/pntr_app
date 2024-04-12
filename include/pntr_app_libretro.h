@@ -3,6 +3,7 @@
 #include <stdio.h>  // vfprintf
 #include <math.h>
 #include <stdlib.h>
+#include <time.h> // time()
 
 #ifndef PNTR_APP_LIBRETRO_H
 #define PNTR_APP_LIBRETRO_H "libretro.h"
@@ -119,9 +120,6 @@ typedef struct pntr_app_libretro_platform {
     int audioBufferSize;
     bool audioEnabled;
 } pntr_app_libretro_platform;
-
-// Random Number Generator
-#include "extensions/pntr_app_random_stdlib.h"
 
 pntr_app_gamepad_button pntr_app_libretro_gamepad_button(int button) {
     switch (button) {
@@ -485,7 +483,7 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
  *
  * @see RETRO_DEVICE_POINTER
  */
-int pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margin)
+float pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margin)
 {
 	float max         = (float)0x7fff;
 	float screenCoord = (((coord + max) / (max * 2.0f) ) * full) - margin;
@@ -497,7 +495,7 @@ int pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margi
 		screenCoord = (screenCoord > limit) ? limit : screenCoord;
 	}
 
-	return (int)(screenCoord + 0.5f);
+	return screenCoord + 0.5f;
 }
 
 bool pntr_app_events(pntr_app* app) {
@@ -517,6 +515,7 @@ bool pntr_app_events(pntr_app* app) {
 
     // Prepare a pntr event to push.
     pntr_app_event event;
+    event.app = app;
 
     // Mouse Move
     int16_t mouseX = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
@@ -633,7 +632,7 @@ bool pntr_app_init(pntr_app* app) {
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
 
     // Random Number Generator
-    pntr_app_random_seed(0);
+    pntr_app_random_seed(app, (unsigned int)time(NULL));
 
     return true;
 }
@@ -684,6 +683,7 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
     }
 
     pntr_app_event event;
+    event.app = pntr_app_libretro;
     event.key = pntr_app_libretro_key(keycode);
     if (event.key != PNTR_APP_KEY_INVALID) {
         event.type = down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
@@ -1024,7 +1024,7 @@ pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char*
     }
 
     if (sound == NULL) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load audio data from %s\n", fileName);
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load audio data%s\n");
         pntr_unload_file(data);
         return NULL;
     }

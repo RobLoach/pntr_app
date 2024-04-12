@@ -98,11 +98,11 @@ EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
  * @param height The desired height of the context.
  */
 EM_JS(void, pntr_app_init_js, (int width, int height), {
-    canvas.width = width;
-    canvas.height = height;
-    Module.ctx = canvas.getContext('2d');
+    Module.canvas.width = width;
+    Module.canvas.height = height;
+    Module.ctx = Module.canvas.getContext('2d');
     Module.screen = Module.ctx.getImageData(0, 0, width, height);
-    specialHTMLTargets["!canvas"] = canvas;
+    specialHTMLTargets["!canvas"] = Module.canvas;
 });
 
 /**
@@ -203,6 +203,7 @@ void pntr_app_emscripten_gamepad(pntr_app* app) {
 
     // Loop through every available gamepad.
     pntr_app_event event;
+    event.app = app;
     int numGamepads =  emscripten_get_num_gamepads();
     for (event.gamepad = 0; event.gamepad < numGamepads && event.gamepad < PNTR_APP_MAX_GAMEPADS; event.gamepad++) {
         EmscriptenGamepadEvent ge;
@@ -297,6 +298,7 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
 
     // Build the key event.
     pntr_app_event event;
+    event.app = app;
     event.type = (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
     event.key = pntr_app_emscripten_key_from_event(keyEvent);
 
@@ -328,9 +330,11 @@ EM_BOOL pntr_app_emscripten_mouse_wheel(int eventType, const struct EmscriptenWh
     }
 
     pntr_app_event event;
+    event.app = app;
     event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
     event.mouseWheel = mouseEvent->deltaY > 0 ? 1 : -1;
     pntr_app_process_event(app, &event);
+
     return EM_TRUE;
 }
 
@@ -342,6 +346,7 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
 
     // Build the key event.
     pntr_app_event event;
+    event.app = app;
     switch (eventType) {
         case EMSCRIPTEN_EVENT_MOUSEDOWN: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN; break;
         case EMSCRIPTEN_EVENT_MOUSEUP: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP; break;
@@ -361,8 +366,8 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
         }
         break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            int canvasWidth = EM_ASM_INT({return canvas.clientWidth;});
-            int canvasHeight = EM_ASM_INT({return canvas.clientHeight;});
+            int canvasWidth = EM_ASM_INT({return Module.canvas.clientWidth;});
+            int canvasHeight = EM_ASM_INT({return Module.canvas.clientHeight;});
             event.mouseX = (float)mouseEvent->targetX / (float)canvasWidth * (float)app->width;
             event.mouseY = (float)mouseEvent->targetY / (float)canvasHeight * (float)app->height;
             pntr_app_process_event(app, &event);
@@ -386,6 +391,7 @@ EMSCRIPTEN_KEEPALIVE int pntr_app_emscripten_file_dropped(void* app, const char*
   }
 
   pntr_app_event event;
+  event.app = app;
   event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
   event.fileDropped = fileName;
   pntr_app_process_event(app, &event);
@@ -407,8 +413,8 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
         Module.HEAPU8.set((new TextEncoder()).encode(s + '\0'), buff_ptr);
         return buff_ptr;
     };
-    canvas.addEventListener('dragover', e => e.preventDefault());
-    canvas.addEventListener('drop', e => {
+    Module.canvas.addEventListener('dragover', e => e.preventDefault());
+    Module.canvas.addEventListener('drop', e => {
         e.preventDefault();
         for (const file of e.dataTransfer.files) {
             const reader = new FileReader();
@@ -459,24 +465,14 @@ bool pntr_app_init(pntr_app* app) {
     app->deltaTime = 0;
     app->deltaTimeCounter = pntr_app_emscripten_get_time();
 
+    // Random Number Generator
+    pntr_app_random_seed(app, (unsigned int)(emscripten_random() * 0x7FFFFFFF));
+
     return true;
 }
 
 void pntr_app_close(pntr_app* app) {
     // TODO: Close the context, and delete the canvas.
-}
-
-PNTR_APP_API int pntr_app_random(int min, int max) {
-    return (int)((emscripten_random() * (float)(max - min)) + (float)min);
-}
-
-PNTR_APP_API void pntr_app_random_seed(unsigned int seed) {
-    if (seed == 0) {
-        int randomNumberSeed = pntr_app_random(1, 100);
-        for (int i = 0; i < randomNumberSeed; i++) {
-            pntr_app_random(0, 100);
-        }
-    }
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {

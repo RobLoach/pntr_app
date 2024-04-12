@@ -18,7 +18,17 @@ target_link_libraries(pntr_app_test PUBLIC
     pntr_app
 )
 target_compile_definitions(pntr_app_test PUBLIC PNTR_APP_CLI)
-set_property(TARGET pntr_app_test PROPERTY C_STANDARD 99)
+
+# C11 Standard
+set_property(TARGET pntr_app_test PROPERTY C_STANDARD 11)
+set_property(TARGET pntr_app_test PROPERTY C_STANDARD_REQUIRED TRUE)
+
+# Strict Warnings and Errors
+if(MSVC)
+    target_compile_options(pntr_app_test PRIVATE /W4 /WX)
+else()
+    target_compile_options(pntr_app_test PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
 
 list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
 add_test(NAME pntr_app_test COMMAND pntr_app_test)

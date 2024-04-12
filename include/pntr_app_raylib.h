@@ -18,11 +18,19 @@
 #endif
 
 #ifndef PNTR_LOAD_FILE
-    #define PNTR_LOAD_FILE LoadFileData
+    #define PNTR_LOAD_FILE pntr_app_raylib_load_file
+    unsigned char* pntr_app_raylib_load_file(const char* fileName, unsigned int* bytesRead) {
+        int dataSize = 0;
+        unsigned char* output = LoadFileData(fileName, &dataSize);
+        if (bytesRead != NULL) {
+            *bytesRead = dataSize;
+        }
+        return output;
+    }
 #endif
 
 #ifndef PNTR_SAVE_FILE
-    #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, bytesToWrite)
+    #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) SaveFileData(fileName, (void*)data, (int)bytesToWrite)
 #endif
 
 Image pntr_app_raylib_image(pntr_image* image);
@@ -177,6 +185,7 @@ bool pntr_app_events(pntr_app* app) {
     }
 
     pntr_app_event event;
+    event.app = app;
 
     // Keys
     for (event.key = PNTR_APP_KEY_FIRST; event.key < PNTR_APP_KEY_LAST; event.key++) {
@@ -226,6 +235,7 @@ bool pntr_app_events(pntr_app* app) {
 
         if (event.type != PNTR_APP_EVENTTYPE_UNKNOWN) {
             event.mouseButton = pntr_app_raylib_mouse_button(i);
+            pntr_app_raylib_fix_mouse_coordinates(app, &event);
             pntr_app_process_event(app, &event);
         }
     }
@@ -253,7 +263,7 @@ bool pntr_app_events(pntr_app* app) {
     if (IsFileDropped()) {
         event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
         FilePathList droppedFiles = LoadDroppedFiles();
-        for (int i = 0; i < droppedFiles.count; i++) {
+        for (unsigned int i = 0; i < droppedFiles.count; i++) {
             event.fileDropped = droppedFiles.paths[i];
             pntr_app_process_event(app, &event);
         }
@@ -355,6 +365,9 @@ bool pntr_app_init(pntr_app* app) {
 
     // Audio
     InitAudioDevice();
+
+    // Random Number Generator
+    pntr_app_random_seed(app, (unsigned int)GetRandomValue(0, PRAND_RAND_MAX));
 
     return true;
 }
@@ -467,18 +480,6 @@ void pntr_stop_sound(pntr_sound* sound) {
     pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
     audio->loop = false;
     PlaySound(audio->sound);
-}
-
-PNTR_APP_API inline int pntr_app_random(int min, int max) {
-    return GetRandomValue(min, max);
-}
-
-PNTR_APP_API inline void pntr_app_random_seed(unsigned int seed) {
-    // When raylib initializes, it seeds the random number generator for us.
-    // We will not need to call SetRandomSeed() again because of that.
-    if (seed != 0) {
-        SetRandomSeed(seed);
-    }
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
