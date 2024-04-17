@@ -354,9 +354,8 @@ struct pntr_app {
     bool keysDownLast[PNTR_APP_KEY_LAST];
 
     // Gamepad
-    bool gamepadButtonsChanged;
-    bool gamepadButtonsDown[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
-    bool gamepadButtonsDownLast[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
+    int gamepadButtonState[PNTR_APP_MAX_GAMEPADS];
+    int gamepadButtonStatePrevious[PNTR_APP_MAX_GAMEPADS];
 
     // Mouse
     float mouseX;
@@ -670,6 +669,11 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #define PRAND_IMPLEMENTATION
 #include "external/prand.h"
 
+/**
+ * Retrieve a bit flag for the given button.
+ */
+#define PNTR_APP_GAMEPAD_BUTTON_FLAG(button) (1 << (button))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -874,18 +878,10 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             app->keysChanged = true;
             break;
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN:
-            if (app->gamepadButtonsDown[event->gamepad][event->gamepadButton]) {
-                return;
-            }
-            app->gamepadButtonsDown[event->gamepad][event->gamepadButton] = true;
-            app->gamepadButtonsChanged = true;
+            app->gamepadButtonState[event->gamepad] |= PNTR_APP_GAMEPAD_BUTTON_FLAG(event->gamepadButton);
             break;
         case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP:
-            if (!app->gamepadButtonsDown[event->gamepad][event->gamepadButton]) {
-                return;
-            }
-            app->gamepadButtonsDown[event->gamepad][event->gamepadButton] = false;
-            app->gamepadButtonsChanged = true;
+            app->gamepadButtonState[event->gamepad] &= ~PNTR_APP_GAMEPAD_BUTTON_FLAG(event->gamepadButton);
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE:
             event->mouseDeltaX = app->mouseX - event->mouseX;
@@ -936,14 +932,8 @@ void pntr_app_pre_events(pntr_app* app) {
         app->keysChanged = false;
     }
 
-    if (app->gamepadButtonsChanged) {
-        // Move the active gamepad buttons to the last buttons.
-        for (int player = 0; player < PNTR_APP_MAX_GAMEPADS; player++) {
-            for (int i = PNTR_APP_GAMEPAD_BUTTON_FIRST; i < PNTR_APP_GAMEPAD_BUTTON_LAST; i++) {
-                app->gamepadButtonsDownLast[player][i] = app->gamepadButtonsDown[player][i];
-            }
-        }
-        app->gamepadButtonsChanged = false;
+    for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
+        app->gamepadButtonStatePrevious[i] = app->gamepadButtonState[i];
     }
 
     if (app->mouseWheelChanged) {
@@ -982,19 +972,77 @@ PNTR_APP_API bool pntr_app_key_up(pntr_app* app, pntr_app_key key) {
 }
 
 PNTR_APP_API bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
-    return app->gamepadButtonsDown[gamepad][button] && !app->gamepadButtonsDownLast[gamepad][button];
+    if (app == NULL) {
+        return false;
+    }
+
+    if (gamepad <= -1) {
+        for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
+            if ((app->gamepadButtonStatePrevious[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) == 0 &&
+			    (app->gamepadButtonState[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    if (gamepad >= PNTR_APP_MAX_GAMEPADS) {
+        return false;
+    }
+
+    return ((app->gamepadButtonStatePrevious[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) == 0 &&
+			(app->gamepadButtonState[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0);
 }
 
 PNTR_APP_API bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
-    return app->gamepadButtonsDown[gamepad][button];
+    if (app == NULL) {
+        return false;
+    }
+
+    if (gamepad <= -1) {
+        for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
+            if ((app->gamepadButtonState[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    if (gamepad >= PNTR_APP_MAX_GAMEPADS) {
+        return false;
+    }
+
+    return (app->gamepadButtonState[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0;
 }
 
 PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
-    return !app->gamepadButtonsDown[gamepad][button] && app->gamepadButtonsDownLast[gamepad][button];
+    if (app == NULL) {
+        return false;
+    }
+
+    if (gamepad <= -1) {
+        for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
+            if ((app->gamepadButtonState[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) == 0 &&
+			    (app->gamepadButtonStatePrevious[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    if (gamepad >= PNTR_APP_MAX_GAMEPADS) {
+        return false;
+    }
+
+    return ((app->gamepadButtonState[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) == 0 &&
+			(app->gamepadButtonStatePrevious[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0);
 }
 
 PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
-    return !app->gamepadButtonsDown[gamepad][button];
+    return !pntr_app_gamepad_button_down(app, gamepad, button);
 }
 
 PNTR_APP_API float pntr_app_mouse_x(pntr_app* app) {
@@ -1029,7 +1077,7 @@ PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_b
     return !app->mouseButtonsDown[button] && app->mouseButtonsDownLast[button];
 }
 PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button) {
-    return !app->mouseButtonsDown[button];
+    return !pntr_app_mouse_button_down(app, button);
 }
 
 /**
