@@ -12,10 +12,7 @@ Build [pntr](https://github.com/robloach/pntr) applications with the same code f
     - Command Line Interfaces with [termbox2](https://github.com/termbox/termbox2)
 - Software rendering with [pntr](https://github.com/robloach/pntr)
 - Audio (*.wav* or *.ogg*)
-- User input...
-    - Mouse
-    - Keyboard
-    - Gamepads
+- Input with Mouse, Keyboard, or Gamepads
 
 ## Example
 
@@ -81,17 +78,19 @@ PNTR_APP_WEB
 ## API
 
 ``` c
+// Application
 pntr_app Main(int argc, char* argv[]);
-pntr_sound* pntr_load_sound(const char* fileName);
-pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize);
-void pntr_unload_sound(pntr_sound* sound);
-void pntr_play_sound(pntr_sound* sound, bool loop);
-void pntr_stop_sound(pntr_sound* sound);
-void* pntr_app_userdata(pntr_app* app);
-void pntr_app_set_userdata(pntr_app* app, void* userData);
 int pntr_app_width(pntr_app* app);
 int pntr_app_height(pntr_app* app);
+void pntr_app_set_title(pntr_app* app, const char* title);
+const char* pntr_app_title(pntr_app* app);
+void* pntr_app_userdata(pntr_app* app);
+void pntr_app_set_userdata(pntr_app* app, void* userData);
+bool pntr_app_set_size(pntr_app* app, int width, int height);
+void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 float pntr_app_delta_time(pntr_app* app);
+
+// Input
 bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
 bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
 bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
@@ -108,14 +107,22 @@ bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
 bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
 bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
 bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
-void pntr_app_set_title(pntr_app* app, const char* title);
-bool pntr_app_set_size(pntr_app* app, int width, int height);
-void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
-void* pntr_app_file_data(pntr_app* app, unsigned int* size);
-void pntr_app_log(int logLevel, const char* message);
+
+// Utility
 int pntr_app_random(pntr_app* app, int min, int max);
 void pntr_app_random_seed(pntr_app* app, unsigned int seed);
+void pntr_app_log(pntr_app_log_type type, const char* message);
+void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
+
+// Sounds
+pntr_sound* pntr_load_sound(const char* fileName);
+pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize);
+void pntr_unload_sound(pntr_sound* sound);
+void pntr_play_sound(pntr_sound* sound, bool loop);
+void pntr_stop_sound(pntr_sound* sound);
 ```
+
+For drawing, see the [pntr API](https://github.com/RobLoach/pntr).
 
 ## Build
 
