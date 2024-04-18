@@ -515,4 +515,16 @@ bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     return true;
 }
 
+PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
+    (void)app;
+    pntr_app_log(PNTR_APP_LOG_WARNING, "Clipboard not supported in web.");
+    return NULL;
+}
+
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text) {
+    (void)app;
+    (void)text;
+    pntr_app_log(PNTR_APP_LOG_WARNING, "Clipboard not supported in web.");
+}
+
 #endif

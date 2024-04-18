@@ -533,6 +533,23 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 PNTR_APP_API void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
 
 /**
+ * Retrieve the clipboard text.
+ *
+ * @param app The application to act on.
+ *
+ * @return The clipboard text.
+ */
+PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
+
+/**
+ * Set the clipboard text.
+ *
+ * @param app The application to act on.
+ * @param text The text to set the clipboard to.
+ */
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text);
+
+/**
  * Platform callback to initialize the platform.
  *
  * @return True if initialization was successful, false otherwise.

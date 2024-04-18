@@ -26,6 +26,10 @@ typedef struct pntr_app_cli_platform {
     int mouseY;
     bool keysEnabled[PNTR_APP_KEY_LAST];
     bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
+    #ifndef PNTR_APP_CLIPBOARD_MAX
+        #define PNTR_APP_CLIPBOARD_MAX 1024
+    #endif
+    char clipboard[PNTR_APP_CLIPBOARD_MAX];
 } pntr_app_cli_platform;
 
 bool pntr_app_events(pntr_app* app) {
@@ -261,7 +265,10 @@ bool pntr_app_init(pntr_app* app) {
     }
 
     app->platform = pntr_load_memory(sizeof(pntr_app_cli_platform));
-    //pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+
+    // Clipboard
+    platform->clipboard[0] = '\0';
 
     #ifndef PNTR_APP_DISABLE_TERMBOX
         tb_init();
@@ -354,6 +361,37 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
     // Nothing.
     (void)app;
     (void)icon;
+}
+
+PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
+    if (!app) {
+        return NULL;
+    }
+
+    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    if (!platform) {
+        return NULL;
+    }
+
+    return platform->clipboard;
+}
+
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text) {
+    if (!app || !text) {
+        return;
+    }
+
+    pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
+    if (!platform) {
+        return;
+    }
+
+    // Copy the clip buffer.
+    int i;
+    for (i = 0; text[i] && i < PNTR_APP_CLIPBOARD_MAX - 1; i++) {
+        platform->clipboard[i] = text[i];
+    }
+    platform->clipboard[i] = '\0';
 }
 
 #ifndef PNTR_APP_LOG

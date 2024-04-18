@@ -108,18 +108,20 @@ bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
 bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
 bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
 
-// Utility
-int pntr_app_random(pntr_app* app, int min, int max);
-void pntr_app_random_seed(pntr_app* app, unsigned int seed);
-void pntr_app_log(pntr_app_log_type type, const char* message);
-void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
-
 // Sounds
 pntr_sound* pntr_load_sound(const char* fileName);
 pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize);
 void pntr_unload_sound(pntr_sound* sound);
 void pntr_play_sound(pntr_sound* sound, bool loop);
 void pntr_stop_sound(pntr_sound* sound);
+
+// Utility
+int pntr_app_random(pntr_app* app, int min, int max);
+void pntr_app_random_seed(pntr_app* app, unsigned int seed);
+void pntr_app_log(pntr_app_log_type type, const char* message);
+void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
+const char* pntr_app_clipboard(pntr_app* app);
+void pntr_app_set_clipboard(pntr_app* app, const char* text);
 ```
 
 For drawing, see the [pntr API](https://github.com/RobLoach/pntr).

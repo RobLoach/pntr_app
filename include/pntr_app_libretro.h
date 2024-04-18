@@ -119,6 +119,10 @@ typedef struct pntr_app_libretro_platform {
     int16_t* audioSamples2;
     int audioBufferSize;
     bool audioEnabled;
+    #ifndef PNTR_APP_CLIPBOARD_MAX
+        #define PNTR_APP_CLIPBOARD_MAX 1024
+    #endif
+    char clipboard[PNTR_APP_CLIPBOARD_MAX];
 } pntr_app_libretro_platform;
 
 pntr_app_gamepad_button pntr_app_libretro_gamepad_button(int button) {
@@ -634,6 +638,10 @@ bool pntr_app_init(pntr_app* app) {
     // Random Number Generator
     pntr_app_random_seed(app, (unsigned int)time(NULL));
 
+    // Clipboard
+    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
+    platform->clipboard[0] = '\0';
+
     return true;
 }
 
@@ -1090,6 +1098,37 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
     // Nothing.
     (void)app;
     (void)icon;
+}
+
+PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
+    if (!app) {
+        return NULL;
+    }
+
+    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
+    if (!platform) {
+        return NULL;
+    }
+
+    return platform->clipboard;
+}
+
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text) {
+    if (!app || !text) {
+        return;
+    }
+
+    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
+    if (!platform) {
+        return;
+    }
+
+    // Copy the clip buffer.
+    int i;
+    for (i = 0; text[i] && i < PNTR_APP_CLIPBOARD_MAX - 1; i++) {
+        platform->clipboard[i] = text[i];
+    }
+    platform->clipboard[i] = '\0';
 }
 
 bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
