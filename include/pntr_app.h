@@ -354,8 +354,8 @@ struct pntr_app {
     bool keysDownLast[PNTR_APP_KEY_LAST];
 
     // Gamepad
-    int gamepadButtonState[PNTR_APP_MAX_GAMEPADS];
-    int gamepadButtonStatePrevious[PNTR_APP_MAX_GAMEPADS];
+    uint32_t gamepadButtonState[PNTR_APP_MAX_GAMEPADS];
+    uint32_t gamepadButtonStatePrevious[PNTR_APP_MAX_GAMEPADS];
 
     // Mouse
     float mouseX;
@@ -499,7 +499,6 @@ PNTR_APP_API bool pntr_app_key_up(pntr_app* app, pntr_app_key key);
 PNTR_APP_API bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
 PNTR_APP_API bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
 PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
-PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
 PNTR_APP_API float pntr_app_mouse_x(pntr_app* app);
 PNTR_APP_API float pntr_app_mouse_y(pntr_app* app);
 PNTR_APP_API float pntr_app_mouse_delta_x(pntr_app* app);
@@ -971,12 +970,21 @@ PNTR_APP_API bool pntr_app_key_up(pntr_app* app, pntr_app_key key) {
     return !app->keysDown[key];
 }
 
+/**
+ * Checks if a given gamepad button was pressed.
+ *
+ * @param app The active application.
+ * @param gamepad The gamepad to check. If set to -1, will check all gamepads.
+ * @param button The button to check.
+ *
+ * @return True or false, depending on whether or not the button was pressed.
+ */
 PNTR_APP_API bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
     if (app == NULL) {
         return false;
     }
 
-    if (gamepad <= -1) {
+    if (gamepad < 0) {
         for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
             if ((app->gamepadButtonStatePrevious[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) == 0 &&
 			    (app->gamepadButtonState[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0) {
@@ -995,12 +1003,21 @@ PNTR_APP_API bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pn
 			(app->gamepadButtonState[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0);
 }
 
+/**
+ * Checks if a given gamepad button is down.
+ *
+ * @param app The active application.
+ * @param gamepad The gamepad to check. If set to -1, will check all gamepads.
+ * @param button The button to check.
+ *
+ * @return True or false, depending on whether or not the button is currently down.
+ */
 PNTR_APP_API bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
     if (app == NULL) {
         return false;
     }
 
-    if (gamepad <= -1) {
+    if (gamepad < 0) {
         for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
             if ((app->gamepadButtonState[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0) {
                 return true;
@@ -1017,12 +1034,21 @@ PNTR_APP_API bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_
     return (app->gamepadButtonState[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0;
 }
 
+/**
+ * Checks if a given gamepad button was released.
+ *
+ * @param app The active application.
+ * @param gamepad The gamepad to check. If set to -1, will check all gamepads.
+ * @param button The button to check.
+ *
+ * @return True or false, depending on whether or not the button was released.
+ */
 PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
     if (app == NULL) {
         return false;
     }
 
-    if (gamepad <= -1) {
+    if (gamepad < 0) {
         for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
             if ((app->gamepadButtonState[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) == 0 &&
 			    (app->gamepadButtonStatePrevious[i] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0) {
@@ -1039,10 +1065,6 @@ PNTR_APP_API bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, p
 
     return ((app->gamepadButtonState[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) == 0 &&
 			(app->gamepadButtonStatePrevious[gamepad] & PNTR_APP_GAMEPAD_BUTTON_FLAG(button)) != 0);
-}
-
-PNTR_APP_API bool pntr_app_gamepad_button_up(pntr_app* app, int gamepad, pntr_app_gamepad_button button) {
-    return !pntr_app_gamepad_button_down(app, gamepad, button);
 }
 
 PNTR_APP_API float pntr_app_mouse_x(pntr_app* app) {
