@@ -97,6 +97,10 @@ typedef struct pntr_app_sdl_platform {
     SDL_Renderer* renderer;
     SDL_Texture* texture;
     uint64_t timerLastTime;
+    #ifndef PNTR_APP_CLIPBOARD_MAX
+        #define PNTR_APP_CLIPBOARD_MAX 1024
+    #endif
+    char clipboard[PNTR_APP_CLIPBOARD_MAX];
 } pntr_app_sdl_platform;
 
 pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button) {
@@ -758,4 +762,37 @@ bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     platform->texture = NULL;
 
     return true;
+}
+
+PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
+    if (!app) {
+        return NULL;
+    }
+
+    const char* clip = SDL_GetClipboardText();
+    if (clip == NULL) {
+        return NULL;
+    }
+
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    if (!platform) {
+        return NULL;
+    }
+
+    // Copy the clip buffer.
+    int i;
+    for (i = 0; clip[i] && i < PNTR_APP_CLIPBOARD_MAX - 1; i++) {
+        platform->clipboard[i] = clip[i];
+    }
+    platform->clipboard[i] = '\0';
+
+    // Clean up
+    SDL_free((void*)clip);
+
+    return platform->clipboard;
+}
+
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text) {
+    (void)app;
+    SDL_SetClipboardText(text);
 }
