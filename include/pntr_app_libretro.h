@@ -165,10 +165,10 @@ pntr_app_key pntr_app_libretro_key(int key) {
         // case RETROK_RIGHTPAREN: return PNTR_APP_KEY_RIGHTPAREN;
         // case RETROK_ASTERISK: return PNTR_APP_KEY_ASTERISK;
         // case RETROK_PLUS: return PNTR_APP_KEY_PLUS;
-        // case RETROK_COMMA: return PNTR_APP_KEY_COMMA;
-        // case RETROK_MINUS: return PNTR_APP_KEY_MINUS;
-        // case RETROK_PERIOD: return PNTR_APP_KEY_PERIOD;
-        // case RETROK_SLASH: return PNTR_APP_KEY_SLASH;
+        case RETROK_COMMA: return PNTR_APP_KEY_COMMA;
+        case RETROK_MINUS: return PNTR_APP_KEY_MINUS;
+        case RETROK_PERIOD: return PNTR_APP_KEY_PERIOD;
+        case RETROK_SLASH: return PNTR_APP_KEY_SLASH;
         case RETROK_0: return PNTR_APP_KEY_0;
         case RETROK_1: return PNTR_APP_KEY_1;
         case RETROK_2: return PNTR_APP_KEY_2;
@@ -218,10 +218,10 @@ pntr_app_key pntr_app_libretro_key(int key) {
         case RETROK_x: return PNTR_APP_KEY_X;
         case RETROK_y: return PNTR_APP_KEY_Y;
         case RETROK_z: return PNTR_APP_KEY_Z;
-        //case RETROK_LEFTBRACE: return PNTR_APP_KEY_LEFT_BRACE;
+        case RETROK_LEFTBRACE: return PNTR_APP_KEY_LEFT_BRACKET;
         //case RETROK_BAR: return PNTR_APP_KEY_BAR;
-        //case RETROK_RIGHTBRACE: return PNTR_APP_KEY_RIGHT_BRACE;
-        //case RETROK_TILDE: return PNTR_APP_KEY_TILDE;
+        case RETROK_RIGHTBRACE: return PNTR_APP_KEY_RIGHT_BRACKET;
+        case RETROK_TILDE: return PNTR_APP_KEY_GRAVE_ACCENT;
         case RETROK_DELETE: return PNTR_APP_KEY_DELETE;
         case RETROK_KP0: return PNTR_APP_KEY_KP_0;
         case RETROK_KP1: return PNTR_APP_KEY_KP_1;
