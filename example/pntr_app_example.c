@@ -195,6 +195,6 @@ pntr_app Main(int argc, char* argv[]) {
         .update = Update,
         .close = Close,
         .event = Event,
-        .fps = 60
+        .fps = 0
     };
 }

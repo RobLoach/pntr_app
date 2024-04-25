@@ -365,9 +365,7 @@ bool pntr_app_init(pntr_app* app) {
         return false;
     }
 
-    if (app->fps > 0) {
-        SetTargetFPS(app->fps);
-    }
+    SetTargetFPS(app->fps);
 
     pntr_app_raylib_platform_instance = platform;
 

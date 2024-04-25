@@ -380,7 +380,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
 
     // TODO: libretro: Is the FPS correct?
     info->timing = (struct retro_system_timing) {
-        .fps = (fps > 0) ? (double)fps : 0.0,
+        .fps = (fps > 0) ? (double)fps : 60,
         .sample_rate = PNTR_APP_LIBRETRO_SAMPLES,
     };
     info->geometry = (struct retro_game_geometry) {
@@ -812,7 +812,7 @@ pntr_app* pntr_app_libretro_load_app(pntr_app* baseApp) {
     memset(app->platform, 0, sizeof(pntr_app_libretro_platform));
 
     pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
-    platform->audioBufferSize = PNTR_APP_LIBRETRO_SAMPLES / app->fps;
+    platform->audioBufferSize = PNTR_APP_LIBRETRO_SAMPLES / ((app->fps <= 0) ? 60 : app->fps);
     platform->audioSamples = pntr_load_memory(sizeof(float) * platform->audioBufferSize * 2);
     platform->audioSamples2 = pntr_load_memory(sizeof(int16_t) * platform->audioBufferSize * 2);
     pntr_app_libretro = app;
@@ -898,10 +898,13 @@ bool retro_load_game(const struct retro_game_info *info) {
     app->argFileDataUnloadOnExit = false; // libretro owns this data
 
     // Set up the frame time callback.
-    struct retro_frame_time_callback retro_frame_time = {
-        retro_frame_time_cb,
-        1000000 / app->fps
-    };
+    struct retro_frame_time_callback retro_frame_time;
+    retro_frame_time.callback = retro_frame_time_cb;
+    if (app->fps < 1) {
+        app->fps = 60;
+    }
+    retro_frame_time.reference = 1000000 / app->fps;
+
     if (!environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &retro_frame_time)) {
         log_cb(RETRO_LOG_INFO, "[pntr] Failed to set frame time callback.\n");
     }

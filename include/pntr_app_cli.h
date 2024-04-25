@@ -321,6 +321,10 @@ void pntr_stop_sound(pntr_sound* sound) {
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
+    if (app->fps <= 0) {
+        return false;
+    }
+
     // TODO: Make CLI delta time get the actual delta time.
     app->deltaTime = 1.0f / (float)app->fps;
 
