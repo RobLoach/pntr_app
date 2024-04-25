@@ -354,8 +354,8 @@ struct pntr_app {
     bool keysDownLast[PNTR_APP_KEY_LAST];
 
     // Gamepad
-    uint32_t gamepadButtonState[PNTR_APP_MAX_GAMEPADS];
-    uint32_t gamepadButtonStatePrevious[PNTR_APP_MAX_GAMEPADS];
+    int gamepadButtonState[PNTR_APP_MAX_GAMEPADS];
+    int gamepadButtonStatePrevious[PNTR_APP_MAX_GAMEPADS];
 
     // Mouse
     float mouseX;

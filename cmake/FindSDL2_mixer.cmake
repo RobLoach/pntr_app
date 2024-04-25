@@ -3,7 +3,7 @@ include(FetchContent)
 FetchContent_Declare(
     SDL2MixerSource
     GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
-    GIT_TAG release-2.6.3
+    GIT_TAG release-2.8.0
     GIT_SHALLOW 1
 )
 FetchContent_MakeAvailable(SDL2MixerSource)
