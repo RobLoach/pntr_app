@@ -809,11 +809,11 @@ int main(int argc, char* argv[]) {
 #endif  // PNTR_APP_NO_ENTRY
 
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName) {
-    if (strstr(fileName, ".wav")) {
+    if (strstr(fileName, ".wav") || strstr(fileName, ".WAV")) {
         return PNTR_APP_SOUND_TYPE_WAV;
     }
 
-    if (strstr(fileName, ".ogg")) {
+    if (strstr(fileName, ".ogg") || strstr(fileName, ".OGG")) {
         return PNTR_APP_SOUND_TYPE_OGG;
     }
 
@@ -1146,7 +1146,7 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     }
 
     // TODO: pntr_app_load_arg_file: Parse the argv correctly so that it grabs an actual file path.
-    if (app->argv[1] != NULL) {
+    if (app->argv && app->argv[1] != NULL) {
         unsigned int loadedSize;
         void* output = pntr_load_file(app->argv[1], &loadedSize);
         if (size != NULL) {
