@@ -279,7 +279,7 @@ void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform
     outRect->h = height;
 }
 
-void pntr_app_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
+void pntr_app_platform_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
     void* pixels;
     int pitch;
     if (platform->renderer == NULL) {
@@ -332,7 +332,7 @@ void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* even
     event->mouseY = (y - dstRect.y) * app->screen->height / dstRect.h;
 }
 
-bool pntr_app_events(pntr_app* app) {
+bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
     }
@@ -454,18 +454,18 @@ bool pntr_app_events(pntr_app* app) {
 /**
  * Pushes the given image to the screen.
  */
-bool pntr_app_render(pntr_app* app) {
+bool pntr_app_platform_render(pntr_app* app) {
     if (app == NULL || app->screen == NULL || app->platform == NULL) {
         return false;
     }
 
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-    pntr_app_render_surface(app, platform);
+    pntr_app_platform_render_surface(app, platform);
 
     return true;
 }
 
-bool pntr_app_init(pntr_app* app) {
+bool pntr_app_platform_init(pntr_app* app) {
     if (app == NULL) {
         return false;
     }
@@ -534,8 +534,8 @@ bool pntr_app_init(pntr_app* app) {
     return true;
 }
 
-void pntr_app_close(pntr_app* app) {
-    if (app != NULL) {
+void pntr_app_platform_close(pntr_app* app) {
+    if (app == NULL) {
         pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
         if (platform != NULL) {
             // Close Gamepads
@@ -739,7 +739,7 @@ PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     SDL_SetWindowTitle(platform->window, title);
 }
 
-bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
+bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     if (app == NULL || app->platform == NULL) {
         return false;
     }

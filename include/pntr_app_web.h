@@ -92,28 +92,30 @@ EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
 })
 
 /**
- * pntr_app_init_js: Initializes the canvas context.
+ * : Initializes the canvas context.
  *
  * @param width The desired width of the context.
  * @param height The desired height of the context.
  */
-EM_JS(void, pntr_app_init_js, (int width, int height), {
+EM_JS(bool, pntr_app_platform_set_size, (int width, int height), {
     Module.canvas.width = width;
     Module.canvas.height = height;
     Module.ctx = Module.canvas.getContext('2d');
     Module.screen = Module.ctx.getImageData(0, 0, width, height);
     specialHTMLTargets["!canvas"] = Module.canvas;
+
+    return true;
 });
 
 /**
- * pntr_app_render_js: Renders the given pixel data onto the emscripten canvas context.
+ * Renders the given pixel data onto the emscripten canvas context.
  *
  * @param data Pointer to the pixel data.
  * @param dataSize The size of the pixel data.
  * @param width The width of the image.
  * @param height The height of the image.
  */
-EM_JS(void, pntr_app_render_js, (void* data, int dataSize, int width, int height), {
+EM_JS(void, pntr_app_platform_render_js, (void* data, int dataSize, int width, int height), {
     Module.screen.data.set(HEAPU8.subarray(data, data + dataSize));
     Module.ctx.putImageData(Module.screen, 0, 0);
 });
@@ -218,19 +220,19 @@ void pntr_app_emscripten_gamepad(pntr_app* app) {
     }
 }
 
-bool pntr_app_events(pntr_app* app) {
+bool pntr_app_platform_events(pntr_app* app) {
     // Most emscripten events are handled through callbacks, except for Gamepads.
     pntr_app_emscripten_gamepad(app);
 
     return true;
 }
 
-bool pntr_app_render(pntr_app* app) {
+bool pntr_app_platform_render(pntr_app* app) {
     if (app == NULL || app->screen == NULL) {
         return false;
     }
 
-    pntr_app_render_js((void*)app->screen->data, app->screen->pitch * app->screen->height, app->screen->width, app->screen->height);
+    pntr_app_platform_render_js((void*)app->screen->data, app->screen->pitch * app->screen->height, app->screen->width, app->screen->height);
     return true;
 }
 
@@ -437,13 +439,13 @@ EM_JS(unsigned int, pntr_app_emscripten_get_time, (), {
     return performance.now();
 });
 
-bool pntr_app_init(pntr_app* app) {
+bool pntr_app_platform_init(pntr_app* app) {
     if (app == NULL) {
         return false;
     }
 
     // Initialize the context
-    pntr_app_init_js(app->width, app->height);
+    pntr_app_platform_set_size(app->width, app->height);
 
     // Window title
     pntr_app_set_title(app, app->title);
@@ -471,7 +473,7 @@ bool pntr_app_init(pntr_app* app) {
     return true;
 }
 
-void pntr_app_close(pntr_app* app) {
+void pntr_app_platform_close(pntr_app* app) {
     // TODO: Close the context, and delete the canvas.
 }
 
@@ -507,12 +509,6 @@ void pntr_app_set_title(pntr_app* app, const char* title) {
     }
 
     emscripten_set_window_title(title);
-}
-
-bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
-    pntr_app_init_js(width, height);
-
-    return true;
 }
 
 #endif
