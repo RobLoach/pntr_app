@@ -61,6 +61,7 @@ bool pntr_app_platform_events(pntr_app* app) {
 
     // Delay for an input event, for maintain the FPS.
     if (app->fps <= 0) {
+        //pntr_app_platform_render(app);
         tb_poll_event(&ev);
     }
     else {

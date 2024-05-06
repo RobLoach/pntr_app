@@ -585,7 +585,6 @@ PNTR_APP_API void pntr_app_close(pntr_app* app);
  */
 PNTR_APP_API void pntr_app_platform_close(pntr_app* app);
 
-
 /**
  * Asks the platform to update the delta time, and indicates if it's time to run an update.
  *
@@ -714,10 +713,8 @@ void pntr_app_emscripten_update_loop(void* application) {
         return;
     }
 
-    pntr_app_platform_update_delta_time(app);
-
     // Run the update function.
-    if (app->update != NULL) {
+    if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
         if (!app->update(app, app->screen)) {
             emscripten_cancel_main_loop();
             return;
@@ -759,11 +756,8 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
-            // Update the time.
-            pntr_app_platform_update_delta_time(&app);
-
             // Update callback
-            if (app.update != NULL) {
+            if (pntr_app_platform_update_delta_time(&app) && app.update != NULL) {
                 if (!app.update(&app, app.screen)) {
                     break;
                 }
@@ -792,7 +786,7 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app) {
     }
 
     if (app->height <= 0) {
-        app->height = 480;
+        app->height = 360;
     }
 
     // Create the screen.

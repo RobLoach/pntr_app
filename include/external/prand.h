@@ -52,6 +52,11 @@
     #define PRAND_RAND_MAX UINT32_MAX
 #endif
 
+/**
+ * Pseudo-random number generator.
+ *
+ * @see prant_init()
+ */
 typedef struct prand_t {
     uint64_t seed;
     uint32_t state[4];
@@ -60,7 +65,7 @@ typedef struct prand_t {
 /**
  * Initializes a pseudo-random number generator with the given seed.
  *
- * @param seed The seed of which to set for the generator.
+ * @param seed The seed of which to set for the generator. If set to 0, a default seed will be used.
  *
  * @return A pointer to the pseudo-random number generator structure.
  */
@@ -70,7 +75,7 @@ PRANDAPI prand_t* prand_init(uint64_t seed);
  * Set the seed for the given pseudo-random number generator.
  *
  * @param prand The pseudo-random number generator.
- * @param seed The seed to set.
+ * @param seed The seed to set. If set to 0, a default seed will be used.
  */
 PRANDAPI void prand_set_seed(prand_t* prand, uint64_t seed);
 
@@ -108,6 +113,8 @@ PRANDAPI void prand_free(prand_t* prand);
  * The state must be seeded so that it is not everywhere zero.
  *
  * @param prand The pseudo-random number generator.
+ *
+ * @return A random number between 0 and UINT32_MAX.
  */
 PRANDAPI uint32_t prand_rand(prand_t* prand);
 
@@ -117,6 +124,8 @@ PRANDAPI uint32_t prand_rand(prand_t* prand);
  * @param prand The pseudo-random number generator.
  * @param min The minimum value to generate.
  * @param max The maximum value to generate.
+ *
+ * @return A random integer between the min and max values.
  */
 PRANDAPI int prand_int(prand_t* prand, int min, int max);
 
@@ -126,6 +135,8 @@ PRANDAPI int prand_int(prand_t* prand, int min, int max);
  * @param prand The pseudo-random number generator.
  * @param min The minimum value to generate.
  * @param max The maximum value to generate.
+ *
+ * @return A random unsigned 32-bit integer between the min and max values.
  */
 PRANDAPI uint32_t prand_uint32(prand_t* prand, uint32_t min, uint32_t max);
 
@@ -135,6 +146,8 @@ PRANDAPI uint32_t prand_uint32(prand_t* prand, uint32_t min, uint32_t max);
  * @param prand The pseudo-random number generator.
  * @param min The minimum value to generate.
  * @param max The maximum value to generate.
+ *
+ * @return A random unsigned integer between the min and max values.
  */
 PRANDAPI unsigned int prand_uint(prand_t* prand, unsigned int min, unsigned int max);
 
@@ -144,9 +157,16 @@ PRANDAPI unsigned int prand_uint(prand_t* prand, unsigned int min, unsigned int 
  * @param prand The pseudo-random number generator.
  * @param min The minimum value to generate.
  * @param max The maximum value to generate.
+ *
+ * @return A random float between the given min and max values.
  */
 PRANDAPI float prand_float(prand_t* prand, float min, float max);
 
+/**
+ * Rotate the pseudo random number generator bits to the left.
+ *
+ * @internal
+ */
 PRANDAPI uint32_t prand_rotate_left(const uint32_t x, int k);
 
 #endif // PRAND_H__
@@ -198,6 +218,11 @@ uint32_t prand_rand(prand_t* prand) {
 PRANDAPI void prand_set_seed(prand_t* prand, uint64_t seed) {
     if (prand == NULL) {
         return;
+    }
+
+    // Default SplitMix64 seed
+    if (seed == 0) {
+        seed = 0xAABBCCDD;
     }
 
     prand->seed = seed;
