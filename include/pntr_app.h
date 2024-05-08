@@ -538,7 +538,12 @@ PNTR_APP_API void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
  *
  * @internal
  */
-bool pntr_app_init(pntr_app* app);
+PNTR_APP_API bool pntr_app_init(pntr_app* app);
+
+/**
+ * Initialize the platform.
+ */
+PNTR_APP_API bool pntr_app_platform_init(pntr_app* app);
 
 /**
  * Platform callback to invoke all events for the platform.
@@ -547,17 +552,17 @@ bool pntr_app_init(pntr_app* app);
  *
  * @internal
  */
-bool pntr_app_events(pntr_app* app);
+PNTR_APP_API bool pntr_app_platform_events(pntr_app* app);
 
 /**
  * @internal
  */
-void pntr_app_pre_events(pntr_app* app);
+PNTR_APP_API void pntr_app_pre_events(pntr_app* app);
 
 /**
  * @internal
  */
-void pntr_app_process_event(pntr_app* app, pntr_app_event* event);
+PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event);
 
 /**
  * Platform callback to render to the screen.
@@ -566,15 +571,19 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event);
  *
  * @internal
  */
-bool pntr_app_render(pntr_app* app);
+PNTR_APP_API bool pntr_app_platform_render(pntr_app* app);
+
+/**
+ * Close the application.
+ */
+PNTR_APP_API void pntr_app_close(pntr_app* app);
 
 /**
  * Platform callback to close the application.
  *
  * @internal
  */
-void pntr_app_close(pntr_app* app);
-
+PNTR_APP_API void pntr_app_platform_close(pntr_app* app);
 
 /**
  * Asks the platform to update the delta time, and indicates if it's time to run an update.
@@ -583,12 +592,12 @@ void pntr_app_close(pntr_app* app);
  *
  * @internal
  */
-bool pntr_app_platform_update_delta_time(pntr_app* app);
+PNTR_APP_API bool pntr_app_platform_update_delta_time(pntr_app* app);
 
 /**
  * @internal
  */
-bool _pntr_app_platform_set_size(pntr_app* app, int width, int height);
+PNTR_APP_API bool pntr_app_platform_set_size(pntr_app* app, int width, int height);
 
 #ifdef PNTR_ENABLE_VARGS
 PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
@@ -641,7 +650,7 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #elif defined(PNTR_APP_CLI)
     #include "pntr_app_cli.h"
 #else
-    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, or PNTR_APP_LIBRETRO."
+    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or PNTR_APP_WEB."
 #endif
 
 #ifdef __cplusplus
@@ -699,27 +708,21 @@ void pntr_app_emscripten_update_loop(void* application) {
 
     // Poll Events
     pntr_app_pre_events(app);
-    if (!pntr_app_events(app)) {
-        emscripten_cancel_main_loop();
-        return;
-    }
-
-    // Check the update function.
-    if (app->update == NULL) {
+    if (!pntr_app_platform_events(app)) {
         emscripten_cancel_main_loop();
         return;
     }
 
     // Run the update function.
-    if (pntr_app_platform_update_delta_time(app)) {
-        if (app->update(app, app->screen) == false) {
+    if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
+        if (!app->update(app, app->screen)) {
             emscripten_cancel_main_loop();
             return;
         }
     }
 
     // Render
-    if (!pntr_app_render(app)) {
+    if (!pntr_app_platform_render(app)) {
         emscripten_cancel_main_loop();
     }
 }
@@ -738,75 +741,104 @@ int main(int argc, char* argv[]) {
     app.argc = argc;
     app.argv = argv;
 
-    app.screen = pntr_gen_image_color(app.width, app.height, PNTR_BLACK);
-    if (app.screen == NULL) {
-        app.init = NULL;
-        app.update = NULL;
-        app.close = NULL;
-    }
-    else if (pntr_app_init(&app) == false) {
-        pntr_unload_image(app.screen);
+    if (!pntr_app_init(&app)) {
         return 1;
     }
 
-    // Call the init callback.
-    if (app.init != NULL) {
-        // Check if initialization worked.
-        if (app.init(&app) == false) {
-            // Skip calling the other callbacks if it failed.
-            app.update = NULL;
-            app.close = NULL;
-        }
-    }
+    #if defined(EMSCRIPTEN)
+        // Set up the main loop.
+        emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, 0, 1);
+    #else
+        do {
+            // Events
+            pntr_app_pre_events(&app);
+            if (!pntr_app_platform_events(&app)) {
+                break;
+            }
 
-    // Start the update loop
-    if (app.update != NULL) {
-        #if defined(EMSCRIPTEN)
-            // Set up the main loop.
-            emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, 0, 1);
-        #else
-            // Continue running when update returns TRUE.
-            do {
-                // Events
-                pntr_app_pre_events(&app);
-                if (!pntr_app_events(&app)) {
+            // Update callback
+            if (pntr_app_platform_update_delta_time(&app) && app.update != NULL) {
+                if (!app.update(&app, app.screen)) {
                     break;
                 }
+            }
 
-                // Update
-                if (pntr_app_platform_update_delta_time(&app)) {
-                    if (!app.update(&app, app.screen)) {
-                        break;
-                    }
-                }
-
-                // Render
-                if (!pntr_app_render(&app)) {
-                    break;
-                }
-            } while(true);
-        #endif
-    }
-
-    // Tell the application to close.
-    if (app.close != NULL) {
-        app.close(&app);
-    }
+            // Render
+            if (!pntr_app_platform_render(&app)) {
+                break;
+            }
+        } while(true);
+    #endif
 
     // Tell the platform to close.
     pntr_app_close(&app);
-
-    // Unload any other associated memory
-    pntr_unload_image(app.screen);
-    if (app.argFileDataUnloadOnExit) {
-        pntr_unload_memory(app.argFileData);
-        app.argFileData = NULL;
-    }
-
-    // Return an error state if update was nullified.
-    return (app.update == NULL) ? 1 : 0;
 }
 #endif  // PNTR_APP_NO_ENTRY
+
+PNTR_APP_API bool pntr_app_init(pntr_app* app) {
+    if (app == NULL) {
+        return false;
+    }
+
+    // Initialize defaults.
+    if (app->width <= 0) {
+        app->width = 640;
+    }
+
+    if (app->height <= 0) {
+        app->height = 360;
+    }
+
+    // Create the screen.
+    app->screen = pntr_gen_image_color(app->width, app->height, PNTR_BLACK);
+    if (app->screen == NULL) {
+        return false;
+    }
+
+    // Initialize the random number generator.
+    pntr_app_random_seed(app, 0);
+
+    // Initialize the platform.
+    if (!pntr_app_platform_init(app)) {
+        pntr_unload_image(app->screen);
+        return false;
+    }
+
+    // Call the init callback.
+    if (app->init != NULL) {
+        // Check if initialization worked.
+        if (!app->init(app)) {
+            pntr_unload_image(app->screen);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+PNTR_APP_API void pntr_app_close(pntr_app* app) {
+    if (app == NULL) {
+        return;
+    }
+
+    // Tell the application to close.
+    if (app->close != NULL) {
+        app->close(app);
+    }
+
+    // Unload any other associated memory
+    pntr_unload_image(app->screen);
+    app->screen = NULL;
+
+    // Unload any loaded file data.
+    if (app->argFileDataUnloadOnExit) {
+        pntr_unload_memory(app->argFileData);
+        app->argFileData = NULL;
+    }
+
+    // Call the platform close.
+    pntr_app_platform_close(app);
+}
 
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName) {
     if (strstr(fileName, ".wav") || strstr(fileName, ".WAV")) {
@@ -866,7 +898,7 @@ PNTR_APP_API inline void pntr_app_set_userdata(pntr_app* app, void* userData) {
     app->userData = userData;
 }
 
-void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
+PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN:
             app->keysDown[event->key] = true;
@@ -922,7 +954,7 @@ void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
     }
 }
 
-void pntr_app_pre_events(pntr_app* app) {
+PNTR_APP_API void pntr_app_pre_events(pntr_app* app) {
     if (app->keysChanged) {
         // Move the active keys to the last keys.
         for (int i = PNTR_APP_KEY_FIRST; i < PNTR_APP_KEY_LAST; i++) {
@@ -1115,7 +1147,7 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
     }
 
     // Request that the platform resizes the window.
-    if (!_pntr_app_platform_set_size(app, width, height)) {
+    if (!pntr_app_platform_set_size(app, width, height)) {
         return false;
     }
 

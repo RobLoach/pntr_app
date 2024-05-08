@@ -187,7 +187,7 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event)
     event->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
 }
 
-bool pntr_app_events(pntr_app* app) {
+bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL) {
         return false;
     }
@@ -284,7 +284,7 @@ bool pntr_app_events(pntr_app* app) {
 /**
  * Pushes the given image to the screen.
  */
-bool pntr_app_render(pntr_app* app) {
+bool pntr_app_platform_render(pntr_app* app) {
     if (app == NULL || app->screen == NULL || app->platform == NULL) {
         return false;
     }
@@ -347,7 +347,7 @@ bool pntr_app_render(pntr_app* app) {
     return !WindowShouldClose();
 }
 
-bool pntr_app_init(pntr_app* app) {
+bool pntr_app_platform_init(pntr_app* app) {
     app->platform = pntr_load_memory(sizeof(pntr_app_raylib_platform));
     if (app->platform == NULL) {
         return false;
@@ -371,6 +371,9 @@ bool pntr_app_init(pntr_app* app) {
 
     // Audio
     InitAudioDevice();
+    for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
+        platform->sounds[i] = NULL;
+    }
 
     // Random Number Generator
     pntr_app_random_seed(app, (unsigned int)GetRandomValue(0, PRAND_RAND_MAX));
@@ -378,7 +381,7 @@ bool pntr_app_init(pntr_app* app) {
     return true;
 }
 
-void pntr_app_close(pntr_app* app) {
+void pntr_app_platform_close(pntr_app* app) {
     if (app != NULL) {
         return;
     }
@@ -386,6 +389,13 @@ void pntr_app_close(pntr_app* app) {
     if (app->platform != NULL) {
         pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
         UnloadTexture(platform->screenTexture);
+
+        // Clean up any remaining sounds.
+        for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
+            if (platform->sounds[i] != NULL) {
+                pntr_unload_sound((pntr_sound*)platform->sounds[i]);
+            }
+        }
     }
 
     pntr_app_raylib_platform_instance = NULL;
@@ -516,7 +526,7 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
     SetWindowIcon(image);
 }
 
-bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
+bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     if (app == NULL || app->platform == NULL) {
         return false;
     }

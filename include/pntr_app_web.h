@@ -47,7 +47,7 @@ EM_JS(pntr_sound*, pntr_load_sound_from_memory, (pntr_app_sound_type type, unsig
 
     // Return the length instead of length - 1, as 0 or NULL is how to depict a failed load.
     return Module.pntr_sounds.length;
-});
+})
 
 EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
     const audio = Module.pntr_sounds[sound - 1];
@@ -92,31 +92,41 @@ EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
 })
 
 /**
- * pntr_app_init_js: Initializes the canvas context.
+ * : Initializes the canvas context.
  *
  * @param width The desired width of the context.
  * @param height The desired height of the context.
  */
-EM_JS(void, pntr_app_init_js, (int width, int height), {
+EM_JS(bool, pntr_app_platform_set_size, (pntr_app* app, int width, int height), {
     Module.canvas.width = width;
     Module.canvas.height = height;
     Module.ctx = Module.canvas.getContext('2d');
     Module.screen = Module.ctx.getImageData(0, 0, width, height);
     specialHTMLTargets["!canvas"] = Module.canvas;
-});
+
+    return true;
+})
+
+EM_JS(int, pntr_app_platform_get_width, (pntr_app* app), {
+    return Module.canvas.width;
+})
+
+EM_JS(int, pntr_app_platform_get_height, (pntr_app* app), {
+    return Module.canvas.height;
+})
 
 /**
- * pntr_app_render_js: Renders the given pixel data onto the emscripten canvas context.
+ * Renders the given pixel data onto the emscripten canvas context.
  *
  * @param data Pointer to the pixel data.
  * @param dataSize The size of the pixel data.
  * @param width The width of the image.
  * @param height The height of the image.
  */
-EM_JS(void, pntr_app_render_js, (void* data, int dataSize, int width, int height), {
+EM_JS(void, pntr_app_platform_render_js, (void* data, int dataSize, int width, int height), {
     Module.screen.data.set(HEAPU8.subarray(data, data + dataSize));
     Module.ctx.putImageData(Module.screen, 0, 0);
-});
+})
 
 /**
  * Ports an emscripten gamepad button mapping to pntr.
@@ -218,19 +228,19 @@ void pntr_app_emscripten_gamepad(pntr_app* app) {
     }
 }
 
-bool pntr_app_events(pntr_app* app) {
+bool pntr_app_platform_events(pntr_app* app) {
     // Most emscripten events are handled through callbacks, except for Gamepads.
     pntr_app_emscripten_gamepad(app);
 
     return true;
 }
 
-bool pntr_app_render(pntr_app* app) {
+bool pntr_app_platform_render(pntr_app* app) {
     if (app == NULL || app->screen == NULL) {
         return false;
     }
 
-    pntr_app_render_js((void*)app->screen->data, app->screen->pitch * app->screen->height, app->screen->width, app->screen->height);
+    pntr_app_platform_render_js((void*)app->screen->data, app->screen->pitch * app->screen->height, app->screen->width, app->screen->height);
     return true;
 }
 
@@ -324,6 +334,7 @@ int pntr_app_emscripten_mouse_button_from_emscripten(unsigned short button) {
 }
 
 EM_BOOL pntr_app_emscripten_mouse_wheel(int eventType, const struct EmscriptenWheelEvent *mouseEvent, void *userData) {
+    (void)eventType;
     pntr_app* app = (pntr_app*)userData;
     if (app == NULL || mouseEvent->deltaY == 0) {
         return EM_FALSE;
@@ -366,10 +377,8 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
         }
         break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            int canvasWidth = EM_ASM_INT({return Module.canvas.clientWidth;});
-            int canvasHeight = EM_ASM_INT({return Module.canvas.clientHeight;});
-            event.mouseX = (float)mouseEvent->targetX / (float)canvasWidth * (float)app->width;
-            event.mouseY = (float)mouseEvent->targetY / (float)canvasHeight * (float)app->height;
+            event.mouseX = (float)mouseEvent->targetX / (float)pntr_app_platform_get_width(app) * (float)app->width;
+            event.mouseY = (float)mouseEvent->targetY / (float)pntr_app_platform_get_height(app) * (float)app->height;
             pntr_app_process_event(app, &event);
         }
         break;
@@ -428,22 +437,22 @@ EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
             reader.readAsArrayBuffer(file);
         }
     });
-});
+})
 
 /**
  * pntr_app_emscripten_get_time: Retrieves the high performance timer.
  */
-EM_JS(unsigned int, pntr_app_emscripten_get_time, (), {
+EM_JS(unsigned int, pntr_app_emscripten_get_time, (void), {
     return performance.now();
-});
+})
 
-bool pntr_app_init(pntr_app* app) {
+bool pntr_app_platform_init(pntr_app* app) {
     if (app == NULL) {
         return false;
     }
 
     // Initialize the context
-    pntr_app_init_js(app->width, app->height);
+    pntr_app_platform_set_size(app, app->width, app->height);
 
     // Window title
     pntr_app_set_title(app, app->title);
@@ -466,13 +475,14 @@ bool pntr_app_init(pntr_app* app) {
     app->deltaTimeCounter = pntr_app_emscripten_get_time();
 
     // Random Number Generator
-    pntr_app_random_seed(app, (unsigned int)(emscripten_random() * 0x7FFFFFFF));
+    pntr_app_random_seed(app, (unsigned int)(emscripten_random() * (float)PRAND_RAND_MAX));
 
     return true;
 }
 
-void pntr_app_close(pntr_app* app) {
+void pntr_app_platform_close(pntr_app* app) {
     // TODO: Close the context, and delete the canvas.
+    (void)app;
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
@@ -484,7 +494,7 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
     unsigned int delta = now - app->deltaTimeCounter;
 
     // Check if it's time to run the update.
-    if (app->fps <= 0 || (delta >= (1000 / app->fps))) {
+    if (app->fps <= 0 || ((int)delta >= (1000 / app->fps))) {
         app->deltaTimeCounter = now;
         app->deltaTime = (float)delta / 1000.0f;
         return true;
@@ -507,12 +517,6 @@ void pntr_app_set_title(pntr_app* app, const char* title) {
     }
 
     emscripten_set_window_title(title);
-}
-
-bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
-    pntr_app_init_js(width, height);
-
-    return true;
 }
 
 #endif

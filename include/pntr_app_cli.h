@@ -16,6 +16,7 @@
 
 #include <stdio.h>
 #include <time.h> // time()
+#include <string.h> // memset
 
 #ifndef PNTR_APP_CLI_LOG_FILE
 #define PNTR_APP_CLI_LOG_FILE "log.txt"
@@ -28,7 +29,7 @@ typedef struct pntr_app_cli_platform {
     bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
 } pntr_app_cli_platform;
 
-bool pntr_app_events(pntr_app* app) {
+bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
     }
@@ -60,6 +61,7 @@ bool pntr_app_events(pntr_app* app) {
 
     // Delay for an input event, for maintain the FPS.
     if (app->fps <= 0) {
+        //pntr_app_platform_render(app);
         tb_poll_event(&ev);
     }
     else {
@@ -196,7 +198,7 @@ bool pntr_app_events(pntr_app* app) {
 /**
  * Pushes the given image to the screen.
  */
-bool pntr_app_render(pntr_app* app) {
+bool pntr_app_platform_render(pntr_app* app) {
     if (app == NULL || app->screen == NULL) {
         return false;
     }
@@ -255,12 +257,13 @@ bool pntr_app_render(pntr_app* app) {
     return true;
 }
 
-bool pntr_app_init(pntr_app* app) {
+bool pntr_app_platform_init(pntr_app* app) {
     if (app == NULL) {
         return false;
     }
 
     app->platform = pntr_load_memory(sizeof(pntr_app_cli_platform));
+    memset(app->platform, 0, sizeof(pntr_app_cli_platform));
     //pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
 
     #ifndef PNTR_APP_DISABLE_TERMBOX
@@ -280,7 +283,7 @@ bool pntr_app_init(pntr_app* app) {
     return true;
 }
 
-void pntr_app_close(pntr_app* app) {
+void pntr_app_platform_close(pntr_app* app) {
     #ifndef PNTR_APP_DISABLE_TERMBOX
         tb_shutdown();
 
@@ -321,11 +324,12 @@ void pntr_stop_sound(pntr_sound* sound) {
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
+    // TODO: Make CLI delta time get the actual delta time.
     if (app->fps <= 0) {
-        return false;
+        app->deltaTime = 0.1f;
+        return true;
     }
 
-    // TODO: Make CLI delta time get the actual delta time.
     app->deltaTime = 1.0f / (float)app->fps;
 
     return true;
@@ -339,7 +343,7 @@ PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     app->title = title;
 }
 
-bool _pntr_app_platform_set_size(pntr_app* app, int width, int height) {
+bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     (void)width;
     (void)height;
     if (app == NULL || app->platform == NULL) {
