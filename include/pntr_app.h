@@ -650,7 +650,7 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #elif defined(PNTR_APP_CLI)
     #include "pntr_app_cli.h"
 #else
-    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, or PNTR_APP_LIBRETRO."
+    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or PNTR_APP_WEB."
 #endif
 
 #ifdef __cplusplus

@@ -107,6 +107,14 @@ EM_JS(bool, pntr_app_platform_set_size, (pntr_app* app, int width, int height), 
     return true;
 })
 
+EM_JS(int, pntr_app_platform_get_width, (pntr_app* app), {
+    return Module.canvas.width;
+})
+
+EM_JS(int, pntr_app_platform_get_height, (pntr_app* app), {
+    return Module.canvas.height;
+})
+
 /**
  * Renders the given pixel data onto the emscripten canvas context.
  *
@@ -369,11 +377,8 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
         }
         break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            int arr[2] = {mouseEvent->targetX, mouseEvent->targetY};
-            int canvasWidth = EM_ASM_INT((return Module.canvas.clientWidth), arr);
-            int canvasHeight = EM_ASM_INT((return Module.canvas.clientHeight), arr);
-            event.mouseX = (float)mouseEvent->targetX / (float)canvasWidth * (float)app->width;
-            event.mouseY = (float)mouseEvent->targetY / (float)canvasHeight * (float)app->height;
+            event.mouseX = (float)mouseEvent->targetX / (float)pntr_app_platform_get_width(app) * (float)app->width;
+            event.mouseY = (float)mouseEvent->targetY / (float)pntr_app_platform_get_height(app) * (float)app->height;
             pntr_app_process_event(app, &event);
         }
         break;
