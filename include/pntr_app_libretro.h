@@ -362,8 +362,8 @@ static retro_input_state_t input_state_cb;
 
 void retro_get_system_av_info(struct retro_system_av_info *info) {
     int fps = 60;
-    int width = 640;
-    int height = 480;
+    unsigned int width = 640;
+    unsigned int height = 480;
     if (pntr_app_libretro == NULL) {
         char* argv[1];
         argv[0] = "pntr_app";
@@ -454,7 +454,7 @@ void retro_audio_cb() {
         return;
     }
 
-    pntr_app_libretro_platform* platform = app->platform;
+    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
     if (platform == NULL) {
         return;
     }
@@ -564,7 +564,7 @@ bool pntr_app_platform_events(pntr_app* app) {
     }
 
     // Mouse Buttons
-    for (event.mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; event.mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; event.mouseButton++) {
+    for (int mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; mouseButton++) {
         int retroButton = pntr_app_libretro_mouse_button_to_retro(event.mouseButton);
         if (retroButton == -1) {
             continue;
@@ -575,6 +575,7 @@ bool pntr_app_platform_events(pntr_app* app) {
             platform->mouseButtonState[event.mouseButton] = currentState;
 
             // Invoke the event.
+            event.mouseButton = (pntr_app_mouse_button)mouseButton;
             pntr_app_process_event(app, &event);
         }
     }
@@ -792,8 +793,8 @@ bool pntr_app_platform_init(pntr_app* app) {
 
     pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
     platform->audioBufferSize = PNTR_APP_LIBRETRO_SAMPLES / ((app->fps <= 0) ? 60 : app->fps);
-    platform->audioSamples = pntr_load_memory(sizeof(float) * platform->audioBufferSize * 2);
-    platform->audioSamples2 = pntr_load_memory(sizeof(int16_t) * platform->audioBufferSize * 2);
+    platform->audioSamples = (float*)pntr_load_memory(sizeof(float) * platform->audioBufferSize * 2);
+    platform->audioSamples2 = (int16_t*)pntr_load_memory(sizeof(int16_t) * platform->audioBufferSize * 2);
     pntr_app_libretro = app;
 
     // Audio
