@@ -465,14 +465,24 @@ PNTR_APP_API int pntr_app_height(pntr_app* app);
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
 
 /**
- * Get a random value between min and max (both included)
+ * Get a random value between min and max.
  *
  * @param min The minimum value.
  * @param max The maximum value.
  *
- * @return A random integer between the min and max values.
+ * @return A random integer between the min and max.
  */
 PNTR_APP_API int pntr_app_random(pntr_app* app, int min, int max);
+
+/**
+ * Get a random float value between min and max.
+ *
+ * @param min The minimum value.
+ * @param max The maximum value.
+ *
+ * @return A random floatvalue between the min and max.
+ */
+float pntr_app_random_float(pntr_app* app, float min, float max);
 
 /**
  * Sets the random number generator seed.
@@ -507,6 +517,11 @@ PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_bu
 PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
+
+/**
+ *
+ */
+PNTR_APP_API bool pntr_app_show_mouse(pntr_app* app, bool toggle);
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title);
 PNTR_APP_API const char* pntr_app_title(pntr_app* app);
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
@@ -1134,6 +1149,25 @@ PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button 
     return !pntr_app_mouse_button_down(app, button);
 }
 
+PNTR_APP_API bool pntr_app_show_mouse(pntr_app* app, bool show) {
+    if (app == NULL) {
+        return false;
+    }
+
+    #ifdef PNTR_APP_SHOW_MOUSE
+        if (!show) {
+            app->mouseX = app->screen->width / 2;
+            app->mouseY = app->screen->height / 2;
+            app->mouseDeltaX = 0;
+            app->mouseDeltaY = 0;
+        }
+        return PNTR_APP_SHOW_MOUSE(app, show);
+    #else
+        (void)show;
+        return false;
+    #endif
+}
+
 /**
  * Change the size of the screen.
  *
@@ -1167,7 +1201,7 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
         return NULL;
     }
 
-    if (app->argFileData != NULL) {
+    if (app->argFileData != NULL && app->argFileDataSize > 0) {
         // Copy the memory as an output, as the application is now responsible to unload it.
         void* output = pntr_load_memory(app->argFileDataSize);
         pntr_memory_copy(output, app->argFileData, app->argFileDataSize);
@@ -1178,8 +1212,8 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     }
 
     // TODO: pntr_app_load_arg_file: Parse the argv correctly so that it grabs an actual file path.
-    if (app->argv && app->argv[1] != NULL) {
-        unsigned int loadedSize;
+    if (app->argv && app->argv[0] != NULL && app->argv[1] != NULL) {
+        unsigned int loadedSize =  0;
         void* output = pntr_load_file(app->argv[1], &loadedSize);
         if (size != NULL) {
             *size = loadedSize;
@@ -1233,6 +1267,10 @@ PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     }
 
     return app->title;
+}
+
+PNTR_APP_API inline float pntr_app_random_float(pntr_app* app, float min, float max) {
+    return prand_float(&app->prand, min, max);
 }
 
 PNTR_APP_API inline int pntr_app_random(pntr_app* app, int min, int max) {

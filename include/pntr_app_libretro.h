@@ -565,14 +565,14 @@ bool pntr_app_platform_events(pntr_app* app) {
 
     // Mouse Buttons
     for (int mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; mouseButton++) {
-        int retroButton = pntr_app_libretro_mouse_button_to_retro(event.mouseButton);
+        int retroButton = pntr_app_libretro_mouse_button_to_retro(mouseButton);
         if (retroButton == -1) {
             continue;
         }
         int16_t currentState = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, retroButton);
-        if (platform->mouseButtonState[event.mouseButton] != currentState) {
+        if (platform->mouseButtonState[mouseButton] != currentState) {
             event.type = (currentState == 0) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
-            platform->mouseButtonState[event.mouseButton] = currentState;
+            platform->mouseButtonState[mouseButton] = currentState;
 
             // Invoke the event.
             event.mouseButton = (pntr_app_mouse_button)mouseButton;
@@ -581,7 +581,7 @@ bool pntr_app_platform_events(pntr_app* app) {
     }
 
     // Gamepad Buttons
-    for (event.gamepad = 0; event.gamepad < 4; event.gamepad++) {
+    for (event.gamepad = 0; event.gamepad < PNTR_APP_MAX_GAMEPADS; event.gamepad++) {
         // TODO: Switch to libretro gamepad bitmasks?
         for (int button = RETRO_DEVICE_ID_JOYPAD_B; button <= RETRO_DEVICE_ID_JOYPAD_R3; button++) {
             int16_t currentState = input_state_cb(event.gamepad, RETRO_DEVICE_JOYPAD, 0, button);

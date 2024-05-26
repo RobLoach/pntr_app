@@ -187,6 +187,21 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event)
     event->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
 }
 
+bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
+    (void)app;
+    if (show) {
+        EnableCursor();
+    }
+    else {
+        DisableCursor();
+    }
+
+    return true;
+}
+#ifndef PNTR_APP_SHOW_MOUSE
+    #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
+#endif
+
 bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL) {
         return false;

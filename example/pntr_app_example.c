@@ -38,6 +38,8 @@ bool Init(pntr_app* app) {
     pntr_app_set_title(app, "pntr_app: Examples");
     pntr_app_set_icon(app, appData->logo);
 
+    pntr_app_show_mouse(app, false);
+
     return true;
 }
 
@@ -69,7 +71,7 @@ bool Update(pntr_app* app, pntr_image* screen) {
         pntr_draw_rectangle_fill(screen, 10, 10, 80, 40, PNTR_RED);
     }
 
-    pntr_draw_circle(screen, pntr_app_mouse_x(app), pntr_app_mouse_y(app), 5, PNTR_BLACK);
+    pntr_draw_circle(screen, pntr_app_mouse_x(app), pntr_app_mouse_y(app), 10, PNTR_BLACK);
 
     if (appData->droppedImage != NULL) {
         pntr_draw_image(screen, appData->droppedImage, 10, 10);
