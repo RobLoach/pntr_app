@@ -73,6 +73,9 @@ bool Update(pntr_app* app, pntr_image* screen) {
 
     pntr_draw_circle(screen, pntr_app_mouse_x(app), pntr_app_mouse_y(app), 10, PNTR_BLACK);
 
+    if (pntr_app_mouse_delta_x(app) != 0 || pntr_app_mouse_delta_y(app) != 0)
+        pntr_app_log_ex(PNTR_APP_LOG_INFO, "Mouse Delta: (%.2f, %.2f)", pntr_app_mouse_delta_x(app), pntr_app_mouse_delta_y(app));
+
     if (appData->droppedImage != NULL) {
         pntr_draw_image(screen, appData->droppedImage, 10, 10);
     }

@@ -52,7 +52,9 @@ extern "C" {
 
 // pntr configuration
 #if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO)
-    #define PNTR_PIXELFORMAT_ARGB
+    #ifndef PNTR_PIXELFORMAT_ARGB
+        #define PNTR_PIXELFORMAT_ARGB
+    #endif
 #endif
 
 // pntr.h
@@ -517,11 +519,8 @@ PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_bu
 PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
-
-/**
- *
- */
 PNTR_APP_API bool pntr_app_show_mouse(pntr_app* app, bool toggle);
+
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title);
 PNTR_APP_API const char* pntr_app_title(pntr_app* app);
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
@@ -930,16 +929,39 @@ PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             app->gamepadButtonState[event->gamepad] &= ~PNTR_APP_GAMEPAD_BUTTON_FLAG(event->gamepadButton);
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE:
-            event->mouseDeltaX = app->mouseX - event->mouseX;
-            event->mouseDeltaY = app->mouseY - event->mouseY;
-            if (event->mouseDeltaX == 0 && event->mouseDeltaY == 0) {
-                return;
+            // Passing in a delta change means we're acting on mouse move rather than position.
+            if (event->mouseDeltaX != 0 || event->mouseDeltaY != 0) {
+                app->mouseDeltaX = event->mouseDeltaX;
+                app->mouseDeltaY = event->mouseDeltaY;
+                app->mouseX += event->mouseDeltaX;
+                app->mouseY += event->mouseDeltaY;
+                app->mouseChanged = true;
             }
-            app->mouseDeltaX = event->mouseDeltaX;
-            app->mouseDeltaY = event->mouseDeltaY;
-            app->mouseX = event->mouseX;
-            app->mouseY = event->mouseY;
-            app->mouseChanged = true;
+            else {
+                event->mouseDeltaX = event->mouseX - app->mouseX;
+                event->mouseDeltaY = event->mouseY - app->mouseY;
+                if (event->mouseDeltaX == 0 && event->mouseDeltaY == 0) {
+                    return;
+                }
+                app->mouseDeltaX = event->mouseDeltaX;
+                app->mouseDeltaY = event->mouseDeltaY;
+                app->mouseX = event->mouseX;
+                app->mouseY = event->mouseY;
+                app->mouseChanged = true;
+            }
+
+            if (app->mouseX < 0) {
+                app->mouseX = 0;
+            }
+            else if (app->mouseX >= app->width) {
+                app->mouseX = app->width - 1;
+            }
+            if (app->mouseY < 0) {
+                app->mouseY = 0;
+            }
+            else if (app->mouseY >= app->height) {
+                app->mouseY = app->height - 1;
+            }
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
             app->mouseWheel = event->mouseWheel;

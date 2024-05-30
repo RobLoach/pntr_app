@@ -356,7 +356,7 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
     }
 
     // Build the key event.
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.app = app;
     switch (eventType) {
         case EMSCRIPTEN_EVENT_MOUSEDOWN: event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN; break;

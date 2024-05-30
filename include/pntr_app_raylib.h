@@ -187,18 +187,21 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event)
     event->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
 }
 
-bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
-    (void)app;
-    if (show) {
-        EnableCursor();
-    }
-    else {
-        DisableCursor();
-    }
-
-    return true;
-}
 #ifndef PNTR_APP_SHOW_MOUSE
+    bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
+        (void)app;
+
+        if (show) {
+            EnableCursor();
+            ShowCursor();
+        }
+        else {
+            DisableCursor();
+            HideCursor();
+        }
+
+        return true;
+    }
     #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
 #endif
 
@@ -207,7 +210,7 @@ bool pntr_app_platform_events(pntr_app* app) {
         return false;
     }
 
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.app = app;
 
     // Keys
@@ -232,7 +235,7 @@ bool pntr_app_platform_events(pntr_app* app) {
 
     // Mouse
     Vector2 mouseMove = GetMouseDelta();
-    if ((int)mouseMove.x != 0 || (int)mouseMove.y != 0) {
+    if (mouseMove.x != 0.0f || mouseMove.y != 0.0f) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
         pntr_app_raylib_fix_mouse_coordinates(app, &event);
         event.mouseWheel = 0;

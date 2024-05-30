@@ -405,7 +405,7 @@ void retro_set_environment(retro_environment_t cb) {
         log_cb = fallback_log;
     }
 
-    #if !defined(PNTR_LOAD_FILE) || !defined(PNTR_SAVE_FILE)
+    #if ((PNTR_LOAD_FILE == pntr_app_libretro_load_file) || (PNTR_SAVE_FILE == pntr_app_libretro_save_file))
         // File System
         struct retro_vfs_interface_info vfs_interface_info;
         vfs_interface_info.required_interface_version = 1;
@@ -485,17 +485,10 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
  *
  * @see RETRO_DEVICE_POINTER
  */
-float pntr_app_libretro_mouse_pointer_convert(float coord, float full, float margin)
+float pntr_app_libretro_mouse_pointer_convert(float coord, float full)
 {
 	float max         = (float)0x7fff;
-	float screenCoord = (((coord + max) / (max * 2.0f) ) * full) - margin;
-
-	// Keep the mouse on the screen.
-	if (margin > 0.0f) {
-		float limit = full - (margin * 2.0f) - 1.0f;
-		screenCoord = (screenCoord < 0.0f)  ? 0.0f  : screenCoord;
-		screenCoord = (screenCoord > limit) ? limit : screenCoord;
-	}
+	float screenCoord = (((coord + max) / (max * 2.0f) ) * full);
 
 	return screenCoord + 0.5f;
 }
@@ -516,28 +509,15 @@ bool pntr_app_platform_events(pntr_app* app) {
     input_poll_cb();
 
     // Prepare a pntr event to push.
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.app = app;
 
     // Mouse Move
+    // TODO: Add RETRO_DEVICE_MOUSE support.
     int16_t mouseX = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
     int16_t mouseY = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
-    event.mouseX = pntr_app_libretro_mouse_pointer_convert((float)mouseX, app->width, 0.0f);
-    event.mouseY = pntr_app_libretro_mouse_pointer_convert((float)mouseY, app->height, 0.0f);
-
-    if (event.mouseX < 0) {
-        event.mouseX = 0;
-    }
-    else if (event.mouseX > app->width) {
-        event.mouseX = app->width;
-    }
-
-    if (event.mouseY < 0) {
-        event.mouseY = 0;
-    }
-    else if (event.mouseY > app->height) {
-        event.mouseY = app->height;
-    }
+    event.mouseX = pntr_app_libretro_mouse_pointer_convert((float)mouseX, app->width);
+    event.mouseY = pntr_app_libretro_mouse_pointer_convert((float)mouseY, app->height);
 
     if (platform->mouseX != event.mouseX || platform->mouseY != event.mouseY) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;

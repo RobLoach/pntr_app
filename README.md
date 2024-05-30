@@ -36,16 +36,6 @@ bool Update(pntr_app* app, pntr_image* screen) {
     return true;
 }
 
-void Event(pntr_app* app, pntr_app_event* event) {
-    switch (event->type) {
-        case PNTR_APP_EVENTTYPE_KEY_DOWN:
-            if (event->key == PNTR_APP_KEY_SPACE) {
-                // SPACE is pressed!
-            }
-        break;
-    }
-}
-
 void Close(pntr_app* app) {
     // Uninitialize the application.
 }
@@ -57,7 +47,6 @@ pntr_app Main(int argc, char* argv[]) {
         .title = "pntr_app",
         .init = Init,
         .update = Update,
-        .event = Event,
         .close = Close,
         .fps = 60
     };

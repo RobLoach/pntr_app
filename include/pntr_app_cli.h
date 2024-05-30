@@ -35,7 +35,7 @@ bool pntr_app_platform_events(pntr_app* app) {
     }
 
     pntr_app_cli_platform* platform = (pntr_app_cli_platform*)app->platform;
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.app = app;
 
     // Key Up

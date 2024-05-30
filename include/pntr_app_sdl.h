@@ -350,7 +350,7 @@ bool pntr_app_platform_events(pntr_app* app) {
     }
 
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-    pntr_app_event pntrEvent;
+    pntr_app_event pntrEvent = {0};
     pntrEvent.app = app;
     SDL_Event event;
 
