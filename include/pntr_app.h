@@ -1254,7 +1254,7 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
 
     va_list arg_ptr;
     va_start(arg_ptr, message);
-    vsprintf(output, message, arg_ptr);
+    vsnprintf(output, PNTR_APP_LOG_EX_STRING_LENGTH, message, arg_ptr);
     va_end(arg_ptr);
 
     pntr_app_log(type, output);

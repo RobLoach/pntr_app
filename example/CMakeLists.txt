@@ -61,7 +61,10 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
     set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer::SDL2_mixer-static)
     #set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer)
 
-    target_compile_definitions(pntr_app_example_sdl PUBLIC PNTR_APP_SDL_MIXER)
+    target_compile_definitions(pntr_app_example_sdl PUBLIC
+        PNTR_APP_SDL_MIXER
+        PNTR_PIXELFORMAT_ARGB
+    )
 
     target_link_libraries(pntr_app_example_sdl PUBLIC
         pntr

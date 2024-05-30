@@ -26,7 +26,7 @@ pntr_app* pntr_app_libretro;
 
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
-struct retro_vfs_interface* vfs;
+struct retro_vfs_interface* vfs = NULL;
 
 #ifndef PNTR_LOAD_FILE
     /**
@@ -405,16 +405,18 @@ void retro_set_environment(retro_environment_t cb) {
         log_cb = fallback_log;
     }
 
-    // File System
-    struct retro_vfs_interface_info vfs_interface_info;
-    vfs_interface_info.required_interface_version = 1;
-    vfs_interface_info.iface = NULL;
-    if (cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_interface_info)) {
-        vfs = vfs_interface_info.iface;
-    }
-    else {
-        vfs = NULL;
-    }
+    #if !defined(PNTR_LOAD_FILE) || !defined(PNTR_SAVE_FILE)
+        // File System
+        struct retro_vfs_interface_info vfs_interface_info;
+        vfs_interface_info.required_interface_version = 1;
+        vfs_interface_info.iface = NULL;
+        if (cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_interface_info)) {
+            vfs = vfs_interface_info.iface;
+        }
+        else {
+            vfs = NULL;
+        }
+    #endif
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb) {
