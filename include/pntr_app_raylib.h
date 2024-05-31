@@ -130,7 +130,7 @@ typedef struct pntr_app_raylib_platform {
     pntr_sound_raylib* sounds[PNTR_APP_RAYLIB_MAX_SOUNDS];
 } pntr_app_raylib_platform;
 
-pntr_app_raylib_platform* pntr_app_raylib_platform_instance;
+pntr_app_raylib_platform* pntr_app_raylib_platform_instance = NULL;
 
 Image pntr_app_raylib_image(pntr_image* image) {
     Image output = { 0 };
@@ -193,11 +193,16 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event)
 
         if (show) {
             EnableCursor();
-            ShowCursor();
         }
         else {
             DisableCursor();
-            HideCursor();
+            SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+            Rectangle dstRect;
+            pntr_app_raylib_destination_rect(app, &dstRect);
+            app->mouseX = (GetMouseX() - dstRect.x) * app->screen->width / dstRect.width;
+            app->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
+            app->mouseDeltaX = 0;
+            app->mouseDeltaY = 0;
         }
 
         return true;
@@ -400,7 +405,7 @@ bool pntr_app_platform_init(pntr_app* app) {
 }
 
 void pntr_app_platform_close(pntr_app* app) {
-    if (app != NULL) {
+    if (app == NULL) {
         return;
     }
 
@@ -414,6 +419,8 @@ void pntr_app_platform_close(pntr_app* app) {
                 pntr_unload_sound((pntr_sound*)platform->sounds[i]);
             }
         }
+
+        pntr_unload_memory(app->platform);
     }
 
     pntr_app_raylib_platform_instance = NULL;

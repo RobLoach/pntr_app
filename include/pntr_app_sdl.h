@@ -547,7 +547,7 @@ bool pntr_app_platform_init(pntr_app* app) {
 }
 
 void pntr_app_platform_close(pntr_app* app) {
-    if (app == NULL) {
+    if (app != NULL) {
         pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
         if (platform != NULL) {
             // Close Gamepads
