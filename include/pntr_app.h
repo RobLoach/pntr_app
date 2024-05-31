@@ -954,13 +954,13 @@ PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
                 app->mouseX = 0;
             }
             else if (app->mouseX >= app->width) {
-                app->mouseX = app->width - 1;
+                app->mouseX = (float)(app->width - 1);
             }
             if (app->mouseY < 0) {
                 app->mouseY = 0;
             }
             else if (app->mouseY >= app->height) {
-                app->mouseY = app->height - 1;
+                app->mouseY = (float)(app->height - 1);
             }
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
