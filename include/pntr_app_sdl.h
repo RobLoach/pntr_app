@@ -356,7 +356,7 @@ void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* even
     bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
         (void)app;
         if (show) {
-            return  SDL_ShowCursor(SDL_TRUE) >= 0 && SDL_SetRelativeMouseMode(SDL_FALSE) >= 0;
+            return SDL_ShowCursor(SDL_TRUE) >= 0 && SDL_SetRelativeMouseMode(SDL_FALSE) >= 0;
         }
 
         return SDL_ShowCursor(SDL_FALSE) >= 0 && SDL_SetRelativeMouseMode(SDL_TRUE) >= 0;

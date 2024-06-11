@@ -1181,12 +1181,6 @@ PNTR_APP_API bool pntr_app_show_mouse(pntr_app* app, bool show) {
     }
 
     #ifdef PNTR_APP_SHOW_MOUSE
-        if (!show) {
-            app->mouseX = app->screen->width / 2;
-            app->mouseY = app->screen->height / 2;
-            app->mouseDeltaX = 0;
-            app->mouseDeltaY = 0;
-        }
         return PNTR_APP_SHOW_MOUSE(app, show);
     #else
         (void)show;
