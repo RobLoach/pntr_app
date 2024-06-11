@@ -119,6 +119,8 @@ typedef struct pntr_app_libretro_platform {
     int16_t* audioSamples2;
     int audioBufferSize;
     bool audioEnabled;
+
+    bool mouseHidden;
 } pntr_app_libretro_platform;
 
 pntr_app_gamepad_button pntr_app_libretro_gamepad_button(int button) {
@@ -513,21 +515,35 @@ bool pntr_app_platform_events(pntr_app* app) {
     event.app = app;
 
     // Mouse Move
-    // TODO: Add RETRO_DEVICE_MOUSE support.
-    int16_t mouseX = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
-    int16_t mouseY = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
-    event.mouseX = pntr_app_libretro_mouse_pointer_convert((float)mouseX, app->width);
-    event.mouseY = pntr_app_libretro_mouse_pointer_convert((float)mouseY, app->height);
+    if (!platform->mouseHidden) {
+        // RETRO_DEVICE_POINTER
+        int16_t mouseX = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_X);
+        int16_t mouseY = input_state_cb(0, RETRO_DEVICE_POINTER, 0, RETRO_DEVICE_ID_POINTER_Y);
+        event.mouseX = pntr_app_libretro_mouse_pointer_convert((float)mouseX, app->width);
+        event.mouseY = pntr_app_libretro_mouse_pointer_convert((float)mouseY, app->height);
 
-    if (platform->mouseX != event.mouseX || platform->mouseY != event.mouseY) {
-        event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-        platform->mouseX = event.mouseX;
-        platform->mouseY = event.mouseY;
-        event.mouseWheel = 0;
+        if (platform->mouseX != event.mouseX || platform->mouseY != event.mouseY) {
+            event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+            platform->mouseX = event.mouseX;
+            platform->mouseY = event.mouseY;
+            event.mouseWheel = 0;
 
-        // Invoke the event.
-        pntr_app_process_event(app, &event);
+            // Invoke the event.
+            pntr_app_process_event(app, &event);
+        }
     }
+    else {
+        // RETRO_DEVICE_MOUSE
+        int16_t mouseDeltaX = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_X);
+        int16_t mouseDeltaY = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_Y);
+        if (mouseDeltaX != 0 || mouseDeltaY != 0) {
+            event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+            event.mouseDeltaX = mouseDeltaX;
+            event.mouseDeltaY = mouseDeltaY;
+            pntr_app_process_event(app, &event);
+        }
+    }
+
 
     // Mouse Wheel
     int16_t mouseWheelUp = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELUP);
@@ -946,6 +962,19 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
     (void)enabled;
     (void)code;
 }
+
+#ifndef PNTR_APP_SHOW_MOUSE
+    bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
+        if (app == NULL || app->platform == NULL) {
+            return false;
+        }
+
+        pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
+        platform->mouseHidden = !show;
+        return true;
+    }
+    #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
+#endif
 
 /**
  * Internal structure to handle libretro audio.

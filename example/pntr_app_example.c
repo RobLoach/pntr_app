@@ -78,7 +78,9 @@ bool Update(pntr_app* app, pntr_image* screen) {
         pntr_draw_image(screen, appData->droppedImage, 10, 10);
     }
 
-    if (pntr_app_key_pressed(app, PNTR_APP_KEY_A)) {
+    // Hide the mouse when A is pressed
+    if (pntr_app_gamepad_button_pressed(app, -1, PNTR_APP_GAMEPAD_BUTTON_A)) {
+        pntr_app_log(PNTR_APP_LOG_INFO, "Key A is pressed");
         pntr_app_show_mouse(app, false);
     }
 
