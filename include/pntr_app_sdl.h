@@ -324,12 +324,32 @@ void pntr_app_platform_render_surface(pntr_app* app, pntr_app_sdl_platform* plat
 }
 
 
-void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event, int x, int y) {
+void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event, SDL_MouseMotionEvent* mouseMotion) {
     SDL_Rect dstRect;
     pntr_app_platform_get_destination(app->screen, app->platform, &dstRect);
 
-    event->mouseX = (x - dstRect.x) * app->screen->width / dstRect.w;
-    event->mouseY = (y - dstRect.y) * app->screen->height / dstRect.h;
+    if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
+        event->mouseDeltaX = (float)mouseMotion->xrel * app->screen->width / dstRect.w;
+        event->mouseDeltaY = (float)mouseMotion->yrel * app->screen->height / dstRect.h;
+    }
+    else {
+        if (mouseMotion->x < dstRect.x) {
+            mouseMotion->x = dstRect.x;
+        }
+        else if (mouseMotion->x > dstRect.x + dstRect.w) {
+            mouseMotion->x = dstRect.x + dstRect.w;
+        }
+
+        if (mouseMotion->y < dstRect.y) {
+            mouseMotion->y = dstRect.y;
+        }
+        else if (mouseMotion->y > dstRect.y + dstRect.h) {
+            mouseMotion->y = dstRect.y + dstRect.h;
+        }
+
+        event->mouseX = (mouseMotion->x - dstRect.x) * app->screen->width / dstRect.w;
+        event->mouseY = (mouseMotion->y - dstRect.y) * app->screen->height / dstRect.h;
+    }
 }
 
 #ifndef PNTR_APP_SHOW_MOUSE
@@ -362,7 +382,7 @@ bool pntr_app_platform_events(pntr_app* app) {
 
             case SDL_MOUSEMOTION: {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                pntr_app_platform_fix_mouse_coordinates(app, &pntrEvent, event.motion.x, event.motion.y);
+                pntr_app_platform_fix_mouse_coordinates(app, &pntrEvent, &event.motion);
                 pntrEvent.mouseWheel = 0;
                 pntr_app_process_event(app, &pntrEvent);
             }

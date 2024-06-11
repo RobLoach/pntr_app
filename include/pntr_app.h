@@ -370,7 +370,6 @@ struct pntr_app {
     bool mouseButtonsDown[PNTR_APP_MOUSE_BUTTON_LAST];
     bool mouseButtonsDownLast[PNTR_APP_MOUSE_BUTTON_LAST];
     bool mouseButtonsChanged;
-    bool mouseShown;
 
     // Command Line Arguments
     int argc;
@@ -954,19 +953,19 @@ PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             if (app->mouseX < 0) {
                 app->mouseX = 0;
             }
-            else if (app->mouseX >= app->width) {
+            else if (app->mouseX > app->width) {
                 app->mouseX = (float)app->width;
             }
             if (app->mouseY < 0) {
                 app->mouseY = 0;
             }
-            else if (app->mouseY >= app->height) {
+            else if (app->mouseY > app->height) {
                 app->mouseY = (float)app->height;
             }
 
             // Make sure the event gets the updated positions.
-            event->mouseX = app->mouseX;
-            event->mouseY = app->mouseY;
+            // event->mouseX = app->mouseX;
+            // event->mouseY = app->mouseY;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
             app->mouseWheel = event->mouseWheel;

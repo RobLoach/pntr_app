@@ -38,8 +38,6 @@ bool Init(pntr_app* app) {
     pntr_app_set_title(app, "pntr_app: Examples");
     pntr_app_set_icon(app, appData->logo);
 
-    pntr_app_show_mouse(app, false);
-
     return true;
 }
 
@@ -78,6 +76,10 @@ bool Update(pntr_app* app, pntr_image* screen) {
 
     if (appData->droppedImage != NULL) {
         pntr_draw_image(screen, appData->droppedImage, 10, 10);
+    }
+
+    if (pntr_app_key_pressed(app, PNTR_APP_KEY_A)) {
+        pntr_app_show_mouse(app, false);
     }
 
     return true;
