@@ -850,7 +850,6 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
         app->argFileData = NULL;
     }
 
-    // Call the platform close.
     pntr_app_platform_close(app);
 }
 
@@ -950,18 +949,23 @@ PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
                 app->mouseChanged = true;
             }
 
+            // Clamp the mouse position.
             if (app->mouseX < 0) {
                 app->mouseX = 0;
             }
-            else if (app->mouseX >= app->width) {
-                app->mouseX = (float)(app->width - 1);
+            else if (app->mouseX > app->width) {
+                app->mouseX = (float)app->width;
             }
             if (app->mouseY < 0) {
                 app->mouseY = 0;
             }
-            else if (app->mouseY >= app->height) {
-                app->mouseY = (float)(app->height - 1);
+            else if (app->mouseY > app->height) {
+                app->mouseY = (float)app->height;
             }
+
+            // Make sure the event gets the updated positions.
+            // event->mouseX = app->mouseX;
+            // event->mouseY = app->mouseY;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
             app->mouseWheel = event->mouseWheel;
@@ -1177,12 +1181,6 @@ PNTR_APP_API bool pntr_app_show_mouse(pntr_app* app, bool show) {
     }
 
     #ifdef PNTR_APP_SHOW_MOUSE
-        if (!show) {
-            app->mouseX = app->screen->width / 2;
-            app->mouseY = app->screen->height / 2;
-            app->mouseDeltaX = 0;
-            app->mouseDeltaY = 0;
-        }
         return PNTR_APP_SHOW_MOUSE(app, show);
     #else
         (void)show;

@@ -130,7 +130,7 @@ typedef struct pntr_app_raylib_platform {
     pntr_sound_raylib* sounds[PNTR_APP_RAYLIB_MAX_SOUNDS];
 } pntr_app_raylib_platform;
 
-pntr_app_raylib_platform* pntr_app_raylib_platform_instance;
+pntr_app_raylib_platform* pntr_app_raylib_platform_instance = NULL;
 
 Image pntr_app_raylib_image(pntr_image* image) {
     Image output = { 0 };
@@ -179,12 +179,33 @@ void pntr_app_raylib_destination_rect(pntr_app* app, Rectangle* outRect) {
     outRect->height = height;
 }
 
-void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event) {
+void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event, Vector2* mouseDelta) {
     Rectangle dstRect;
     pntr_app_raylib_destination_rect(app, &dstRect);
 
-    event->mouseX = (GetMouseX() - dstRect.x) * app->screen->width / dstRect.width;
-    event->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
+    if (!IsCursorHidden()) {
+        event->mouseX = (GetMouseX() - dstRect.x) * app->screen->width / dstRect.width;
+        event->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
+    }
+    else {
+        event->mouseDeltaX = mouseDelta->x * app->screen->width / dstRect.width;
+        event->mouseDeltaY = mouseDelta->y * app->screen->height / dstRect.height;
+
+        // Clamp the mouse to the screen.
+        if (GetMouseX() < dstRect.x) {
+            SetMousePosition(dstRect.x, GetMouseY());
+        }
+        else if (GetMouseX() > dstRect.x + dstRect.width) {
+            SetMousePosition(dstRect.x + dstRect.width, GetMouseY());
+        }
+
+        if (GetMouseY() < dstRect.y) {
+            SetMousePosition(GetMouseX(), dstRect.y);
+        }
+        else if (GetMouseY() > dstRect.y + dstRect.height) {
+            SetMousePosition(GetMouseX(), dstRect.y + dstRect.height);
+        }
+    }
 }
 
 #ifndef PNTR_APP_SHOW_MOUSE
@@ -193,11 +214,16 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event)
 
         if (show) {
             EnableCursor();
-            ShowCursor();
         }
         else {
             DisableCursor();
-            HideCursor();
+            SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+            Rectangle dstRect;
+            pntr_app_raylib_destination_rect(app, &dstRect);
+            app->mouseX = (GetMouseX() - dstRect.x) * app->screen->width / dstRect.width;
+            app->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
+            app->mouseDeltaX = 0;
+            app->mouseDeltaY = 0;
         }
 
         return true;
@@ -237,7 +263,7 @@ bool pntr_app_platform_events(pntr_app* app) {
     Vector2 mouseMove = GetMouseDelta();
     if (mouseMove.x != 0.0f || mouseMove.y != 0.0f) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-        pntr_app_raylib_fix_mouse_coordinates(app, &event);
+        pntr_app_raylib_fix_mouse_coordinates(app, &event, &mouseMove);
         event.mouseWheel = 0;
         pntr_app_process_event(app, &event);
     }
@@ -261,7 +287,8 @@ bool pntr_app_platform_events(pntr_app* app) {
 
         if (event.type != PNTR_APP_EVENTTYPE_UNKNOWN) {
             event.mouseButton = pntr_app_raylib_mouse_button(i);
-            pntr_app_raylib_fix_mouse_coordinates(app, &event);
+            event.mouseX = app->mouseX;
+            event.mouseY = app->mouseY;
             pntr_app_process_event(app, &event);
         }
     }
@@ -383,6 +410,7 @@ bool pntr_app_platform_init(pntr_app* app) {
         return false;
     }
 
+    SetWindowMinSize(50, 50);
     SetTargetFPS(app->fps);
 
     pntr_app_raylib_platform_instance = platform;
@@ -400,7 +428,7 @@ bool pntr_app_platform_init(pntr_app* app) {
 }
 
 void pntr_app_platform_close(pntr_app* app) {
-    if (app != NULL) {
+    if (app == NULL) {
         return;
     }
 
@@ -414,6 +442,8 @@ void pntr_app_platform_close(pntr_app* app) {
                 pntr_unload_sound((pntr_sound*)platform->sounds[i]);
             }
         }
+
+        pntr_unload_memory(app->platform);
     }
 
     pntr_app_raylib_platform_instance = NULL;

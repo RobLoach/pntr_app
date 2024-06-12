@@ -27,6 +27,17 @@
     #define PNTR_APP_LOG pntr_app_emscripten_log
 #endif
 
+#ifndef PNTR_APP_SHOW_MOUSE
+    bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
+        (void)app;
+        if (!show) {
+            return emscripten_request_pointerlock("!canvas", true) == EMSCRIPTEN_RESULT_SUCCESS;
+        }
+        return emscripten_exit_pointerlock() == EMSCRIPTEN_RESULT_SUCCESS;
+    }
+    #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
+#endif
+
 // this is cheap/simple but magic-bytes is better
 // https://github.com/konsumer/emscripten_browser_sound/blob/main/browser_sound.h#L50-L64
 

@@ -38,8 +38,6 @@ bool Init(pntr_app* app) {
     pntr_app_set_title(app, "pntr_app: Examples");
     pntr_app_set_icon(app, appData->logo);
 
-    pntr_app_show_mouse(app, false);
-
     return true;
 }
 
@@ -78,6 +76,12 @@ bool Update(pntr_app* app, pntr_image* screen) {
 
     if (appData->droppedImage != NULL) {
         pntr_draw_image(screen, appData->droppedImage, 10, 10);
+    }
+
+    // Hide the mouse when A is pressed
+    if (pntr_app_gamepad_button_pressed(app, -1, PNTR_APP_GAMEPAD_BUTTON_A)) {
+        pntr_app_log(PNTR_APP_LOG_INFO, "Key A is pressed");
+        pntr_app_show_mouse(app, false);
     }
 
     return true;
