@@ -329,8 +329,8 @@ void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* even
     pntr_app_platform_get_destination(app->screen, app->platform, &dstRect);
 
     if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
-        event->mouseDeltaX = (float)mouseMotion->xrel * app->screen->width / dstRect.w;
-        event->mouseDeltaY = (float)mouseMotion->yrel * app->screen->height / dstRect.h;
+        event->mouseDeltaX = (float)mouseMotion->xrel;
+        event->mouseDeltaY = (float)mouseMotion->yrel;
     }
     else {
         if (mouseMotion->x < dstRect.x) {

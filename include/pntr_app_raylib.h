@@ -188,8 +188,8 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event,
         event->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
     }
     else {
-        event->mouseDeltaX = mouseDelta->x * app->screen->width / dstRect.width;
-        event->mouseDeltaY = mouseDelta->y * app->screen->height / dstRect.height;
+        event->mouseDeltaX = mouseDelta->x;
+        event->mouseDeltaY = mouseDelta->y;
 
         // Clamp the mouse to the screen.
         if (GetMouseX() < dstRect.x) {
