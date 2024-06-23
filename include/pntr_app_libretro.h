@@ -563,7 +563,7 @@ bool pntr_app_platform_events(pntr_app* app) {
 
     // Mouse Buttons
     for (int mouseButton = PNTR_APP_MOUSE_BUTTON_FIRST; mouseButton < PNTR_APP_MOUSE_BUTTON_LAST; mouseButton++) {
-        int retroButton = pntr_app_libretro_mouse_button_to_retro(mouseButton);
+        int retroButton = pntr_app_libretro_mouse_button_to_retro((pntr_app_mouse_button)mouseButton);
         if (retroButton == -1) {
             continue;
         }
