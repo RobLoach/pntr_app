@@ -98,7 +98,7 @@ EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
     if (audio) {
         audio.pause();
         audio.currentTime = 0;
-        revokeObjectURL(audio.src);
+        URL.revokeObjectURL(audio.src);
     }
 })
 
