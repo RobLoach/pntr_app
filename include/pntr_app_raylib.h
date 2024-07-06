@@ -239,8 +239,8 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event,
     #define PNTR_APP_SET_CLIPBOARD pntr_app_platform_set_clipboard
 #endif
 
-#ifndef PNTR_APP_GET_CLIPBOARD
-    const char* pntr_app_platform_get_clipboard(pntr_app* app) {
+#ifndef PNTR_APP_CLIPBOARD
+    const char* pntr_app_platform_clipboard(pntr_app* app) {
         // Get the clipboard text from raylib.
         const char* text = GetClipboardText();
         int length = TextLength(text);
@@ -264,7 +264,7 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event,
         TextCopy(output, text);
         return output;
     }
-    #define PNTR_APP_GET_CLIPBOARD pntr_app_platform_get_clipboard
+    #define PNTR_APP_CLIPBOARD pntr_app_platform_clipboard
 #endif
 
 bool pntr_app_platform_events(pntr_app* app) {

@@ -1366,15 +1366,15 @@ PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text) {
 /**
  * Get the clipboard text.
  *
- * On the platform front, the `PNTR_APP_GET_CLIPBOARD` macro can be defined to handle getting the clipboard. It will create new memory with the text, only if it has changed.
+ * On the platform front, the `PNTR_APP_CLIPBOARD` macro can be defined to handle getting the clipboard. It will create new memory with the text, only if it has changed.
  *
  * @param app The application to act on.
  *
  * @return The clipboard text, or NULL if there hasn't been any clipboard text set.
  */
 PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
-    #ifdef PNTR_APP_GET_CLIPBOARD
-        const char* clipboard = PNTR_APP_GET_CLIPBOARD(app);
+    #ifdef PNTR_APP_CLIPBOARD
+        const char* clipboard = PNTR_APP_CLIPBOARD(app);
         if (clipboard != NULL) {
             if (app->clipboard != NULL) {
                 pntr_unload_memory((void*)app->clipboard);

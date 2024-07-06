@@ -2,6 +2,13 @@
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
+#define EMSCRIPTEN_CLIPBOARD_IMPLEMENTATION
+#include "external/emscripten_clipboard.h"
+
+typedef struct pntr_app_platform_emscripten {
+    emscripten_clipboard clipboard;
+} pntr_app_platform_emscripten;
+
 #ifndef PNTR_APP_LOG
     #include <emscripten/console.h> // emscripten_console_log(), emscripten_console_warn(), etc.
 
@@ -462,6 +469,12 @@ bool pntr_app_platform_init(pntr_app* app) {
         return false;
     }
 
+    pntr_app_platform_emscripten* platform = pntr_load_memory(sizeof(pntr_app_platform_emscripten));
+    if (platform == NULL) {
+        return false;
+    }
+    app->platform = (void*)platform;
+
     // Initialize the context
     pntr_app_platform_set_size(app, app->width, app->height);
 
@@ -488,12 +501,23 @@ bool pntr_app_platform_init(pntr_app* app) {
     // Random Number Generator
     pntr_app_random_seed(app, (unsigned int)(emscripten_random() * (float)PRAND_RAND_MAX));
 
+    // Intialize the clipboard
+    emscripten_clipboard_init(&platform->clipboard);
+
     return true;
 }
 
 void pntr_app_platform_close(pntr_app* app) {
+    if (app == NULL) {
+        return;
+    }
+
+    if (app->platform != NULL) {
+        pntr_unload_memory(app->platform);
+        app->platform = NULL;
+    }
+
     // TODO: Close the context, and delete the canvas.
-    (void)app;
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
@@ -529,5 +553,43 @@ void pntr_app_set_title(pntr_app* app, const char* title) {
 
     emscripten_set_window_title(title);
 }
+
+#ifndef PNTR_APP_CLIPBOARD
+    const char* pntr_app_platform_clipboard(pntr_app* app) {
+        if (app == NULL || app->platform == NULL) {
+            return NULL;
+        }
+
+        pntr_app_platform_emscripten* platform = (pntr_app_platform_emscripten*)app->platform;
+        const char* text = emscripten_clipboard_get(&platform->clipboard);
+
+        if (text == NULL || text[0] == '\0') {
+            return NULL;
+        }
+
+        int length = strlen(text);
+        char* output = pntr_load_memory(length + 1);
+        if (output == NULL) {
+            return NULL;
+        }
+
+        memcpy((void*)output, text, length);
+        output[length] = '\0';
+        return output;
+    }
+    #define PNTR_APP_CLIPBOARD pntr_app_platform_clipboard
+#endif
+
+#ifndef PNTR_APP_SET_CLIPBOARD
+    void pntr_app_platform_set_clipboard(pntr_app* app, const char* text) {
+        if (app == NULL || app->platform == NULL) {
+            return;
+        }
+
+        pntr_app_platform_emscripten* platform = (pntr_app_platform_emscripten*)app->platform;
+        emscripten_clipboard_set(&platform->clipboard, text);
+    }
+    #define PNTR_APP_SET_CLIPBOARD pntr_app_platform_set_clipboard
+#endif
 
 #endif
