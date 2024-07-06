@@ -380,6 +380,14 @@ struct pntr_app {
 
     // Random Number Generator
     prand_t prand;
+
+    /**
+     * The managed clipboard data.
+     *
+     * @see pntr_app_set_clipboard()
+     * @see pntr_app_clipboard()
+     */
+    char* clipboard;
 };
 
 typedef void pntr_sound;
@@ -544,6 +552,19 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
  * @return A memory buffer for the file data that was passed in. This must be cleared with pntr_unload_file() afterwards.
  */
 PNTR_APP_API void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
+
+/**
+ * Set the clipboard text.
+ */
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text);
+
+/**
+ * Get the clipboard text.
+ * @param app The application to act on.
+ *
+ * @return The clipboard text.
+ */
+PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
 
 /**
  * Platform callback to initialize the platform.
@@ -848,6 +869,12 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
     if (app->argFileDataUnloadOnExit) {
         pntr_unload_memory(app->argFileData);
         app->argFileData = NULL;
+    }
+
+    // Clear the clipboard data.
+    if (app->clipboard != NULL) {
+        pntr_unload_memory(app->clipboard);
+        app->clipboard = NULL;
     }
 
     pntr_app_platform_close(app);
@@ -1299,6 +1326,63 @@ PNTR_APP_API inline int pntr_app_random(pntr_app* app, int min, int max) {
 
 PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed) {
     prand_set_seed(&app->prand, seed);
+}
+
+/**
+ * Set the clipboard text.
+ *
+ * On the platform front, the `PNTR_APP_SET_CLIPBOARD` macro can be defined to handle setting the clipboard.
+ *
+ * @param app The application to act on.
+ * @param text The text to set the clipboard to.
+ */
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text) {
+    if (app == NULL) {
+        return;
+    }
+
+    if (app->clipboard != NULL) {
+        pntr_unload_memory(app->clipboard);
+    }
+
+    // Copy the clipboard text.
+    size_t length = PNTR_STRSIZE(text);
+    app->clipboard = pntr_load_memory(length);
+    if (app->clipboard == NULL) {
+        return;
+    }
+
+    // Copy the memory.
+    for (size_t i = 0; i < length; i++) {
+        app->clipboard[i] = text[i];
+    }
+    app->clipboard[length - (size_t)1] = '\0';
+
+    #ifdef PNTR_APP_SET_CLIPBOARD
+        PNTR_APP_SET_CLIPBOARD(app, app->clipboard);
+    #endif
+}
+
+/**
+ * Get the clipboard text.
+ *
+ * On the platform front, the `PNTR_APP_GET_CLIPBOARD` macro can be defined to handle getting the clipboard. It will create new memory with the text, only if it has changed.
+ *
+ * @param app The application to act on.
+ *
+ * @return The clipboard text, or NULL if there hasn't been any clipboard text set.
+ */
+PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
+    #ifdef PNTR_APP_GET_CLIPBOARD
+        const char* clipboard = PNTR_APP_GET_CLIPBOARD(app);
+        if (clipboard != NULL) {
+            if (app->clipboard != NULL) {
+                pntr_unload_memory((void*)app->clipboard);
+            }
+            app->clipboard = (char*)clipboard;
+        }
+    #endif
+    return app->clipboard;
 }
 
 #ifdef __cplusplus

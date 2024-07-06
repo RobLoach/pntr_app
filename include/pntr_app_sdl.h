@@ -364,6 +364,27 @@ void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* even
     #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
 #endif
 
+#ifndef PNTR_APP_SET_CLIPBOARD
+    void pntr_app_platform_set_clipboard(pntr_app* app, const char* text) {
+        (void)app;
+        SDL_SetClipboardText(text);
+    }
+    #define PNTR_APP_SET_CLIPBOARD pntr_app_platform_set_clipboard
+#endif
+
+#ifndef PNTR_APP_GET_CLIPBOARD
+    const char* pntr_app_platform_get_clipboard(pntr_app* app) {
+        (void)app;
+        if (SDL_HasClipboardText() == SDL_FALSE) {
+            return NULL;
+        }
+
+        // Don't need to copy the string since SDL creates the memory for us.
+        return SDL_GetClipboardText();
+    }
+    #define PNTR_APP_GET_CLIPBOARD pntr_app_platform_get_clipboard
+#endif
+
 bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
