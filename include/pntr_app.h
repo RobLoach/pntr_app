@@ -556,7 +556,7 @@ PNTR_APP_API void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
 /**
  * Set the clipboard text.
  */
-PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text);
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int len);
 
 /**
  * Get the clipboard text.
@@ -1335,8 +1335,9 @@ PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed) {
  *
  * @param app The application to act on.
  * @param text The text to set the clipboard to.
+ * @param text_size The length of the text to set. Use 0 to determine the length automatically.
  */
-PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text) {
+PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int text_size) {
     if (app == NULL) {
         return;
     }
@@ -1346,17 +1347,18 @@ PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text) {
     }
 
     // Copy the clipboard text.
-    size_t length = PNTR_STRSIZE(text);
+    size_t length = text_size <= 0 ? PNTR_STRSIZE(text) : (size_t)(text_size + 1);
     app->clipboard = pntr_load_memory(length);
     if (app->clipboard == NULL) {
         return;
     }
 
     // Copy the memory.
-    for (size_t i = 0; i < length; i++) {
+    size_t i;
+    for (i = 0; i < length - (size_t)1; i++) {
         app->clipboard[i] = text[i];
     }
-    app->clipboard[length - (size_t)1] = '\0';
+    app->clipboard[i] = '\0';
 
     #ifdef PNTR_APP_SET_CLIPBOARD
         PNTR_APP_SET_CLIPBOARD(app, app->clipboard);

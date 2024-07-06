@@ -84,6 +84,13 @@ bool Update(pntr_app* app, pntr_image* screen) {
         pntr_app_show_mouse(app, false);
     }
 
+    // Get the clipboard, and report the new one.
+    if (pntr_app_key_pressed(app, PNTR_APP_KEY_V)) {
+        pntr_app_log(PNTR_APP_LOG_INFO, "Clipboard Currently:");
+        pntr_app_log(PNTR_APP_LOG_INFO, pntr_app_clipboard(app));
+        pntr_app_set_clipboard(app, "Hello, World!", 4);
+    }
+
     return true;
 }
 
