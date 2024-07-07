@@ -1338,7 +1338,7 @@ PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed) {
  * @param text_size The length of the text to set. Use 0 to determine the length automatically.
  */
 PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int text_size) {
-    if (app == NULL) {
+    if (app == NULL || text == NULL) {
         return;
     }
 
