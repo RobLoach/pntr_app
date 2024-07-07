@@ -1,8 +1,6 @@
 #include <stdarg.h> // va_start, va_end
-#include <string.h> // memset, strstr
+#include <string.h> // memset
 #include <stdio.h>  // vfprintf
-#include <math.h>
-#include <stdlib.h>
 #include <time.h> // time()
 
 #ifndef PNTR_APP_LIBRETRO_H
@@ -110,17 +108,18 @@ struct retro_vfs_interface* vfs = NULL;
 #endif
 
 typedef struct pntr_app_libretro_platform {
+    // Input
     int16_t mouseButtonState[PNTR_APP_MOUSE_BUTTON_LAST];
     int16_t mouseX;
     int16_t mouseY;
     int16_t gamepadState[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
+    bool mouseHidden;
 
+    // Audio
     float* audioSamples;
     int16_t* audioSamples2;
     int audioBufferSize;
     bool audioEnabled;
-
-    bool mouseHidden;
 } pntr_app_libretro_platform;
 
 pntr_app_gamepad_button pntr_app_libretro_gamepad_button(int button) {
@@ -335,23 +334,37 @@ void retro_set_controller_port_device(unsigned port, unsigned device) {
 }
 
 void retro_get_system_info(struct retro_system_info *info) {
-    memset(info, 0, sizeof(*info));
-    info->library_name     = "pntr_app";
+    if (info == NULL) {
+        return;
+    }
 
-    // TODO: See if this is an option.
+    memset(info, 0, sizeof(*info));
+
+    // Get the library name for the application.
     if (pntr_app_libretro == NULL) {
         char* argv[1];
         argv[0] = "pntr_app";
         pntr_app app = PNTR_APP_MAIN(1, argv);
         info->library_name = app.title;
     }
-    else {
+    else if (pntr_app_libretro->title != NULL) {
         info->library_name = pntr_app_libretro->title;
     }
+    else {
+        info->library_name     = "pntr_app";
+    }
 
-    info->library_version  = "0.0.1";
+    // Grab a version from the application.
+    #ifndef GIT_VERSION
+        #define GIT_VERSION ""
+    #endif
+    #ifndef PROJECT_VERSION
+        #define PROJECT_VERSION "0.0.1"
+    #endif
+    info->library_version  = PROJECT_VERSION GIT_VERSION;
     info->need_fullpath    = false;
-    // TODO: Add valid_extensions to PNTR_APP_MAIN()
+
+    // TODO(RobLoach): Add valid_extensions to PNTR_APP_MAIN()?
     info->valid_extensions = NULL; // Anything is fine, we don't care.
 }
 
@@ -366,6 +379,7 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     int fps = 60;
     unsigned int width = 640;
     unsigned int height = 480;
+
     if (pntr_app_libretro == NULL) {
         char* argv[1];
         argv[0] = "pntr_app";
@@ -397,9 +411,11 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
 void retro_set_environment(retro_environment_t cb) {
     environ_cb = cb;
 
+    // Allow loading without any content.
     bool no_content = true;
     cb(RETRO_ENVIRONMENT_SET_SUPPORT_NO_GAME, &no_content);
 
+    // Set up the logging interface.
     if (cb(RETRO_ENVIRONMENT_GET_LOG_INTERFACE, &logging)) {
         log_cb = logging.log;
     }
@@ -407,8 +423,8 @@ void retro_set_environment(retro_environment_t cb) {
         log_cb = fallback_log;
     }
 
+    // File System
     #if ((PNTR_LOAD_FILE == pntr_app_libretro_load_file) || (PNTR_SAVE_FILE == pntr_app_libretro_save_file))
-        // File System
         struct retro_vfs_interface_info vfs_interface_info;
         vfs_interface_info.required_interface_version = 1;
         vfs_interface_info.iface = NULL;
@@ -489,10 +505,8 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
  */
 float pntr_app_libretro_mouse_pointer_convert(float coord, float full)
 {
-	float max         = (float)0x7fff;
-	float screenCoord = (((coord + max) / (max * 2.0f) ) * full);
-
-	return screenCoord + 0.5f;
+	float max = (float)0x7fff;
+	return (((coord + max) / (max * 2.0f) ) * full) + 0.5f;
 }
 
 bool pntr_app_platform_events(pntr_app* app) {
@@ -543,7 +557,6 @@ bool pntr_app_platform_events(pntr_app* app) {
             pntr_app_process_event(app, &event);
         }
     }
-
 
     // Mouse Wheel
     int16_t mouseWheelUp = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELUP);
@@ -613,6 +626,7 @@ bool pntr_app_platform_render(pntr_app* app) {
         return false;
     }
 
+    // TODO(RobLoach): Switch to retro_framebuffer via RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER.
     video_cb((void*)app->screen->data, app->screen->width, app->screen->height, app->screen->pitch);
 
     return true;
@@ -677,13 +691,17 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
         return;
     }
 
+    // Find hte key that was pressed.
+    pntr_app_key key = pntr_app_libretro_key(keycode);
+    if (key == PNTR_APP_KEY_INVALID) {
+        return;
+    }
+
     pntr_app_event event;
     event.app = pntr_app_libretro;
-    event.key = pntr_app_libretro_key(keycode);
-    if (event.key != PNTR_APP_KEY_INVALID) {
-        event.type = down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
-        pntr_app_libretro->event(pntr_app_libretro, &event);
-    }
+    event.key = key;
+    event.type = down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
+    pntr_app_libretro->event(pntr_app_libretro, &event);
 }
 
 /**
@@ -922,9 +940,8 @@ unsigned retro_get_region(void) {
 
 bool retro_load_game_special(unsigned type, const struct retro_game_info *info, size_t num) {
     (void)type;
-    (void)info;
     (void)num;
-    return retro_load_game(NULL);
+    return retro_load_game(info);
 }
 
 size_t retro_serialize_size(void) {
