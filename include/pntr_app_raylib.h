@@ -231,6 +231,42 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event,
     #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
 #endif
 
+#ifndef PNTR_APP_SET_CLIPBOARD
+    void pntr_app_platform_set_clipboard(pntr_app* app, const char* text) {
+        (void)app;
+        SetClipboardText(text);
+    }
+    #define PNTR_APP_SET_CLIPBOARD pntr_app_platform_set_clipboard
+#endif
+
+#ifndef PNTR_APP_CLIPBOARD
+    const char* pntr_app_platform_clipboard(pntr_app* app) {
+        // Get the clipboard text from raylib.
+        const char* text = GetClipboardText();
+        int length = TextLength(text);
+        if (text == NULL || length == 0) {
+            return NULL;
+        }
+
+        // Only return the new text if it's different.
+        if (TextIsEqual(app->clipboard, text)) {
+            return NULL;
+        }
+
+        // Copy the text into our own memory.
+        // TODO: Add UTF-8 support to the raylib clipboard.
+        size_t byte_size = (size_t)TextLength(text) + (size_t)1;
+        char* output = pntr_load_memory(byte_size);
+        if (output == NULL) {
+            return NULL;
+        }
+
+        TextCopy(output, text);
+        return output;
+    }
+    #define PNTR_APP_CLIPBOARD pntr_app_platform_clipboard
+#endif
+
 bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL) {
         return false;

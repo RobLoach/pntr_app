@@ -98,6 +98,25 @@ bool Init(pntr_app* app) {
         pntr_app_random_seed(app, 50);
     }
 
+    // pntr_app_clipboard()
+    {
+        pntr_app_set_clipboard(app, "Hello World!", 0);
+        const char* clipboard = pntr_app_clipboard(app);
+        ASSERT(clipboard[0] == 'H');
+        ASSERT(clipboard[1] == 'e');
+        ASSERT(clipboard[2] == 'l');
+        ASSERT(clipboard[3] == 'l');
+        ASSERT(clipboard[4] == 'o');
+
+        pntr_app_set_clipboard(app, "Goodbye World!", 4);
+        clipboard = pntr_app_clipboard(app);
+        ASSERT(clipboard[0] == 'G');
+        ASSERT(clipboard[1] == 'o');
+        ASSERT(clipboard[2] == 'o');
+        ASSERT(clipboard[3] == 'd');
+        ASSERT(clipboard[4] == '\0');
+    }
+
     // Set up the application data.
     AppData* appData = pntr_load_memory(sizeof(AppData));
     pntr_app_set_userdata(app, appData);
