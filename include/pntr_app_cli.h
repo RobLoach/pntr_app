@@ -1,3 +1,20 @@
+#ifdef PNTR_APP_CLI
+#ifndef PNTR_APP_CLI_H__
+#define PNTR_APP_CLI_H__
+
+typedef struct pntr_app_cli_platform {
+    int mouseX;
+    int mouseY;
+    bool keysEnabled[PNTR_APP_KEY_LAST];
+    bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
+} pntr_app_cli_platform;
+
+#endif  // PNTR_APP_CLI_H__
+
+#if defined(PNTR_APP_IMPLEMENTATION) && !defined(PNTR_APP_HEADER_ONLY)
+#ifndef PNTR_APP_CLI_IMPLEMENTATION_ONCE
+#define PNTR_APP_CLI_IMPLEMENTATION_ONCE
+
 #include <stdlib.h> // realloc
 
 // Termbox2
@@ -21,13 +38,6 @@
 #ifndef PNTR_APP_CLI_LOG_FILE
 #define PNTR_APP_CLI_LOG_FILE "log.txt"
 #endif
-
-typedef struct pntr_app_cli_platform {
-    int mouseX;
-    int mouseY;
-    bool keysEnabled[PNTR_APP_KEY_LAST];
-    bool mouseButtonsPressed[PNTR_APP_MOUSE_BUTTON_LAST];
-} pntr_app_cli_platform;
 
 bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
@@ -408,3 +418,7 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
     }
     #define PNTR_APP_LOG pntr_app_cli_log
 #endif
+
+#endif  // PNTR_APP_CLI_IMPLEMENTATION_ONCE
+#endif  // PNTR_APP_IMPLEMENTATION && !PNTR_APP_HEADER_ONLY
+#endif  // PNTR_APP_CLI

@@ -1,3 +1,7 @@
+#ifdef PNTR_APP_LIBRETRO
+#ifndef PNTR_APP_LIBRETRO_H__
+#define PNTR_APP_LIBRETRO_H__
+
 #include <stdarg.h> // va_start, va_end
 #include <string.h> // memset
 #include <stdio.h>  // vfprintf
@@ -5,8 +9,31 @@
 
 #ifndef PNTR_APP_LIBRETRO_H
 #define PNTR_APP_LIBRETRO_H "libretro.h"
-#endif
+#endif  // PNTR_APP_LIBRETRO_H
 #include PNTR_APP_LIBRETRO_H
+
+typedef struct pntr_app_libretro_platform {
+    // Input
+    int16_t mouseButtonState[PNTR_APP_MOUSE_BUTTON_LAST];
+    int16_t mouseX;
+    int16_t mouseY;
+    int16_t gamepadState[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
+    bool mouseHidden;
+
+    // Audio
+    float* audioSamples;
+    int16_t* audioSamples2;
+    int audioBufferSize;
+    bool audioEnabled;
+} pntr_app_libretro_platform;
+
+retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
+
+#endif  // PNTR_APP_LIBRETRO_H__
+
+#if defined(PNTR_APP_IMPLEMENTATION) && !defined(PNTR_APP_HEADER_ONLY)
+#ifndef PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
+#define PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
 
 #include "audio/audio_mixer.h"
 #include "audio/audio_resampler.h"
@@ -106,21 +133,6 @@ struct retro_vfs_interface* vfs = NULL;
     }
     #define PNTR_SAVE_FILE(fileName, data, bytesToWrite) pntr_app_libretro_save_file(fileName, data, bytesToWrite)
 #endif
-
-typedef struct pntr_app_libretro_platform {
-    // Input
-    int16_t mouseButtonState[PNTR_APP_MOUSE_BUTTON_LAST];
-    int16_t mouseX;
-    int16_t mouseY;
-    int16_t gamepadState[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
-    bool mouseHidden;
-
-    // Audio
-    float* audioSamples;
-    int16_t* audioSamples2;
-    int audioBufferSize;
-    bool audioEnabled;
-} pntr_app_libretro_platform;
 
 pntr_app_gamepad_button pntr_app_libretro_gamepad_button(int button) {
     switch (button) {
@@ -374,6 +386,11 @@ static retro_audio_sample_batch_t audio_batch_cb;
 static retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
+
+retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app) {
+    (void)app;
+    return environ_cb;
+}
 
 void retro_get_system_av_info(struct retro_system_av_info *info) {
     int fps = 60;
@@ -1114,3 +1131,7 @@ bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
 
     return true;
 }
+
+#endif  // PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
+#endif  // PNTR_APP_LIBRETRO_IMPLEMENTATION
+#endif  // PNTR_APP_LIBRETRO

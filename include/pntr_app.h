@@ -8,10 +8,11 @@
 *       pntr https://github.com/robloach/pntr
 *
 *   CONFIGURATION:
-*       PNTR_APP_RAYLIB
+*       PNTR_APP_CLI
 *       PNTR_APP_SDL
 *       PNTR_APP_LIBRETRO
-*       PNTR_APP_CLI
+*       PNTR_APP_RAYLIB
+*       PNTR_APP_WEB
 *
 *   LICENSE: zlib/libpng
 *
@@ -44,22 +45,16 @@
 extern "C" {
 #endif
 
-#ifdef __LIBRETRO__
-    #ifndef PNTR_APP_LIBRETRO
-        #define PNTR_APP_LIBRETRO
-    #endif
-#endif
-
-// pntr configuration
-#if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO)
-    #ifndef PNTR_PIXELFORMAT_ARGB
-        #define PNTR_PIXELFORMAT_ARGB
-    #endif
-#endif
+// Platform Detection
+#include "pntr_app_platform.h"
 
 // pntr.h
 #ifndef PNTR_APP_PNTR_H
     #define PNTR_APP_PNTR_H "pntr.h"
+#endif
+#ifdef PNTR_IMPLEMENTATION
+    // The PNTR_IMPLEMENTATION is handled later on in with PNTR_APP_IMPLEMENTATION.
+    #undef PNTR_IMPLEMENTATION
 #endif
 #include PNTR_APP_PNTR_H
 
@@ -492,7 +487,7 @@ PNTR_APP_API int pntr_app_random(pntr_app* app, int min, int max);
  *
  * @return A random floatvalue between the min and max.
  */
-float pntr_app_random_float(pntr_app* app, float min, float max);
+PNTR_APP_API float pntr_app_random_float(pntr_app* app, float min, float max);
 
 /**
  * Sets the random number generator seed.
@@ -638,6 +633,14 @@ PNTR_APP_API bool pntr_app_platform_set_size(pntr_app* app, int width, int heigh
 PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
 #endif
 
+#define PNTR_APP_HEADER_ONLY
+#include "pntr_app_cli.h"
+#include "pntr_app_libretro.h"
+#include "pntr_app_raylib.h"
+#include "pntr_app_sdl.h"
+#include "pntr_app_web.h"
+#undef PNTR_APP_HEADER_ONLY
+
 #ifdef __cplusplus
 }
 #endif
@@ -673,29 +676,17 @@ extern "C" {
 
 pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 
-// Platform
-#if defined(PNTR_APP_SDL)
-    #include "pntr_app_sdl.h"
-#elif defined(PNTR_APP_RAYLIB)
-    #include "pntr_app_raylib.h"
-#elif defined(PNTR_APP_LIBRETRO)
-    #include "pntr_app_libretro.h"
-#elif defined(PNTR_APP_WEB)
-    #include "pntr_app_web.h"
-#elif defined(PNTR_APP_CLI)
-    #include "pntr_app_cli.h"
-#else
-    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or PNTR_APP_WEB."
-#endif
+#include "pntr_app_cli.h"
+#include "pntr_app_libretro.h"
+#include "pntr_app_raylib.h"
+#include "pntr_app_sdl.h"
+#include "pntr_app_web.h"
 
 #ifdef __cplusplus
 }
 #endif
 
 #define PNTR_IMPLEMENTATION
-#ifndef PNTR_APP_PNTR_H
-#define PNTR_APP_PNTR_H "pntr.h"
-#endif
 #include PNTR_APP_PNTR_H
 
 #ifndef PNTR_APP_LOG

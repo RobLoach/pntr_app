@@ -1,8 +1,26 @@
+#ifdef PNTR_APP_SDL
+#ifndef PNTR_APP_SDL_H__
+#define PNTR_APP_SDL_H__
+
 // SDL.h
 #ifndef PNTR_APP_SDL_H
 #define PNTR_APP_SDL_H <SDL2/SDL.h>
 #endif
 #include PNTR_APP_SDL_H
+
+typedef struct pntr_app_sdl_platform {
+    SDL_GameController* gameControllers[PNTR_APP_MAX_GAMEPADS];
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Texture* texture;
+    uint64_t timerLastTime;
+} pntr_app_sdl_platform;
+
+#endif  // PNTR_APP_SDL_H__
+
+#if defined(PNTR_APP_IMPLEMENTATION) && !defined(PNTR_APP_HEADER_ONLY)
+#ifndef PNTR_APP_SDL_IMPLEMENTATION_ONCE
+#define PNTR_APP_SDL_IMPLEMENTATION_ONCE
 
 // SDL_mixer.h
 #ifdef PNTR_APP_SDL_MIXER
@@ -90,14 +108,6 @@
     }
     #define PNTR_APP_LOG pntr_app_sdl_log
 #endif
-
-typedef struct pntr_app_sdl_platform {
-    SDL_GameController* gameControllers[PNTR_APP_MAX_GAMEPADS];
-    SDL_Window* window;
-    SDL_Renderer* renderer;
-    SDL_Texture* texture;
-    uint64_t timerLastTime;
-} pntr_app_sdl_platform;
 
 pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button) {
     switch (button) {
@@ -812,3 +822,8 @@ bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
 
     return true;
 }
+
+
+#endif  // PNTR_APP_SDL_IMPLEMENTATION_ONCE
+#endif  // PNTR_APP_IMPLEMENTATION && !PNTR_APP_HEADER_ONLY
+#endif  // PNTR_APP_SDL
