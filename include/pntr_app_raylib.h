@@ -106,16 +106,13 @@ Image pntr_app_raylib_image(pntr_image* image);
 #ifndef PNTR_APP_LOG
     void pntr_app_raylib_log(pntr_app_log_type type, const char* message) {;
         switch (type) {
-            case PNTR_APP_LOG_WARNING: logLevel = LOG_WARNING; break;
-            case PNTR_APP_LOG_ERROR: logLevel = LOG_ERROR; break;
-            case PNTR_APP_LOG_DEBUG: logLevel = LOG_DEBUG; break;
+            case PNTR_APP_LOG_WARNING:  TraceLog(LOG_WARNING, message); break;
+            case PNTR_APP_LOG_ERROR:    TraceLog(LOG_ERROR, message); break;
+            case PNTR_APP_LOG_DEBUG:    TraceLog(LOG_DEBUG, message); break;
             case PNTR_APP_LOG_INFO:
-            default:
-                logLevel = LOG_INFO;
+            default:                    TraceLog(LOG_INFO, message);
             break;
         }
-
-        TraceLog(logLevel, message);
     }
     #define PNTR_APP_LOG pntr_app_raylib_log
 #endif
