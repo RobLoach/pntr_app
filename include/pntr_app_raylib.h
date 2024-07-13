@@ -104,13 +104,15 @@ Image pntr_app_raylib_image(pntr_image* image);
 #endif
 
 #ifndef PNTR_APP_LOG
-    void pntr_app_raylib_log(pntr_app_log_type type, const char* message) {
-        TraceLogLevel logLevel;
+    void pntr_app_raylib_log(pntr_app_log_type type, const char* message) {;
         switch (type) {
-            case PNTR_APP_LOG_INFO: logLevel = LOG_INFO; break;
             case PNTR_APP_LOG_WARNING: logLevel = LOG_WARNING; break;
             case PNTR_APP_LOG_ERROR: logLevel = LOG_ERROR; break;
             case PNTR_APP_LOG_DEBUG: logLevel = LOG_DEBUG; break;
+            case PNTR_APP_LOG_INFO:
+            default:
+                logLevel = LOG_INFO;
+            break;
         }
 
         TraceLog(logLevel, message);
@@ -502,6 +504,7 @@ pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char*
             fileExtension = ".ogg";
             break;
         case PNTR_APP_SOUND_TYPE_UNKNOWN:
+        default:
             return pntr_set_error(PNTR_ERROR_NOT_SUPPORTED);
             break;
     }
