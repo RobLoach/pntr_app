@@ -510,7 +510,7 @@ bool pntr_app_platform_init(pntr_app* app) {
     app->deltaTimeCounter = pntr_app_emscripten_get_time();
 
     // Random Number Generator
-    pntr_app_random_seed(app, (unsigned int)(emscripten_random() * (float)PRAND_RAND_MAX));
+    pntr_app_random_set_seed(app, (uint64_t)(emscripten_random() * (float)PRAND_RAND_MAX));
 
     // Intialize the clipboard
     emscripten_clipboard_init(&platform->clipboard);

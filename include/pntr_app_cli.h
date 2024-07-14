@@ -289,7 +289,7 @@ bool pntr_app_platform_init(pntr_app* app) {
     #endif
 
     // Random Number Generator
-    pntr_app_random_seed(app, (unsigned int)time(NULL));
+    pntr_app_random_set_seed(app, (uint64_t)time(NULL));
 
     return true;
 }

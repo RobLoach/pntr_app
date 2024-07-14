@@ -3,6 +3,7 @@
 #define PNTR_APP_DISABLE_TERMBOX
 #define PNTR_ENABLE_VARGS
 #include "pntr_app.h"
+#include "pntr_assert.h"
 
 typedef struct AppData {
     pntr_font* font;
@@ -11,13 +12,7 @@ typedef struct AppData {
 
 #include <stdio.h> // sprintf
 
-#define ASSERT(condition) do { \
-    if ((bool)(condition) == false) { \
-        char message[512]; \
-        pntr_app_log_ex(PNTR_APP_LOG_ERROR, message, "%s:%d: error: expected \"%s\" to be true", __FILE__, __LINE__, #condition); \
-        return false; \
-    } \
-} while(0)
+#define ASSERT(condition) PNTR_ASSERT(condition)
 
 bool Init(pntr_app* app) {
     // pntr_app_userdata
@@ -82,22 +77,37 @@ bool Init(pntr_app* app) {
         ASSERT(pntr_app_key_pressed(app, PNTR_APP_KEY_A));
     }
 
-    // pntr_app_random()
+    // pntr_app_random_seed(), pntr_app_random_set_seed()
+    {
+        // Make sure resetting the random seed works.
+        pntr_app_random_set_seed(app, 0);
+        int random = pntr_app_random(app, 0, 100);
+        ASSERT(random == 39);
+
+        pntr_app_random_set_seed(app, 0);
+        random = pntr_app_random(app, 0, 100);
+        ASSERT(random == 39);
+
+        pntr_app_random_set_seed(app, 5);
+        random = pntr_app_random(app, 0, 100);
+        ASSERT(random != 39);
+    }
+
+    // pntr_app_random(), pntr_app_random_float()
     {
         for (int i = 0; i < 1000; i++) {
             int randomValue = pntr_app_random(app, 5000, 10000);
             ASSERT(randomValue >= 5000);
             ASSERT(randomValue <= 10000);
         }
+        for (int x = 0; x < 1000; x++) {
+            float randomValue = pntr_app_random_float(app, 0.5f, 2.0f);
+            ASSERT(randomValue >= 0.5f);
+            ASSERT(randomValue <= 2.0f);
+        }
     }
 
-    // pntr_app_random_seed()
-    {
-        pntr_app_random_seed(app, 0);
-        pntr_app_random_seed(app, 50);
-    }
-
-    // pntr_app_clipboard()
+    // pntr_app_clipboard(), pntr_app_set_clipboard()
     {
         pntr_app_set_clipboard(app, "Hello World!", 0);
         const char* clipboard = pntr_app_clipboard(app);
