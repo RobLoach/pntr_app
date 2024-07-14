@@ -58,6 +58,8 @@ extern "C" {
 #endif
 #include PNTR_APP_PNTR_H
 
+#include <stdint.h> // uint64_t
+
 // Random Number Generator
 #include "external/prand.h"
 
@@ -482,7 +484,12 @@ PNTR_APP_API float pntr_app_random_float(pntr_app* app, float min, float max);
  *
  * @param seed The seed to use for the random number generator. If set to 0, will let the platform decide which seed to use.
  */
-PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed);
+PNTR_APP_API void pntr_app_random_set_seed(pntr_app* app, uint64_t seed);
+
+/**
+ * Get the currently active random number generator seed.
+ */
+PNTR_APP_API uint64_t pntr_app_random_seed(pntr_app* app);
 
 /**
  * Log a message.
@@ -816,7 +823,7 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app) {
     }
 
     // Initialize the random number generator.
-    pntr_app_random_seed(app, 0);
+    pntr_app_random_set_seed(app, 0);
 
     // Initialize the platform.
     if (!pntr_app_platform_init(app)) {
@@ -1303,14 +1310,30 @@ PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
 }
 
 PNTR_APP_API inline float pntr_app_random_float(pntr_app* app, float min, float max) {
+    if (app == NULL) {
+        return 0.0f;
+    }
     return prand_float(&app->prand, min, max);
 }
 
 PNTR_APP_API inline int pntr_app_random(pntr_app* app, int min, int max) {
+    if (app == NULL) {
+        return 0;
+    }
     return prand_int(&app->prand, min, max);
 }
 
-PNTR_APP_API void pntr_app_random_seed(pntr_app* app, unsigned int seed) {
+PNTR_APP_API uint64_t pntr_app_random_seed(pntr_app* app) {
+    if (app == NULL) {
+        return 0;
+    }
+    return app->prand.seed;
+}
+
+PNTR_APP_API void pntr_app_random_set_seed(pntr_app* app, uint64_t seed) {
+    if (app == NULL) {
+        return;
+    }
     prand_set_seed(&app->prand, seed);
 }
 

@@ -98,7 +98,9 @@ bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
 
 // Utility
 int pntr_app_random(pntr_app* app, int min, int max);
-void pntr_app_random_seed(pntr_app* app, unsigned int seed);
+int pntr_app_random_float(pntr_app* app, float min, float max);
+uint64_t pntr_app_random_seed(pntr_app* app);
+void pntr_app_random_set_seed(pntr_app* app, uint64_t seed);
 void pntr_app_log(pntr_app_log_type type, const char* message);
 void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
 

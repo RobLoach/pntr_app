@@ -476,7 +476,7 @@ bool pntr_app_platform_init(pntr_app* app) {
     }
 
     // Random Number Generator
-    pntr_app_random_seed(app, (unsigned int)GetRandomValue(0, PRAND_RAND_MAX));
+    pntr_app_random_set_seed(app, (uint64_t)GetRandomValue(0, PRAND_RAND_MAX));
 
     return true;
 }

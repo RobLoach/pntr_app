@@ -850,7 +850,7 @@ bool pntr_app_platform_init(pntr_app* app) {
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
 
     // Random Number Generator
-    pntr_app_random_seed(app, (unsigned int)time(NULL));
+    pntr_app_random_set_seed(app, (uint64_t)time(NULL));
 
     return true;
 }
