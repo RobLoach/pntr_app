@@ -215,7 +215,7 @@ pntr_app Main(int argc, char* argv[]) {
     return (pntr_app) {
         .width = 400,
         .height = 225,
-        .title = "pntr_app: Example2222",
+        .title = "pntr_app: Example",
         .init = Init,
         .update = Update,
         .close = Close,
