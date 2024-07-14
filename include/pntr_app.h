@@ -1280,8 +1280,6 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     if (app == NULL) {
         return NULL;
     }
-    pntr_app_log(PNTR_APP_LOG_DEBUG, "Loading file from arguments.");
-    pntr_app_log(PNTR_APP_LOG_DEBUG, app->argFile);
 
     // See if the data is already available.
     if (app->argFileData != NULL && app->argFileDataSize > 0) {
