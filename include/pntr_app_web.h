@@ -1,13 +1,24 @@
-#ifdef EMSCRIPTEN
+#ifdef PNTR_APP_WEB
+#ifndef PNTR_APP_WEB_H__
+#define PNTR_APP_WEB_H__
+
 #include <emscripten.h>
 #include <emscripten/html5.h>
 
-#define EMSCRIPTEN_CLIPBOARD_IMPLEMENTATION
 #include "external/emscripten_clipboard.h"
 
 typedef struct pntr_app_platform_emscripten {
     emscripten_clipboard clipboard;
 } pntr_app_platform_emscripten;
+
+#endif  // PNTR_APP_WEB_H__
+
+#if defined(PNTR_APP_IMPLEMENTATION) && !defined(PNTR_APP_HEADER_ONLY)
+#ifndef PNTR_APP_WEB_IMPLEMENTATION_ONCE
+#define PNTR_APP_WEB_IMPLEMENTATION_ONCE
+
+#define EMSCRIPTEN_CLIPBOARD_IMPLEMENTATION
+#include "external/emscripten_clipboard.h"
 
 #ifndef PNTR_APP_LOG
     #include <emscripten/console.h> // emscripten_console_log(), emscripten_console_warn(), etc.
@@ -592,4 +603,6 @@ void pntr_app_set_title(pntr_app* app, const char* title) {
     #define PNTR_APP_SET_CLIPBOARD pntr_app_platform_set_clipboard
 #endif
 
-#endif
+#endif  // PNTR_APP_WEB_IMPLEMENTATION_ONCE
+#endif  // PNTR_APP_IMPLEMENTATION && !PNTR_APP_HEADER_ONLY
+#endif  // PNTR_APP_WEB

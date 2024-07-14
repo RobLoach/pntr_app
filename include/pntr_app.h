@@ -8,10 +8,11 @@
 *       pntr https://github.com/robloach/pntr
 *
 *   CONFIGURATION:
-*       PNTR_APP_RAYLIB
+*       PNTR_APP_CLI
 *       PNTR_APP_SDL
 *       PNTR_APP_LIBRETRO
-*       PNTR_APP_CLI
+*       PNTR_APP_RAYLIB
+*       PNTR_APP_WEB
 *
 *   LICENSE: zlib/libpng
 *
@@ -44,22 +45,16 @@
 extern "C" {
 #endif
 
-#ifdef __LIBRETRO__
-    #ifndef PNTR_APP_LIBRETRO
-        #define PNTR_APP_LIBRETRO
-    #endif
-#endif
-
-// pntr configuration
-#if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO)
-    #ifndef PNTR_PIXELFORMAT_ARGB
-        #define PNTR_PIXELFORMAT_ARGB
-    #endif
-#endif
+// Platform Detection
+#include "pntr_app_platform.h"
 
 // pntr.h
 #ifndef PNTR_APP_PNTR_H
     #define PNTR_APP_PNTR_H "pntr.h"
+#endif
+#ifdef PNTR_IMPLEMENTATION
+    // The PNTR_IMPLEMENTATION is handled later on in with PNTR_APP_IMPLEMENTATION.
+    #undef PNTR_IMPLEMENTATION
 #endif
 #include PNTR_APP_PNTR_H
 
@@ -290,44 +285,24 @@ typedef enum pntr_app_log_type {
 typedef struct pntr_app pntr_app;
 
 typedef struct pntr_app_event {
-    /**
-     * The application associated with the event.
-     */
-    pntr_app* app;
+    pntr_app* app; /** The application associated with the event. */
+    pntr_app_event_type type; /** The type of the event that has been pushed. */
+    pntr_app_key key; /** With `PNTR_APP_EVENTTYPE_KEY_DOWN` or `PNTR_APP_EVENTTYPE_KEY_UP`, will determine the key that was affected. */
 
-    /**
-     * The type of the event that has been pushed.
-     */
-    pntr_app_event_type type;
-
-    /**
-     * With PNTR_APP_EVENTTYPE_KEY_DOWN or PNTR_APP_EVENTTYPE_KEY_UP, will determine the key that was affected.
-     */
-    pntr_app_key key;
-
-    /**
-     * PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN or PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP
-     */
-    pntr_app_mouse_button mouseButton;
+    // Mouse
+    pntr_app_mouse_button mouseButton; /** `PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN` or `PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP` */
     float mouseX;
     float mouseY;
     float mouseDeltaX;
     float mouseDeltaY;
+    int mouseWheel; /** When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be -1 when the mouse wheel is scrolling up, and 1 when scrolling down. */
 
-    /**
-     * When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be -1 when the mouse wheel is scrolling up, and 1 when scrolling down.
-     */
-    int mouseWheel;
-
+    // Gamepad
     pntr_app_gamepad_button gamepadButton;
     int gamepad;
 
-    /**
-     * When a file is drag and dropped on the application, this contains the path to the file.
-     *
-     * @see PNTR_APP_EVENTTYPE_DRAG_AND_DROP
-     */
-    const char* fileDropped;
+    // File Drag and Drop
+    const char* fileDropped; /** For `PNTR_APP_EVENTTYPE_DRAG_AND_DROP`, when a file is drag and dropped on the application, this contains the path to the file. */
 } pntr_app_event;
 
 /**
@@ -376,9 +351,15 @@ struct pntr_app {
     char** argv;
     void* argFileData;
     unsigned int argFileDataSize;
-    bool argFileDataUnloadOnExit;
+    bool argFileDataDoNotUnload;
 
-    // Random Number Generator
+    /**
+     * Random Number Generator
+     *
+     * @see pntr_app_random()
+     * @see pntr_app_random_float()
+     * @see pntr_app_random_seed()
+     */
     prand_t prand;
 
     /**
@@ -492,7 +473,7 @@ PNTR_APP_API int pntr_app_random(pntr_app* app, int min, int max);
  *
  * @return A random floatvalue between the min and max.
  */
-float pntr_app_random_float(pntr_app* app, float min, float max);
+PNTR_APP_API float pntr_app_random_float(pntr_app* app, float min, float max);
 
 /**
  * Sets the random number generator seed.
@@ -542,19 +523,23 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
 PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 
 /**
- * When the application is passed a file to load, this will retrieve the file argument's file data.
+ * When the application is passed a file to load through the command line arguments, this function will retrieve the file data.
  *
- * @note This function can only be called during or after \c init().
+ * @note This function can only be called during or after `init()`.
  *
  * @param app The application to act on.
  * @param size A pointer to an unsigned int that will represent the size in bytes of the memory buffer.
  *
- * @return A memory buffer for the file data that was passed in. This must be cleared with pntr_unload_file() afterwards.
+ * @return A memory buffer for the file data that was passed in. The returned memory buffer must be manually cleared with pntr_unload_file() after use.
  */
 PNTR_APP_API void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
 
 /**
  * Set the clipboard text.
+ *
+ * @param app The application to act on.
+ * @param text The text to set to the clipboard.
+ * @param len The length of the text. Provide 0 if you're using a null-terminated string.
  */
 PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int len);
 
@@ -610,6 +595,8 @@ PNTR_APP_API bool pntr_app_platform_render(pntr_app* app);
 
 /**
  * Close the application.
+ *
+ * @internal
  */
 PNTR_APP_API void pntr_app_close(pntr_app* app);
 
@@ -637,6 +624,14 @@ PNTR_APP_API bool pntr_app_platform_set_size(pntr_app* app, int width, int heigh
 #ifdef PNTR_ENABLE_VARGS
 PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
 #endif
+
+#define PNTR_APP_HEADER_ONLY
+#include "pntr_app_cli.h"
+#include "pntr_app_libretro.h"
+#include "pntr_app_raylib.h"
+#include "pntr_app_sdl.h"
+#include "pntr_app_web.h"
+#undef PNTR_APP_HEADER_ONLY
 
 #ifdef __cplusplus
 }
@@ -673,29 +668,17 @@ extern "C" {
 
 pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 
-// Platform
-#if defined(PNTR_APP_SDL)
-    #include "pntr_app_sdl.h"
-#elif defined(PNTR_APP_RAYLIB)
-    #include "pntr_app_raylib.h"
-#elif defined(PNTR_APP_LIBRETRO)
-    #include "pntr_app_libretro.h"
-#elif defined(PNTR_APP_WEB)
-    #include "pntr_app_web.h"
-#elif defined(PNTR_APP_CLI)
-    #include "pntr_app_cli.h"
-#else
-    #error "[pntr_app] No target found. Define PNTR_APP_SDL, PNTR_APP_CLI, PNTR_APP_RAYLIB, PNTR_APP_LIBRETRO, or PNTR_APP_WEB."
-#endif
+#include "pntr_app_cli.h"
+#include "pntr_app_libretro.h"
+#include "pntr_app_raylib.h"
+#include "pntr_app_sdl.h"
+#include "pntr_app_web.h"
 
 #ifdef __cplusplus
 }
 #endif
 
 #define PNTR_IMPLEMENTATION
-#ifndef PNTR_APP_PNTR_H
-#define PNTR_APP_PNTR_H "pntr.h"
-#endif
 #include PNTR_APP_PNTR_H
 
 #ifndef PNTR_APP_LOG
@@ -807,6 +790,8 @@ int main(int argc, char* argv[]) {
 
     // Tell the platform to close.
     pntr_app_close(&app);
+
+    return 0;
 }
 #endif  // PNTR_APP_NO_ENTRY
 
@@ -866,8 +851,9 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
     app->screen = NULL;
 
     // Unload any loaded file data.
-    if (app->argFileDataUnloadOnExit) {
+    if (!app->argFileDataDoNotUnload) {
         pntr_unload_memory(app->argFileData);
+        app->argFileDataSize = 0;
         app->argFileData = NULL;
     }
 

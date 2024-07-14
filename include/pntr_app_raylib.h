@@ -1,13 +1,23 @@
+#ifdef PNTR_APP_RAYLIB
+#ifndef PNTR_APP_RAYLIB_H__
+#define PNTR_APP_RAYLIB_H__
+
 #ifndef PNTR_APP_RAYLIB_H
 #define PNTR_APP_RAYLIB_H "raylib.h"
 #endif
 #include PNTR_APP_RAYLIB_H
 
 // pntr Configuration
-// raylib has its own implementation of stb_image_resize, so use that instead of pntr's.
-#define PTNR_NO_STB_IMAGE_RESIZE_IMPLEMENTATION
-#define PNTR_NO_STB_IMAGE_IMPLEMENTATION
-#define PNTR_NO_STB_IMAGE_WRITE_IMPLEMENTATION
+// raylib has its own implementation of stb_image_resize, std_image, and stb_image_write, so use that instead of pntr's.
+#ifndef PTNR_NO_STB_IMAGE_RESIZE_IMPLEMENTATION
+    #define PTNR_NO_STB_IMAGE_RESIZE_IMPLEMENTATION
+#endif  // PTNR_NO_STB_IMAGE_RESIZE_IMPLEMENTATION
+#ifndef PNTR_NO_STB_IMAGE_IMPLEMENTATION
+    #define PNTR_NO_STB_IMAGE_IMPLEMENTATION
+#endif  // PNTR_NO_STB_IMAGE_IMPLEMENTATION
+#ifndef PNTR_NO_STB_IMAGE_WRITE_IMPLEMENTATION
+    #define PNTR_NO_STB_IMAGE_WRITE_IMPLEMENTATION
+#endif  // PNTR_NO_STB_IMAGE_WRITE_IMPLEMENTATION
 
 #ifndef PNTR_FREE
     #define PNTR_FREE MemFree
@@ -16,6 +26,27 @@
 #ifndef PNTR_MALLOC
     #define PNTR_MALLOC MemAlloc
 #endif
+
+typedef struct pntr_sound_raylib {
+    Sound sound;
+    bool loop;
+} pntr_sound_raylib;
+
+// TODO: Switch PNTR_APP_RAYLIB_MAX_SOUNDS to a dynamic array.
+#ifndef PNTR_APP_RAYLIB_MAX_SOUNDS
+#define PNTR_APP_RAYLIB_MAX_SOUNDS 100
+#endif  // PNTR_APP_RAYLIB_MAX_SOUNDS
+
+typedef struct pntr_app_raylib_platform {
+    Texture screenTexture;
+    pntr_sound_raylib* sounds[PNTR_APP_RAYLIB_MAX_SOUNDS];
+} pntr_app_raylib_platform;
+
+#endif  // PNTR_APP_RAYLIB_H__
+
+#if defined(PNTR_APP_IMPLEMENTATION) && !defined(PNTR_APP_HEADER_ONLY)
+#ifndef PNTR_APP_RAYLIB_IMPLEMENTATION_ONCE
+#define PNTR_APP_RAYLIB_IMPLEMENTATION_ONCE
 
 #ifndef PNTR_LOAD_FILE
     #define PNTR_LOAD_FILE pntr_app_raylib_load_file
@@ -116,18 +147,6 @@ Image pntr_app_raylib_image(pntr_image* image);
     }
     #define PNTR_APP_LOG pntr_app_raylib_log
 #endif
-
-typedef struct pntr_sound_raylib {
-    Sound sound;
-    bool loop;
-} pntr_sound_raylib;
-
-#define PNTR_APP_RAYLIB_MAX_SOUNDS 100
-
-typedef struct pntr_app_raylib_platform {
-    Texture screenTexture;
-    pntr_sound_raylib* sounds[PNTR_APP_RAYLIB_MAX_SOUNDS];
-} pntr_app_raylib_platform;
 
 pntr_app_raylib_platform* pntr_app_raylib_platform_instance = NULL;
 
@@ -632,3 +651,7 @@ bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
 
     return true;
 }
+
+#endif  // PNTR_APP_RAYLIB_IMPLEMENTATION_ONCE
+#endif  // PNTR_APP_IMPLEMENTATION && !PNTR_APP_HEADER_ONLY
+#endif  // PNTR_APP_RAYLIB

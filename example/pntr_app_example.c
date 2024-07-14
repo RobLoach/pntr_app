@@ -3,7 +3,6 @@
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
 #define PNTR_ENABLE_VARGS
-#define PNTR_DISABLE_MATH
 #include "pntr_app.h"
 
 typedef struct AppData {
@@ -14,7 +13,7 @@ typedef struct AppData {
     pntr_sound* sound;
     pntr_sound* music;
     float velocity;
-
+    pntr_image* loadedImage;
     pntr_image* droppedImage;
 } AppData;
 
@@ -37,6 +36,11 @@ bool Init(pntr_app* app) {
 
     pntr_app_set_title(app, "pntr_app: Examples");
     pntr_app_set_icon(app, appData->logo);
+
+    unsigned int size;
+    void* data = pntr_app_load_arg_file(app, &size);
+    appData->loadedImage = pntr_load_image_from_memory(PNTR_IMAGE_TYPE_PNG, data, size);
+    pntr_unload_memory(data);
 
     return true;
 }
@@ -90,6 +94,8 @@ bool Update(pntr_app* app, pntr_image* screen) {
         pntr_app_log(PNTR_APP_LOG_INFO, pntr_app_clipboard(app));
         pntr_app_set_clipboard(app, "Hello, World!", 4);
     }
+
+    pntr_draw_image(screen, appData->loadedImage, 10, 10);
 
     return true;
 }
