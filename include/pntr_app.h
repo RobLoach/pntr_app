@@ -318,10 +318,10 @@ struct pntr_app {
     void (*event)(pntr_app* app, pntr_app_event* event);
     int fps;                        // The desired framerate. Use 0 for a variable framerate.
     void* userData;                 // A pointer to a custom state in memory that is passed across all pntr_app callbacks.
-    pntr_image* screen;
-    void* platform;
-    float deltaTime;
-    unsigned int deltaTimeCounter;
+    pntr_image* screen;             // The screen buffer to render to.
+    void* platform;                 // Custom data that is specific to the platform.
+    float deltaTime;                /** The amount of seconds between the previous frame and the current one. @see pntr_app_delta_time() */
+    unsigned int deltaTimeCounter;  // TODO: Move deltaTimeCounter to pntr_app_web platform data.
 
     // Input state
 
@@ -347,11 +347,10 @@ struct pntr_app {
     bool mouseButtonsChanged;
 
     // Command Line Arguments
-    int argc;
-    char** argv;
-    void* argFileData;
-    unsigned int argFileDataSize;
-    bool argFileDataDoNotUnload;
+    const char* argFile; /** The first argument passed to the command line argument. @see pntr_app_load_arg_file() */
+    void* argFileData; /** The file data from argFile. @see pntr_app_load_arg_file() */
+    unsigned int argFileDataSize; /** The file size of the argFile. @see pntr_app_load_arg_file() */
+    bool argFileDataDoNotUnload; /** When true, will indicate that argFile should NOT be unloaded on exit. @see pntr_app_load_arg_file() */
 
     /**
      * Random Number Generator
@@ -523,7 +522,7 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
 PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 
 /**
- * When the application is passed a file to load through the command line arguments, this function will retrieve the file data.
+ * When the application is passed a file to load through as a command line argument, this function will retrieve the associated file data.
  *
  * @note This function can only be called during or after `init()`.
  *
@@ -554,11 +553,15 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
 /**
  * Platform callback to initialize the platform.
  *
+ * @param app The application to initialize.
+ * @param argc The number of command line arguments passed in.
+ * @param argv The arguments passed in through the command line.
+ *
  * @return True if initialization was successful, false otherwise.
  *
  * @internal
  */
-PNTR_APP_API bool pntr_app_init(pntr_app* app);
+PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]);
 
 /**
  * Initialize the platform.
@@ -642,6 +645,14 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
 #ifdef PNTR_APP_IMPLEMENTATION
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
+
+#ifndef PNTR_APP_NO_SOKOL_ARGS_IMPL
+#define SOKOL_ARGS_IMPL
+#endif  // PNTR_APP_NO_SOKOL_ARGS_IMPL
+#ifndef PNTR_APP_SOKOL_ARGS_H
+#define PNTR_APP_SOKOL_ARGS_H "external/sokol_args.h"
+#endif  // PNTR_APP_SOKOL_ARGS_H
+#include PNTR_APP_SOKOL_ARGS_H
 
 #ifndef PNTR_APP_MAIN
 /**
@@ -756,10 +767,7 @@ void pntr_app_emscripten_update_loop(void* application) {
 int main(int argc, char* argv[]) {
     pntr_app app = PNTR_APP_MAIN(argc, argv);
 
-    app.argc = argc;
-    app.argv = argv;
-
-    if (!pntr_app_init(&app)) {
+    if (!pntr_app_init(&app, argc, argv)) {
         return 1;
     }
 
@@ -795,9 +803,45 @@ int main(int argc, char* argv[]) {
 }
 #endif  // PNTR_APP_NO_ENTRY
 
-PNTR_APP_API bool pntr_app_init(pntr_app* app) {
+static void* pntr_app_sokol_args_alloc(size_t size, void* user_data) {
+    (void)user_data;
+    return pntr_load_memory(size);
+}
+
+static void pntr_app_sokol_args_free(void* ptr, void* user_data) {
+    (void)user_data;
+    pntr_unload_memory(ptr);
+}
+
+PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     if (app == NULL) {
         return false;
+    }
+
+    // Parse the command line arguments.
+    sargs_setup(&(sargs_desc){
+        .argc = argc,
+        .argv = argv,
+        .allocator = {
+            .alloc_fn = pntr_app_sokol_args_alloc,
+            .free_fn = pntr_app_sokol_args_free
+        }
+    });
+
+    // Search for the file provided.
+    if (sargs_isvalid()) {
+        for (int i = 0; i < sargs_num_args(); i++) {
+            // The provided file is found as having an empty value.
+            const char* value = sargs_value_at(i);
+            if (value[0] == '\0') {
+                const char* key = sargs_key_at(i);
+                // Make sure it's not a flag.
+                if (key != NULL && key[0] != '\0' && key[0] != '-') {
+                    app->argFile = key;
+                    break;
+                }
+            }
+        }
     }
 
     // Initialize defaults.
@@ -864,6 +908,9 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
     }
 
     pntr_app_platform_close(app);
+
+    // Stop using Sokol args.
+    sargs_shutdown();
 }
 
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName) {
@@ -1234,6 +1281,7 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
         return NULL;
     }
 
+    // See if the data is already available.
     if (app->argFileData != NULL && app->argFileDataSize > 0) {
         // Copy the memory as an output, as the application is now responsible to unload it.
         void* output = pntr_load_memory(app->argFileDataSize);
@@ -1244,10 +1292,10 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
         return output;
     }
 
-    // TODO: pntr_app_load_arg_file: Parse the argv correctly so that it grabs an actual file path.
-    if (app->argv && app->argv[0] != NULL && app->argv[1] != NULL) {
+    // Load the file directly.
+    if (app->argFile != NULL && app->argFile[0] != '\0') {
         unsigned int loadedSize =  0;
-        void* output = pntr_load_file(app->argv[1], &loadedSize);
+        void* output = pntr_load_file(app->argFile, &loadedSize);
         if (size != NULL) {
             *size = loadedSize;
         }

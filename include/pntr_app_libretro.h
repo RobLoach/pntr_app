@@ -407,8 +407,10 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     unsigned int height = 480;
 
     if (pntr_app_libretro == NULL) {
-        char* argv[1];
-        argv[0] = "pntr_app";
+        char* argv[2] = {
+            "./pntr_app",
+            NULL
+        };
         pntr_app app = PNTR_APP_MAIN(1, argv);
         fps = app.fps;
         width = app.width;
@@ -906,9 +908,10 @@ bool retro_load_game(const struct retro_game_info *info) {
 
     // Build the command line arguments.
     int argc = 1;
-    char* argv[2] = {
-        "pntr_app",
-        info != NULL ? (char*)info->path : NULL
+    char* argv[3] = {
+        "./pntr_app",
+        info != NULL ? (char*)info->path : NULL,
+        NULL
     };
     if (info != NULL && info->path != NULL) {
         argc++;
@@ -923,9 +926,7 @@ bool retro_load_game(const struct retro_game_info *info) {
         return false;
     }
 
-    // Set up the command line arguments
-    app->argc = argc;
-    app->argv = argv;
+    // Set up the command line argument file data.
     app->argFileData = info != NULL ? (char*)info->data : NULL;
     app->argFileDataSize = info != NULL ? (unsigned int)info->size : 0;
     app->argFileDataDoNotUnload = true; // libretro owns this data
@@ -933,19 +934,16 @@ bool retro_load_game(const struct retro_game_info *info) {
     // Set up the frame time callback.
     struct retro_frame_time_callback retro_frame_time;
     retro_frame_time.callback = pntr_app_libretro_frame_time_cb;
-
-    // TODO: libretro: Allow frame independent time.
     if (app->fps < 1) {
-        app->fps = 60;
+        app->fps = 60; // TODO: libretro: Allow frame independent time.
     }
     retro_frame_time.reference = 1000000 / app->fps;
-
     if (!environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &retro_frame_time)) {
         log_cb(RETRO_LOG_INFO, "[pntr] Failed to set frame time callback.\n");
     }
 
     // Initialize the libretro platform.
-    if (!pntr_app_init(app)) {
+    if (!pntr_app_init(app, argc, argv)) {
         pntr_app_platform_close(app);
         return NULL;
     }
