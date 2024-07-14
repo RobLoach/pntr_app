@@ -63,7 +63,6 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
 
     target_compile_definitions(pntr_app_example_sdl PUBLIC
         PNTR_APP_SDL_MIXER
-        PNTR_PIXELFORMAT_ARGB
     )
 
     target_link_libraries(pntr_app_example_sdl PUBLIC

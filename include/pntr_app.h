@@ -371,7 +371,7 @@ struct pntr_app {
     char** argv;
     void* argFileData;
     unsigned int argFileDataSize;
-    bool argFileDataUnloadOnExit;
+    bool argFileDataDoNotUnload;
 
     // Random Number Generator
     prand_t prand;
@@ -537,19 +537,23 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
 PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 
 /**
- * When the application is passed a file to load, this will retrieve the file argument's file data.
+ * When the application is passed a file to load through the command line arguments, this function will retrieve the file data.
  *
- * @note This function can only be called during or after \c init().
+ * @note This function can only be called during or after `init()`.
  *
  * @param app The application to act on.
  * @param size A pointer to an unsigned int that will represent the size in bytes of the memory buffer.
  *
- * @return A memory buffer for the file data that was passed in. This must be cleared with pntr_unload_file() afterwards.
+ * @return A memory buffer for the file data that was passed in. The returned memory buffer must be manually cleared with pntr_unload_file() after use.
  */
 PNTR_APP_API void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
 
 /**
  * Set the clipboard text.
+ *
+ * @param app The application to act on.
+ * @param text The text to set to the clipboard.
+ * @param len The length of the text. Provide 0 if you're using a null-terminated string.
  */
 PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int len);
 
@@ -605,6 +609,8 @@ PNTR_APP_API bool pntr_app_platform_render(pntr_app* app);
 
 /**
  * Close the application.
+ *
+ * @internal
  */
 PNTR_APP_API void pntr_app_close(pntr_app* app);
 
@@ -798,6 +804,8 @@ int main(int argc, char* argv[]) {
 
     // Tell the platform to close.
     pntr_app_close(&app);
+
+    return 0;
 }
 #endif  // PNTR_APP_NO_ENTRY
 
@@ -857,8 +865,9 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
     app->screen = NULL;
 
     // Unload any loaded file data.
-    if (app->argFileDataUnloadOnExit) {
+    if (!app->argFileDataDoNotUnload) {
         pntr_unload_memory(app->argFileData);
+        app->argFileDataSize = 0;
         app->argFileData = NULL;
     }
 

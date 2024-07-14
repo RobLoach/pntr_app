@@ -23,7 +23,6 @@
         // Fall back to the CLI
         #define PNTR_APP_CLI
         #define PNTR_APP_DISABLE_TERMBOX
-        #warning "No platform detected, falling back to CLI without termbox."
     #endif
 #endif
 

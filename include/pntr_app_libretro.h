@@ -921,7 +921,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     app->argv = argv;
     app->argFileData = info != NULL ? (char*)info->data : NULL;
     app->argFileDataSize = info != NULL ? (unsigned int)info->size : 0;
-    app->argFileDataUnloadOnExit = false; // libretro owns this data
+    app->argFileDataDoNotUnload = true; // libretro owns this data
 
     // Set up the frame time callback.
     struct retro_frame_time_callback retro_frame_time;
