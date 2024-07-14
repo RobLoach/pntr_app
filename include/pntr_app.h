@@ -347,8 +347,7 @@ struct pntr_app {
     bool mouseButtonsChanged;
 
     // Command Line Arguments
-    int argc;
-    char** argv;
+    const char* argFile;
     void* argFileData;
     unsigned int argFileDataSize;
     bool argFileDataDoNotUnload;
@@ -554,11 +553,15 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
 /**
  * Platform callback to initialize the platform.
  *
+ * @param app The application to initialize.
+ * @param argc The number of command line arguments passed in.
+ * @param argv The arguments passed in through the command line.
+ *
  * @return True if initialization was successful, false otherwise.
  *
  * @internal
  */
-PNTR_APP_API bool pntr_app_init(pntr_app* app);
+PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]);
 
 /**
  * Initialize the platform.
@@ -642,6 +645,14 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
 #ifdef PNTR_APP_IMPLEMENTATION
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
+
+#ifndef PNTR_APP_NO_SOKOL_ARGS_IMPL
+#define SOKOL_ARGS_IMPL
+#endif  // PNTR_APP_NO_SOKOL_ARGS_IMPL
+#ifndef PNTR_APP_SOKOL_ARGS_H
+#define PNTR_APP_SOKOL_ARGS_H "external/sokol_args.h"
+#endif  // PNTR_APP_SOKOL_ARGS_H
+#include PNTR_APP_SOKOL_ARGS_H
 
 #ifndef PNTR_APP_MAIN
 /**
@@ -756,10 +767,7 @@ void pntr_app_emscripten_update_loop(void* application) {
 int main(int argc, char* argv[]) {
     pntr_app app = PNTR_APP_MAIN(argc, argv);
 
-    app.argc = argc;
-    app.argv = argv;
-
-    if (!pntr_app_init(&app)) {
+    if (!pntr_app_init(&app, argc, argv)) {
         return 1;
     }
 
@@ -795,10 +803,61 @@ int main(int argc, char* argv[]) {
 }
 #endif  // PNTR_APP_NO_ENTRY
 
-PNTR_APP_API bool pntr_app_init(pntr_app* app) {
+static void* pntr_app_sokol_args_alloc(size_t size, void* user_data) {
+    (void)user_data;
+    return pntr_load_memory(size);
+}
+
+static void pntr_app_sokol_args_free(void* ptr, void* user_data) {
+    (void)user_data;
+    pntr_unload_memory(ptr);
+}
+
+PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     if (app == NULL) {
         return false;
     }
+
+    printf("Argc: %d\n", argc);
+    if (argc > 0) {
+        printf("Argv0: %s\n", argv[0]);
+    }
+    if (argc > 1) {
+        printf("Argv1: %s\n", argv[1]);
+    }
+    if (argc > 2) {
+        printf("Argv2: %s\n", argv[2]);
+    }
+    if (argc > 3) {
+        printf("Argv3: %s\n", argv[3]);
+    }
+
+    // Parse the command line arguments.
+    sargs_setup(&(sargs_desc){
+        .argc = argc,
+        .argv = argv,
+        .allocator = {
+            .alloc_fn = pntr_app_sokol_args_alloc,
+            .free_fn = pntr_app_sokol_args_free
+        }
+    });
+
+    // Search for the file provided.
+    if (sargs_isvalid()) {
+        for (int i = 0; i < sargs_num_args(); i++) {
+            // The provided file is found as having an empty value.
+            const char* value = sargs_value_at(i);
+            if (value[0] == '\0') {
+                const char* key = sargs_key_at(i);
+                // Make sure it's not a flag.
+                if (key != NULL && key[0] != '\0' && key[0] != '-') {
+                    app->argFile = key;
+                    break;
+                }
+            }
+        }
+    }
+    printf("File: %s\n", app->argFile);
 
     // Initialize defaults.
     if (app->width <= 0) {
@@ -864,6 +923,9 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
     }
 
     pntr_app_platform_close(app);
+
+    // Stop using Sokol args.
+    sargs_shutdown();
 }
 
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName) {
@@ -1233,7 +1295,10 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     if (app == NULL) {
         return NULL;
     }
+    pntr_app_log(PNTR_APP_LOG_DEBUG, "Loading file from arguments.");
+    pntr_app_log(PNTR_APP_LOG_DEBUG, app->argFile);
 
+    // See if the data is already available.
     if (app->argFileData != NULL && app->argFileDataSize > 0) {
         // Copy the memory as an output, as the application is now responsible to unload it.
         void* output = pntr_load_memory(app->argFileDataSize);
@@ -1244,10 +1309,10 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
         return output;
     }
 
-    // TODO: pntr_app_load_arg_file: Parse the argv correctly so that it grabs an actual file path.
-    if (app->argv && app->argv[0] != NULL && app->argv[1] != NULL) {
+    // Load the file directly.
+    if (app->argFile != NULL && app->argFile[0] != '\0') {
         unsigned int loadedSize =  0;
-        void* output = pntr_load_file(app->argv[1], &loadedSize);
+        void* output = pntr_load_file(app->argFile, &loadedSize);
         if (size != NULL) {
             *size = loadedSize;
         }
