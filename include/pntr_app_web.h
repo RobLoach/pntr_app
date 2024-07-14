@@ -604,6 +604,5 @@ void pntr_app_set_title(pntr_app* app, const char* title) {
 #endif
 
 #endif  // PNTR_APP_WEB_IMPLEMENTATION_ONCE
-
 #endif  // PNTR_APP_IMPLEMENTATION && !PNTR_APP_HEADER_ONLY
 #endif  // PNTR_APP_WEB

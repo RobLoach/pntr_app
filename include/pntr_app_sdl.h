@@ -823,7 +823,6 @@ bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     return true;
 }
 
-
 #endif  // PNTR_APP_SDL_IMPLEMENTATION_ONCE
 #endif  // PNTR_APP_IMPLEMENTATION && !PNTR_APP_HEADER_ONLY
 #endif  // PNTR_APP_SDL

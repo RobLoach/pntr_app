@@ -37,7 +37,7 @@ typedef struct pntr_app_cli_platform {
 
 #ifndef PNTR_APP_CLI_LOG_FILE
 #define PNTR_APP_CLI_LOG_FILE "log.txt"
-#endif
+#endif  // PNTR_APP_CLI_LOG_FILE
 
 bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
@@ -200,7 +200,7 @@ bool pntr_app_platform_events(pntr_app* app) {
         }
         break;
     }
-    #endif
+    #endif  // PNTR_APP_DISABLE_TERMBOX
 
     return true;
 }
@@ -217,10 +217,11 @@ bool pntr_app_platform_render(pntr_app* app) {
     (void)platform;
     pntr_image* screen = app->screen;
 
+    const char* characters =
     #ifdef PNTR_APP_CLI_REVERSE_CHARACTERS
-    const char* characters = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+        "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
     #else
-    const char* characters = " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
+        " .'`^\",:;Il!i><~+_-?][}{1)(|\\/tfjrxnuvczXYUJCLQ0OZmwqpdbkhao*#MW&8%B@$";
     #endif
 
     int charactersLen = 70;

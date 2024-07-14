@@ -12,6 +12,11 @@
 #endif  // PNTR_APP_LIBRETRO_H
 #include PNTR_APP_LIBRETRO_H
 
+// libretro has its own entry point
+#ifndef PNTR_APP_NO_ENTRY
+#define PNTR_APP_NO_ENTRY
+#endif  // PNTR_APP_NO_ENTRY
+
 typedef struct pntr_app_libretro_platform {
     // Input
     int16_t mouseButtonState[PNTR_APP_MOUSE_BUTTON_LAST];
@@ -38,9 +43,6 @@ retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
 #include "audio/audio_mixer.h"
 #include "audio/audio_resampler.h"
 #include "audio/conversion/float_to_s16.h"
-
-// libretro has its own entry point
-#define PNTR_APP_NO_ENTRY
 
 // Audio sample size
 #ifndef PNTR_APP_LIBRETRO_SAMPLES
@@ -363,15 +365,15 @@ void retro_get_system_info(struct retro_system_info *info) {
         info->library_name = pntr_app_libretro->title;
     }
     else {
-        info->library_name     = "pntr_app";
+        info->library_name = "pntr_app";
     }
 
     // Grab a version from the application.
-    #ifndef GIT_VERSION
-        #define GIT_VERSION ""
-    #endif
     #ifndef PROJECT_VERSION
         #define PROJECT_VERSION "0.0.1"
+    #endif
+    #ifndef GIT_VERSION
+        #define GIT_VERSION ""
     #endif
     info->library_version  = PROJECT_VERSION GIT_VERSION;
     info->need_fullpath    = false;
@@ -407,11 +409,19 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     }
     else {
         fps = pntr_app_libretro->fps;
-        width = pntr_app_libretro->width;
-        height = pntr_app_libretro->height;
+        width = (unsigned int)pntr_app_libretro->width;
+        height = (unsigned int)pntr_app_libretro->height;
     }
 
-    // TODO: libretro: Is the FPS correct?
+    if (height <= 0) {
+        height = 480;
+    }
+
+    if (width <= 0) {
+        width = 640;
+    }
+
+    // TODO: libretro: Allow for variable framerates with FPS 0.
     info->timing = (struct retro_system_timing) {
         .fps = (fps > 0) ? (double)fps : 60,
         .sample_rate = PNTR_APP_LIBRETRO_SAMPLES,
@@ -485,7 +495,7 @@ static void check_variables(void) {
 /**
  * libretro callback; Step the audio forwards a step.
  */
-void retro_audio_cb() {
+void pntr_app_libretro_audio_cb() {
     pntr_app* app = (pntr_app*)pntr_app_libretro;
     if (app == NULL) {
         return;
@@ -520,8 +530,7 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
  *
  * @see RETRO_DEVICE_POINTER
  */
-float pntr_app_libretro_mouse_pointer_convert(float coord, float full)
-{
+float pntr_app_libretro_mouse_pointer_convert(float coord, float full) {
 	float max = (float)0x7fff;
 	return (((coord + max) / (max * 2.0f) ) * full) + 0.5f;
 }
@@ -724,7 +733,7 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
 /**
  * libretro callback; Load the labels for the input buttons.
  */
-void init_descriptors() {
+void pntr_app_libretro_init_descriptors() {
     // TODO: Update the input descriptions to match the header
 	struct retro_input_descriptor desc[] = {
 		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" },
@@ -800,7 +809,7 @@ void init_descriptors() {
 /**
  * libretro callback: Indicate when the audio gets enabled or disabled.
  */
-void audio_set_state(bool enabled) {
+void pntr_app_libretro_audio_set_state(bool enabled) {
     pntr_app* app = pntr_app_libretro;
     if (app == NULL || app->platform == NULL) {
         return;
@@ -856,7 +865,7 @@ pntr_app* pntr_app_libretro_load_app(pntr_app* baseApp) {
     return app;
 }
 
-void retro_frame_time_cb(retro_usec_t usec) {
+void pntr_app_libretro_frame_time_cb(retro_usec_t usec) {
     if (pntr_app_libretro == NULL) {
         return;
     }
@@ -881,7 +890,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     }
 
     // Set the audio callback.
-	struct retro_audio_callback retro_audio = { retro_audio_cb, audio_set_state };
+	struct retro_audio_callback retro_audio = { pntr_app_libretro_audio_cb, pntr_app_libretro_audio_set_state };
 	if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &retro_audio)) {
         log_cb(RETRO_LOG_INFO, "[pntr] Failed to set audio callback.\n");
         // Don't quit if audio is not supported.
@@ -916,7 +925,7 @@ bool retro_load_game(const struct retro_game_info *info) {
 
     // Set up the frame time callback.
     struct retro_frame_time_callback retro_frame_time;
-    retro_frame_time.callback = retro_frame_time_cb;
+    retro_frame_time.callback = pntr_app_libretro_frame_time_cb;
 
     // TODO: libretro: Allow frame independent time.
     if (app->fps < 1) {
@@ -935,7 +944,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     }
 
     // Update the input button descriptions.
-    init_descriptors();
+    pntr_app_libretro_init_descriptors();
 
     // Update any core options.
     check_variables();
@@ -966,6 +975,7 @@ size_t retro_serialize_size(void) {
 }
 
 bool retro_serialize(void *data, size_t size) {
+    // TODO: libretro: Add serialize and unserialize support.
     (void)data;
     (void)size;
     return true;
@@ -1110,7 +1120,7 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
 }
 
 bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
-    if (app == NULL || app->platform == NULL) {
+    if (app == NULL || app->platform == NULL || width <= 0 || height <= 0) {
         return false;
     }
 
