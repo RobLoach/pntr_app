@@ -226,7 +226,7 @@ bool pntr_app_platform_render(pntr_app* app) {
 
     int charactersLen = 70;
 
-    // TODO: Scale the image to the size of the terminal?
+    // TODO: Scale the image to the size of the terminal with tb_width() and tb_height()
 
     // Get the greyscale representation of the screen
     unsigned char* grayscaleImage = (unsigned char*)pntr_image_to_pixelformat(screen, NULL, PNTR_PIXELFORMAT_GRAYSCALE);

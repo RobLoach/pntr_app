@@ -8,13 +8,13 @@
 #include <time.h> // time()
 
 #ifndef PNTR_APP_LIBRETRO_H
-#define PNTR_APP_LIBRETRO_H "libretro.h"
+    #define PNTR_APP_LIBRETRO_H "libretro.h"
 #endif  // PNTR_APP_LIBRETRO_H
 #include PNTR_APP_LIBRETRO_H
 
 // libretro has its own entry point
 #ifndef PNTR_APP_NO_ENTRY
-#define PNTR_APP_NO_ENTRY
+    #define PNTR_APP_NO_ENTRY
 #endif  // PNTR_APP_NO_ENTRY
 
 typedef struct pntr_app_libretro_platform {
@@ -32,6 +32,13 @@ typedef struct pntr_app_libretro_platform {
     bool audioEnabled;
 } pntr_app_libretro_platform;
 
+/**
+ * Retrieve the environment callback from libretro.
+ *
+ * @param app The associated pntr_app application. This call be NULL to get the global state.
+ *
+ * @return The environment callback.
+ */
 retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
 
 #endif  // PNTR_APP_LIBRETRO_H__

@@ -26,6 +26,7 @@
     #endif
 #endif
 
+// Pixel Format
 #if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO)
     #ifndef PNTR_PIXELFORMAT_ARGB
         #define PNTR_PIXELFORMAT_ARGB

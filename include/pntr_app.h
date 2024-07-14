@@ -285,44 +285,24 @@ typedef enum pntr_app_log_type {
 typedef struct pntr_app pntr_app;
 
 typedef struct pntr_app_event {
-    /**
-     * The application associated with the event.
-     */
-    pntr_app* app;
+    pntr_app* app; /** The application associated with the event. */
+    pntr_app_event_type type; /** The type of the event that has been pushed. */
+    pntr_app_key key; /** With `PNTR_APP_EVENTTYPE_KEY_DOWN` or `PNTR_APP_EVENTTYPE_KEY_UP`, will determine the key that was affected. */
 
-    /**
-     * The type of the event that has been pushed.
-     */
-    pntr_app_event_type type;
-
-    /**
-     * With PNTR_APP_EVENTTYPE_KEY_DOWN or PNTR_APP_EVENTTYPE_KEY_UP, will determine the key that was affected.
-     */
-    pntr_app_key key;
-
-    /**
-     * PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN or PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP
-     */
-    pntr_app_mouse_button mouseButton;
+    // Mouse
+    pntr_app_mouse_button mouseButton; /** `PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN` or `PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP` */
     float mouseX;
     float mouseY;
     float mouseDeltaX;
     float mouseDeltaY;
+    int mouseWheel; /** When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be -1 when the mouse wheel is scrolling up, and 1 when scrolling down. */
 
-    /**
-     * When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be -1 when the mouse wheel is scrolling up, and 1 when scrolling down.
-     */
-    int mouseWheel;
-
+    // Gamepad
     pntr_app_gamepad_button gamepadButton;
     int gamepad;
 
-    /**
-     * When a file is drag and dropped on the application, this contains the path to the file.
-     *
-     * @see PNTR_APP_EVENTTYPE_DRAG_AND_DROP
-     */
-    const char* fileDropped;
+    // File Drag and Drop
+    const char* fileDropped; /** For `PNTR_APP_EVENTTYPE_DRAG_AND_DROP`, when a file is drag and dropped on the application, this contains the path to the file. */
 } pntr_app_event;
 
 /**
@@ -373,7 +353,13 @@ struct pntr_app {
     unsigned int argFileDataSize;
     bool argFileDataDoNotUnload;
 
-    // Random Number Generator
+    /**
+     * Random Number Generator
+     *
+     * @see pntr_app_random()
+     * @see pntr_app_random_float()
+     * @see pntr_app_random_seed()
+     */
     prand_t prand;
 
     /**
