@@ -318,10 +318,10 @@ struct pntr_app {
     void (*event)(pntr_app* app, pntr_app_event* event);
     int fps;                        // The desired framerate. Use 0 for a variable framerate.
     void* userData;                 // A pointer to a custom state in memory that is passed across all pntr_app callbacks.
-    pntr_image* screen;
-    void* platform;
-    float deltaTime;
-    unsigned int deltaTimeCounter;
+    pntr_image* screen;             // The screen buffer to render to.
+    void* platform;                 // Custom data that is specific to the platform.
+    float deltaTime;                /** The amount of seconds between the previous frame and the current one. @see pntr_app_delta_time() */
+    unsigned int deltaTimeCounter;  // TODO: Move deltaTimeCounter to pntr_app_web platform data.
 
     // Input state
 
@@ -347,10 +347,10 @@ struct pntr_app {
     bool mouseButtonsChanged;
 
     // Command Line Arguments
-    const char* argFile;
-    void* argFileData;
-    unsigned int argFileDataSize;
-    bool argFileDataDoNotUnload;
+    const char* argFile; /** The first argument passed to the command line argument. @see pntr_app_load_arg_file() */
+    void* argFileData; /** The file data from argFile. @see pntr_app_load_arg_file() */
+    unsigned int argFileDataSize; /** The file size of the argFile. @see pntr_app_load_arg_file() */
+    bool argFileDataDoNotUnload; /** When true, will indicate that argFile should NOT be unloaded on exit. @see pntr_app_load_arg_file() */
 
     /**
      * Random Number Generator
@@ -522,7 +522,7 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height);
 PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 
 /**
- * When the application is passed a file to load through the command line arguments, this function will retrieve the file data.
+ * When the application is passed a file to load through as a command line argument, this function will retrieve the associated file data.
  *
  * @note This function can only be called during or after `init()`.
  *
@@ -818,20 +818,6 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
         return false;
     }
 
-    printf("Argc: %d\n", argc);
-    if (argc > 0) {
-        printf("Argv0: %s\n", argv[0]);
-    }
-    if (argc > 1) {
-        printf("Argv1: %s\n", argv[1]);
-    }
-    if (argc > 2) {
-        printf("Argv2: %s\n", argv[2]);
-    }
-    if (argc > 3) {
-        printf("Argv3: %s\n", argv[3]);
-    }
-
     // Parse the command line arguments.
     sargs_setup(&(sargs_desc){
         .argc = argc,
@@ -857,7 +843,6 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
             }
         }
     }
-    printf("File: %s\n", app->argFile);
 
     // Initialize defaults.
     if (app->width <= 0) {
