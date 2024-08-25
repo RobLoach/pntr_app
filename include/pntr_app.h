@@ -820,14 +820,15 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     }
 
     // Parse the command line arguments.
-    sargs_setup(&(sargs_desc){
+    sargs_desc desc = PNTR_CLITERAL(sargs_desc) {
         .argc = argc,
         .argv = argv,
         .allocator = {
             .alloc_fn = pntr_app_sokol_args_alloc,
             .free_fn = pntr_app_sokol_args_free
         }
-    });
+    };
+    sargs_setup(&desc);
 
     // Search for the file provided.
     if (sargs_isvalid()) {
@@ -1399,7 +1400,7 @@ PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int te
 
     // Copy the clipboard text.
     size_t length = text_size <= 0 ? PNTR_STRSIZE(text) : (size_t)(text_size + 1);
-    app->clipboard = pntr_load_memory(length);
+    app->clipboard = (char*)pntr_load_memory(length);
     if (app->clipboard == NULL) {
         return;
     }
