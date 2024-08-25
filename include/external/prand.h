@@ -55,36 +55,29 @@
 /**
  * Pseudo-random number generator.
  *
- * @see prant_init()
+ * @see prand_init()
  */
 typedef struct prand_t {
     uint64_t seed;
     uint32_t state[4];
 } prand_t;
 
-/**
- * Initializes a pseudo-random number generator with the given seed.
- *
- * @param seed The seed of which to set for the generator. If set to 0, a default seed will be used.
- *
- * @return A pointer to the pseudo-random number generator structure.
- */
-PRANDAPI prand_t* prand_init(uint64_t seed);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
- * Set the seed for the given pseudo-random number generator.
+ * Initialize the given pseudo-random number generator with the provided seed.
  *
  * @param prand The pseudo-random number generator.
  * @param seed The seed to set. If set to 0, a default seed will be used.
- */
-PRANDAPI void prand_set_seed(prand_t* prand, uint64_t seed);
-
-/**
- * Frees the memory for the given pseudo-random number generator.
  *
- * @param prand The pseudo-random number generator to free.
+ * @code
+ * prand_t prand;
+ * prand_init(&prand, 0);
+ * @endcode
  */
-PRANDAPI void prand_free(prand_t* prand);
+PRANDAPI void prand_init(prand_t* prand, uint64_t seed);
 
 /**
  * Generate a random unsigned integer between 0 and UINT32_MAX.
@@ -169,26 +162,22 @@ PRANDAPI float prand_float(prand_t* prand, float min, float max);
  */
 PRANDAPI uint32_t prand_rotate_left(const uint32_t x, int k);
 
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* PRAND_H__ */
 
 #ifdef PRAND_IMPLEMENTATION
 #ifndef PRAND_IMPLEMENTATION_ONCE
 
-#ifndef PRAND_MALLOC
-    #include <stdlib.h>
-    #define PRAND_MALLOC(sz) malloc(sz)
+#ifndef NULL
+    #include <stddef.h>
 #endif
 
-#ifndef PRAND_FREE
-    #include <stdlib.h>
-    #define PRAND_FREE(ptr) free(ptr)
+#ifdef __cplusplus
+extern "C" {
 #endif
-
-PRANDAPI prand_t* prand_init(uint64_t seed) {
-    prand_t* prand = (prand_t*)PRAND_MALLOC(sizeof(prand_t));
-    prand_set_seed(prand, seed);
-    return prand;
-}
 
 uint64_t prand_splitmix64(prand_t* prand) {
     uint64_t z = (prand->seed += 0x9e3779b97f4a7c15);
@@ -215,7 +204,7 @@ uint32_t prand_rand(prand_t* prand) {
     return result;
 }
 
-PRANDAPI void prand_set_seed(prand_t* prand, uint64_t seed) {
+PRANDAPI void prand_init(prand_t* prand, uint64_t seed) {
     if (prand == NULL) {
         return;
     }
@@ -252,13 +241,9 @@ PRANDAPI float prand_float(prand_t* prand, float min, float max) {
     return ((max - min) * scale) + min;
 }
 
-PRANDAPI void prand_free(prand_t* prand) {
-    if (prand == NULL) {
-        return;
-    }
-
-    PRAND_FREE(prand);
+#ifdef __cplusplus
 }
+#endif
 
 #endif /* PRAND_IMPLEMENTATION_ONCE */
 #endif /* PRAND_IMPLEMENTATION */

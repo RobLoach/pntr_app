@@ -704,12 +704,6 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #endif
 
 // prand: Pseudo Random Number Generator
-#ifndef PRAND_MALLOC
-    #define PRAND_MALLOC(sz) PNTR_MALLOC(sz)
-#endif
-#ifndef PRAND_FREE
-    #define PRAND_FREE(obj) PNTR_FREE(obj)
-#endif
 #define PRAND_IMPLEMENTATION
 #include "external/prand.h"
 
@@ -1382,7 +1376,7 @@ PNTR_APP_API void pntr_app_random_set_seed(pntr_app* app, uint64_t seed) {
     if (app == NULL) {
         return;
     }
-    prand_set_seed(&app->prand, seed);
+    prand_init(&app->prand, seed);
 }
 
 /**
