@@ -451,7 +451,7 @@ PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileNa
 #endif
 
 /**
- * Used by pntr_set_stream_handler as callback
+ * Used by pntr_set_audio_stream_handler as callback
  */
 typedef void (pntr_audio_stream_handler)(
   int numInputs, const AudioSampleFrame *inputs,
@@ -476,7 +476,7 @@ void pntr_seek_sound(pntr_sound* sound, int timeMs);
  *
  * @param cb This will be called on every audio-frame, in another thread, to generate or process sound.
  */
-void pntr_set_stream_handler(pntr_audio_stream_handler* cb);
+void pntr_set_audio_stream_handler(pntr_audio_stream_handler* cb);
 
 /**
  * Get the user data associated with the application.

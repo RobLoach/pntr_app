@@ -111,7 +111,7 @@ void pntr_unload_sound(pntr_sound* sound);
 void pntr_play_sound(pntr_sound* sound, bool loop);
 void pntr_stop_sound(pntr_sound* sound);
 void pntr_seek_sound(pntr_sound* sound, int timeMs);
-void pntr_set_stream_handler(pntr_audio_stream_handler* cb);
+void pntr_set_audio_stream_handler(pntr_audio_stream_handler* cb);
 ```
 
 For drawing, see the [pntr API](https://github.com/RobLoach/pntr).
