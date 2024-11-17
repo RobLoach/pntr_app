@@ -120,6 +120,17 @@ EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
     }
 })
 
+// seek a sound to a specirfic time-location
+EM_JS(void, pntr_seek_sound, (pntr_sound* sound, int timeMs), {
+    const audio = Module.pntr_sounds[sound - 1];
+    audio.currentTime = timeMs / 1000;
+})
+
+// register an audio-generating callback, use NULL to disable current 
+void pntr_set_stream_handler(pntr_audio_stream_handler* cb) {
+    // TODO: STUB
+}
+
 /**
  * : Initializes the canvas context.
  *
