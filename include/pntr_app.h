@@ -427,6 +427,57 @@ PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
  */
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName);
 
+#ifdef EMSCIRPTEN
+    #include <emscripten/webaudio.h>
+#else
+    // these are part of emscripten, so I define here for native, so defs are shared
+    typedef struct AudioSampleFrame {
+    // Number of audio channels to process (multiplied by samplesPerChannel gives the elements in data)
+    const int numberOfChannels;
+    // Number of samples per channel in data
+    const int samplesPerChannel;
+    // An array of length numberOfChannels*samplesPerChannel elements. Samples are always arranged in a planar fashion,
+    // where data[channelIndex*samplesPerChannel+i] locates the data of the i'th sample of channel channelIndex.
+    float *data;
+    } AudioSampleFrame;
+
+    typedef struct AudioParamFrame {
+    // Specifies the length of the input array data (in float elements). This will be guaranteed to either have
+    // a value of 1, for a parameter valid for the entire frame, or emscripten_audio_context_quantum_size() for a parameter that changes per sample during the frame.
+    int length;
+    // An array of length specified in 'length'.
+    float *data;
+    } AudioParamFrame;
+#endif
+
+/**
+ * Used by pntr_set_stream_handler as callback
+ */
+typedef void (pntr_audio_stream_handler)(
+  int numInputs, const AudioSampleFrame *inputs,
+  int numOutputs, AudioSampleFrame *outputs,
+  int numParams, const AudioParamFrame *params,
+  const int currentFrame,
+  const int currentTime,
+  const int sampleRate,
+  void *userData
+);
+
+/**
+ * Set the current time of the given sound.
+ *
+ * @param sound The sound to set time of.
+ * @param timeMs The time, in milliseconds, form the beginning, to offset
+ */
+void pntr_seek_sound(pntr_sound* sound, int timeMs);
+
+/**
+ * Set an audio-callback
+ *
+ * @param cb This will be called on every audio-frame, in another thread, to generate or process sound.
+ */
+void pntr_set_stream_handler(pntr_audio_stream_handler* cb);
+
 /**
  * Get the user data associated with the application.
  *

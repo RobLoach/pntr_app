@@ -126,6 +126,7 @@ EM_JS(void, pntr_seek_sound, (pntr_sound* sound, int timeMs), {
     audio.currentTime = timeMs / 1000;
 })
 
+
 // register an audio-generating callback, use NULL to disable current 
 void pntr_set_stream_handler(pntr_audio_stream_handler* cb) {
     // TODO: STUB
