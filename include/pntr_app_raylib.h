@@ -90,7 +90,7 @@ Image pntr_app_raylib_image(pntr_image* image);
         }
 
         Image image = LoadImageFromMemory(fileType, fileData, dataSize);
-        if (!IsImageReady(image)) {
+        if (!IsImageValid(image)) {
             return NULL;
         }
 
@@ -392,9 +392,9 @@ bool pntr_app_platform_render(pntr_app* app) {
     pntr_app_raylib_platform* platform = (pntr_app_raylib_platform*)app->platform;
 
     // Update the texture with the latest from the pntr screen.
-    if (!IsTextureReady(platform->screenTexture)) {
+    if (!IsTextureValid(platform->screenTexture)) {
         platform->screenTexture = LoadTextureFromImage(pntr_app_raylib_image(app->screen));
-        if (!IsTextureReady(platform->screenTexture)) {
+        if (!IsTextureValid(platform->screenTexture)) {
             TraceLog(LOG_ERROR, "pntr: Failed to resize screen texture");
             return false;
         }
@@ -527,13 +527,13 @@ pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char*
 
     Wave wave = LoadWaveFromMemory(fileExtension, data, dataSize);
     pntr_unload_file(data);
-    if (!IsWaveReady(wave)) {
+    if (!IsWaveValid(wave)) {
         return NULL;
     }
 
     Sound sound = LoadSoundFromWave(wave);
     UnloadWave(wave);
-    if (!IsSoundReady(sound)) {
+    if (!IsSoundValid(sound)) {
         return NULL;
     }
 
@@ -639,7 +639,7 @@ bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     SetWindowSize(width, height);
 
     // Unload the screen texture, it'll get rebuilt at next render
-    if (IsTextureReady(platform->screenTexture)) {
+    if (IsTextureValid(platform->screenTexture)) {
         UnloadTexture(platform->screenTexture);
     }
 
