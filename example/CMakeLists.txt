@@ -141,7 +141,7 @@ if (PNTR_APP_BUILD_EXAMPLE_WEB AND EMSCRIPTEN)
     set_property(TARGET pntr_app_example_web PROPERTY C_STANDARD 11)
     set_target_properties(pntr_app_example_web PROPERTIES SUFFIX ".html")
     set_target_properties(pntr_app_example_web PROPERTIES OUTPUT_NAME "index")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s ASSERTIONS=1 -s WASM=1 --preload-file resources@/resources --shell-file ${CMAKE_SOURCE_DIR}/example/pntr_app_example.html")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s AUDIO_WORKLET=1 -s WASM_WORKERS=1 -s ASSERTIONS=1 -s WASM=1 --preload-file resources@/resources --shell-file ${CMAKE_SOURCE_DIR}/example/pntr_app_example.html")
     # Strict Warnings and Errors
     if(MSVC)
         target_compile_options(pntr_app_example_web PRIVATE /W4 /WX)

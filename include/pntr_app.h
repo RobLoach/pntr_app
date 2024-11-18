@@ -427,7 +427,7 @@ PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
  */
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName);
 
-#ifdef EMSCIRPTEN
+#ifdef EMSCRIPTEN
     #include <emscripten/webaudio.h>
 #else
     // these are part of emscripten, so I define here for native, so defs are shared
@@ -453,13 +453,10 @@ PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileNa
 /**
  * Used by pntr_set_audio_stream_handler as callback
  */
-typedef void (pntr_audio_stream_handler)(
+typedef bool (pntr_audio_stream_handler)(
   int numInputs, const AudioSampleFrame *inputs,
   int numOutputs, AudioSampleFrame *outputs,
   int numParams, const AudioParamFrame *params,
-  const int currentFrame,
-  const int currentTime,
-  const int sampleRate,
   void *userData
 );
 

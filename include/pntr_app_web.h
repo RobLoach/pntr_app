@@ -20,6 +20,10 @@ typedef struct pntr_app_platform_emscripten {
 #define EMSCRIPTEN_CLIPBOARD_IMPLEMENTATION
 #include "external/emscripten_clipboard.h"
 
+static pntr_audio_stream_handler* audio_stream_cb = NULL;
+static uint8_t audioThreadStack[4096];
+static EMSCRIPTEN_WEBAUDIO_T audioContext;
+
 #ifndef PNTR_APP_LOG
     #include <emscripten/console.h> // emscripten_console_log(), emscripten_console_warn(), etc.
 
@@ -125,12 +129,6 @@ EM_JS(void, pntr_seek_sound, (pntr_sound* sound, int timeMs), {
     const audio = Module.pntr_sounds[sound - 1];
     audio.currentTime = timeMs / 1000;
 })
-
-
-// register an audio-generating callback, use NULL to disable current 
-void pntr_set_audio_stream_handler(pntr_audio_stream_handler* cb) {
-    // TODO: STUB
-}
 
 /**
  * : Initializes the canvas context.
@@ -487,6 +485,61 @@ EM_JS(unsigned int, pntr_app_emscripten_get_time, (void), {
     return performance.now();
 })
 
+static bool AudioStreamGenerate(int numInputs, const AudioSampleFrame *inputs, int numOutputs, AudioSampleFrame *outputs, int numParams, const AudioParamFrame *params, void *userData) {
+  if (audio_stream_cb != NULL) {
+    return (*audio_stream_cb)(
+        numInputs, inputs,
+        numOutputs, outputs,
+        numParams, params,
+        userData
+    );
+  }
+  return true;
+}
+
+static bool AudioOnCanvasClick(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData) {
+  if (eventType) {} // get around too picky build
+  if (mouseEvent) {} // get around too picky build
+  if (userData) {} // get around too picky build
+  
+  EMSCRIPTEN_WEBAUDIO_T audioContext = (EMSCRIPTEN_WEBAUDIO_T)userData;
+  if (emscripten_audio_context_state(audioContext) != AUDIO_CONTEXT_STATE_RUNNING) {
+    emscripten_resume_audio_context_sync(audioContext);
+  }
+  return false;
+}
+
+static void AudioWorkletProcessorCreated(EMSCRIPTEN_WEBAUDIO_T audioContext, bool success, void *userData) {
+  if (!success) return; // Check browser console in a debug build for detailed errors
+
+  int outputChannelCounts[1] = { 1 };
+  EmscriptenAudioWorkletNodeCreateOptions options = {
+    .numberOfInputs = 0,
+    .numberOfOutputs = 1,
+    .outputChannelCounts = outputChannelCounts
+  };
+
+  // Create node
+  EMSCRIPTEN_AUDIO_WORKLET_NODE_T wasmAudioWorklet = emscripten_create_wasm_audio_worklet_node(audioContext, "pntr-stream", &options, &AudioStreamGenerate, userData);
+
+  // Connect it to audio context destination
+  emscripten_audio_node_connect(wasmAudioWorklet, audioContext, 0, 0);
+
+  // Resume context on mouse click
+  emscripten_set_click_callback("canvas", (void*)audioContext, 0, AudioOnCanvasClick);
+}
+
+static void AudioThreadInitialized(EMSCRIPTEN_WEBAUDIO_T audioContext, bool success, void *userData) {
+  if (!success) return; // Check browser console in a debug build for detailed errors
+  WebAudioWorkletProcessorCreateOptions opts = { .name = "pntr-stream" };
+  emscripten_create_wasm_audio_worklet_processor_async(audioContext, &opts, &AudioWorkletProcessorCreated, userData);
+}
+
+// register an audio-generating callback, use NULL to disable current 
+void pntr_set_audio_stream_handler(pntr_audio_stream_handler* cb) {
+    audio_stream_cb = cb;
+}
+
 bool pntr_app_platform_init(pntr_app* app) {
     if (app == NULL) {
         return false;
@@ -523,6 +576,9 @@ bool pntr_app_platform_init(pntr_app* app) {
 
     // Random Number Generator
     pntr_app_random_set_seed(app, (uint64_t)(emscripten_random() * (float)PRAND_RAND_MAX));
+
+    audioContext = emscripten_create_audio_context(0);
+    emscripten_start_wasm_audio_worklet_thread_async(audioContext, audioThreadStack, sizeof(audioThreadStack), &AudioThreadInitialized, 0);
 
     // Intialize the clipboard
     emscripten_clipboard_init(&platform->clipboard);
