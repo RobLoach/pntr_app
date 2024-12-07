@@ -122,6 +122,7 @@ if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
     add_executable(pntr_app_example_cli pntr_app_example.c)
     target_link_libraries(pntr_app_example_cli PUBLIC pntr pntr_app)
     target_compile_definitions(pntr_app_example_cli PUBLIC PNTR_APP_CLI)
+    target_compile_definitions(pntr_app_example_cli PUBLIC PNTR_APP_NOSOUND)
     set_property(TARGET pntr_app_example_cli PROPERTY C_STANDARD 11)
     # Strict Warnings and Errors
     if(MSVC)
