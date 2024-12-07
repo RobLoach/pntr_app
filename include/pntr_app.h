@@ -12,6 +12,7 @@
 *       PNTR_APP_SDL
 *       PNTR_APP_LIBRETRO
 *       PNTR_APP_RAYLIB
+*       PNTR_APP_RSGL
 *       PNTR_APP_WEB
 *
 *   LICENSE: zlib/libpng
@@ -640,6 +641,7 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
 #include "pntr_app_sdl.h"
+#include "pntr_app_rsgl.h"
 #include "pntr_app_web.h"
 #undef PNTR_APP_HEADER_ONLY
 
@@ -690,6 +692,7 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
 #include "pntr_app_sdl.h"
+#include "pntr_app_rsgl.h"
 #include "pntr_app_web.h"
 
 #ifdef __cplusplus

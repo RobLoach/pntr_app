@@ -117,6 +117,40 @@ if (PNTR_APP_BUILD_EXAMPLE_RAYLIB)
 
 endif()
 
+# RSGL
+if (PNTR_APP_BUILD_EXAMPLE_RSGL AND NOT EMSCRIPTEN)
+    find_package(RSGL QUIET)
+    add_executable(pntr_app_example_rsgl pntr_app_example.c)
+    target_link_libraries(pntr_app_example_rsgl PUBLIC pntr pntr_app)
+    target_compile_definitions(pntr_app_example_rsgl PUBLIC PNTR_APP_RSGL)
+    set_property(TARGET pntr_app_example_rsgl PROPERTY C_STANDARD 11)
+
+    if (NOT EMSCRIPTEN)
+         if (WINDOWS)
+            target_link_libraries(pntr_app_example_raylib PUBLIC shell32)
+            target_link_libraries(pntr_app_example_raylib PUBLIC gdi32)
+            target_link_libraries(pntr_app_example_raylib PUBLIC winmm)
+        elseif (APPLE)
+            target_link_libraries(pntr_app_example_raylib PUBLIC "-framework Foundation")
+            target_link_libraries(pntr_app_example_raylib PUBLIC "-framework AppKit")
+            target_link_libraries(pntr_app_example_raylib PUBLIC "-framework CoreVideo")
+        else()
+            target_link_libraries(pntr_app_example_raylib PUBLIC X11)
+            target_link_libraries(pntr_app_example_raylib PUBLIC Xcursor)
+            target_link_libraries(pntr_app_example_raylib PUBLIC Xrandr)
+        endif()
+    endif()
+
+
+    # these are disabled because rsgl will fail
+    # Strict Warnings and Errors
+    # if(MSVC)
+    #     target_compile_options(pntr_app_example_rsgl PRIVATE /W4 /WX)
+    # else()
+    #     target_compile_options(pntr_app_example_rsgl PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    # endif()
+endif()
+
 # CLI
 if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
     add_executable(pntr_app_example_cli pntr_app_example.c)
