@@ -636,12 +636,12 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
 #endif
 
 #define PNTR_APP_HEADER_ONLY
+#include "pntr_app_nosound.h"
 #include "pntr_app_cli.h"
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
 #include "pntr_app_sdl.h"
 #include "pntr_app_web.h"
-#include "pntr_app_nosound.h"
 #undef PNTR_APP_HEADER_ONLY
 
 #ifdef __cplusplus
@@ -687,12 +687,12 @@ extern "C" {
 
 pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 
+#include "pntr_app_nosound.h"
 #include "pntr_app_cli.h"
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
 #include "pntr_app_sdl.h"
 #include "pntr_app_web.h"
-#include "pntr_app_nosound.h"
 
 #ifdef __cplusplus
 }

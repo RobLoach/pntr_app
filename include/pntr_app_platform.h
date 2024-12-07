@@ -26,6 +26,11 @@
     #endif
 #endif
 
+// some targets have no sound of their own
+#if !defined(PNTR_APP_WEB) && !defined(PNTR_APP_LIBRETRO) && !defined(PNTR_APP_RAYLIB) && !defined(PNTR_APP_SDL_MIXER) && !defined(PNTR_APP_MINIAUDIO)
+#define PNTR_APP_NOSOUND
+#endif
+
 // Pixel Format
 #if defined(PNTR_APP_SDL) || defined(PNTR_APP_LIBRETRO)
     #ifndef PNTR_PIXELFORMAT_ARGB

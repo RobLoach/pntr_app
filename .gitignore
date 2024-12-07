@@ -3,3 +3,6 @@ build
 *.so
 *.o
 *.bc
+
+# default log for CLI
+log.txt
