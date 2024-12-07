@@ -60,6 +60,7 @@ When compiling, define one of the following to determine which platform you are 
 PNTR_APP_SDL
 PNTR_APP_RAYLIB
 PNTR_APP_LIBRETRO
+PNTR_APP_RSGL
 PNTR_APP_CLI
 PNTR_APP_WEB
 ```
