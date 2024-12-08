@@ -59,7 +59,8 @@ typedef struct pntr_app_platform_emscripten {
 // this is cheap/simple but magic-bytes is better
 // https://github.com/konsumer/emscripten_browser_sound/blob/main/browser_sound.h#L50-L64
 
-EM_JS(pntr_sound*, pntr_load_sound_from_memory, (pntr_app_sound_type type, unsigned char* dataPtr, unsigned int dataSize), {
+#define PNTR_APP_LOAD_SOUND_FROM_MEMORY pntr_app_web_load_sound_from_memory
+EM_JS(pntr_sound*, pntr_app_web_load_sound_from_memory, (pntr_app_sound_type type, unsigned char* dataPtr, unsigned int dataSize), {
     // Get the sound's mime type.
     let mimeType;
     switch (type) {
@@ -78,7 +79,8 @@ EM_JS(pntr_sound*, pntr_load_sound_from_memory, (pntr_app_sound_type type, unsig
     return Module.pntr_sounds.length;
 })
 
-EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
+#define PNTR_APP_PLAY_SOUND pntr_app_web_play_sound
+EM_JS(void, pntr_app_web_play_sound, (pntr_sound* sound, bool loop), {
     const audio = Module.pntr_sounds[sound - 1];
     if (!audio) {
         console.log('play: sound not loaded', {sound, pntr_sounds: Module.pntr_sound});
@@ -103,7 +105,8 @@ EM_JS(void, pntr_play_sound, (pntr_sound* sound, bool loop), {
     }
 })
 
-EM_JS(void, pntr_stop_sound, (pntr_sound* sound), {
+#define PNTR_APP_STOP_SOUND pntr_app_web_stop_sound
+EM_JS(void, pntr_app_web_stop_sound, (pntr_sound* sound), {
     const audio = Module.pntr_sounds[sound - 1];
     if (audio) {
         audio.pause();
@@ -111,7 +114,8 @@ EM_JS(void, pntr_stop_sound, (pntr_sound* sound), {
     }
 })
 
-EM_JS(void, pntr_unload_sound, (pntr_sound* sound), {
+#define PNTR_APP_UNLOAD_SOUND pntr_app_web_unload_sound
+EM_JS(void, pntr_app_web_unload_sound, (pntr_sound* sound), {
     const audio = Module.pntr_sounds[sound - 1];
     if (audio) {
         audio.pause();

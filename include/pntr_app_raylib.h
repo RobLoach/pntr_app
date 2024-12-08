@@ -506,7 +506,9 @@ void pntr_app_platform_close(pntr_app* app) {
     CloseWindow();
 }
 
-pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
+#ifndef PNTR_APP_LOAD_SOUND_FROM_MEMORY
+#define PNTR_APP_LOAD_SOUND_FROM_MEMORY pntr_app_raylib_load_sound_from_memory
+pntr_sound* pntr_app_raylib_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
     if (data == NULL || dataSize <= 0) {
         return NULL;
     }
@@ -559,8 +561,11 @@ pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char*
 
     return output;
 }
+#endif
 
-void pntr_unload_sound(pntr_sound* sound) {
+#ifndef PNTR_APP_UNLOAD_SOUND
+#define PNTR_APP_UNLOAD_SOUND pntr_app_raylib_unload_sound
+void pntr_app_raylib_unload_sound(pntr_sound* sound) {
     if (sound == NULL) {
         return;
     }
@@ -579,8 +584,11 @@ void pntr_unload_sound(pntr_sound* sound) {
     UnloadSound(audio->sound);
     pntr_unload_memory(audio);
 }
+#endif
 
-void pntr_play_sound(pntr_sound* sound, bool loop) {
+#ifndef PNTR_APP_PLAY_SOUND
+#define PNTR_APP_PLAY_SOUND pntr_app_raylib_play_sound
+void pntr_app_raylib_play_sound(pntr_sound* sound, bool loop) {
     // TODO: Add volume and panning.
     if (sound == NULL) {
         return;
@@ -590,8 +598,11 @@ void pntr_play_sound(pntr_sound* sound, bool loop) {
     audio->loop = loop;
     PlaySound(audio->sound);
 }
+#endif
 
-void pntr_stop_sound(pntr_sound* sound) {
+#ifndef PNTR_APP_STOP_SOUND
+#define PNTR_APP_STOP_SOUND pntr_app_raylib_stop_sound
+void pntr_app_raylib_stop_sound(pntr_sound* sound) {
     if (sound == NULL) {
         return;
     }
@@ -600,6 +611,7 @@ void pntr_stop_sound(pntr_sound* sound) {
     audio->loop = false;
     PlaySound(audio->sound);
 }
+#endif
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     app->deltaTime = GetFrameTime();

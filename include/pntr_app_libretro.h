@@ -1035,8 +1035,10 @@ typedef struct pntr_sound_libretro {
     audio_mixer_voice_t* voice;
 } pntr_sound_libretro;
 
-pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
-    if (data == NULL || dataSize <= 0 || type == PNTR_APP_SOUND_TYPE_UNKNOWN) {
+#ifndef PNTR_APP_LOAD_SOUND_FROM_MEMORY
+#define PNTR_APP_LOAD_SOUND_FROM_MEMORY pntr_app_platform_load_sound_from_memory
+pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
+    if (type == PNTR_APP_SOUND_TYPE_UNKNOWN) {
         return pntr_set_error(PNTR_ERROR_INVALID_ARGS);
     }
 
@@ -1073,37 +1075,35 @@ pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char*
 
     return (pntr_sound*)output;
 }
+#endif
 
-void pntr_unload_sound(pntr_sound* sound) {
-    if (sound == NULL) {
-        return;
-    }
-
+#ifndef PNTR_APP_UNLOAD_SOUND
+#define PNTR_APP_UNLOAD_SOUND(sound) pntr_app_platform_unload_sound(sound)
+void pntr_app_platform_unload_sound(pntr_sound* sound) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     pntr_stop_sound(sound);
     audio_mixer_destroy(audio->sound);
     pntr_unload_memory(audio);
 }
+#endif
 
-void pntr_play_sound(pntr_sound* sound, bool loop) {
-    if (sound == NULL) {
-        return;
-    }
-
+#ifndef PNTR_APP_PLAY_SOUND
+#define PNTR_APP_PLAY_SOUND(sound, loop) pntr_app_libretro_play_sound(sound, loop)
+void pntr_app_libretro_play_sound(pntr_sound* sound, bool loop) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     audio->voice = audio_mixer_play(audio->sound, loop, 1.0f, "", RESAMPLER_QUALITY_DONTCARE, NULL);
 
     // TODO: Set callback to set current voice to NULL
 }
+#endif
 
-void pntr_stop_sound(pntr_sound* sound) {
-    if (sound == NULL) {
-        return;
-    }
-
+#ifndef PNTR_APP_PLAY_SOUND
+#define PNTR_APP_PLAY_SOUND(sound) pntr_app_libretro_stop_sound(sound)
+void pntr_app_libretro_stop_sound(pntr_sound* sound) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     audio_mixer_stop(audio->voice);
 }
+#endif
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     // Nothing, using retro_frame_time_cb() instead.
