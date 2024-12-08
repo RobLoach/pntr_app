@@ -639,6 +639,7 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
 #include "pntr_app_cli.h"
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
+#include "pntr_app_rgfw.h"
 #include "pntr_app_sdl.h"
 #include "pntr_app_web.h"
 #undef PNTR_APP_HEADER_ONLY
@@ -689,6 +690,7 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #include "pntr_app_cli.h"
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
+#include "pntr_app_rgfw.h"
 #include "pntr_app_sdl.h"
 #include "pntr_app_web.h"
 
