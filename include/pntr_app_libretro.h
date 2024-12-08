@@ -675,9 +675,6 @@ void pntr_app_platform_close(pntr_app* app) {
         return;
     }
 
-    // Audio
-    audio_mixer_done();
-
     if (app->platform != NULL) {
         pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
         pntr_unload_memory(platform->audioSamples);
@@ -847,9 +844,6 @@ bool pntr_app_platform_init(pntr_app* app) {
     platform->audioSamples = (float*)pntr_load_memory(sizeof(float) * platform->audioBufferSize * 2);
     platform->audioSamples2 = (int16_t*)pntr_load_memory(sizeof(int16_t) * platform->audioBufferSize * 2);
     pntr_app_libretro = app;
-
-    // Audio
-    audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
 
     // Random Number Generator
     pntr_app_random_set_seed(app, (uint64_t)time(NULL));
@@ -1034,6 +1028,20 @@ typedef struct pntr_sound_libretro {
     audio_mixer_sound_t* sound;
     audio_mixer_voice_t* voice;
 } pntr_sound_libretro;
+
+#ifndef PNTR_APP_INIT_AUDIO
+#define PNTR_APP_INIT_AUDIO pntr_app_libretro_init_audio
+void pntr_app_libretro_init_audio(pntr_app* app) {
+    audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
+}
+#endif
+
+#ifndef PNTR_APP_CLOSE_AUDIO
+#define PNTR_APP_CLOSE_AUDIO pntr_app_libretro_close_audio
+void pntr_app_libretro_close_audio(pntr_app* app) {
+    audio_mixer_done();
+}
+#endif
 
 #ifndef PNTR_APP_LOAD_SOUND_FROM_MEMORY
 #define PNTR_APP_LOAD_SOUND_FROM_MEMORY pntr_app_platform_load_sound_from_memory
