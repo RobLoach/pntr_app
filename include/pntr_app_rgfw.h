@@ -5,6 +5,7 @@
 #define PNTR_APP_RGFW_H__
 
 #ifndef RGFW_HEADER
+#define RGFW_IMPLEMENTATION
 #include "RGFW.h"
 #endif
 

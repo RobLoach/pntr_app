@@ -126,9 +126,6 @@ if (PNTR_APP_BUILD_EXAMPLE_RGFW)
     )
     target_compile_definitions(pntr_app_example_rgfw PUBLIC PNTR_APP_RGFW)
 
-    # this should go in code, but does not link correctly
-    target_compile_definitions(pntr_app_example_rgfw PUBLIC RGFW_IMPLEMENTATION)
-
     # Platform Updates
     if (EMSCRIPTEN)
         set_target_properties(pntr_app_example_rgfw PROPERTIES OUTPUT_NAME "index")
