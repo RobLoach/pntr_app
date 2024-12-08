@@ -1439,6 +1439,51 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
     return app->clipboard;
 }
 
+PNTR_APP_API pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
+    if (data == NULL || dataSize <= 0) {
+        return NULL;
+    }
+
+    #ifdef PNTR_APP_LOAD_SOUND_FROM_MEMORY
+        return PNTR_APP_LOAD_SOUND_FROM_MEMORY(type, data, dataSize);
+    #else
+        (void)type;
+        return NULL;
+    #endif
+}
+
+PNTR_APP_API void pntr_unload_sound(pntr_sound* sound) {
+    if (sound == NULL) {
+        return;
+    }
+
+    #ifdef PNTR_APP_UNLOAD_SOUND
+        PNTR_APP_UNLOAD_SOUND(sound);
+    #endif
+}
+
+PNTR_APP_API void pntr_play_sound(pntr_sound* sound, bool loop) {
+    if (sound == NULL) {
+        return;
+    }
+
+    #ifdef PNTR_APP_PLAY_SOUND
+        PNTR_APP_PLAY_SOUND(sound, loop);
+    #else
+        (void)loop;
+    #endif
+}
+
+PNTR_APP_API void pntr_stop_sound(pntr_sound* sound) {
+    if (sound == NULL) {
+        return;
+    }
+
+    #ifdef PNTR_APP_STOP_SOUND
+        PNTR_APP_STOP_SOUND(sound);
+    #endif
+}
+
 #ifdef __cplusplus
 }
 #endif
