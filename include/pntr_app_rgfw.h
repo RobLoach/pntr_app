@@ -11,6 +11,7 @@
 
 typedef struct pntr_app_rgfw_platform {
   RGFW_window* window;
+  u64 timerLast;
 } pntr_app_rgfw_platform;
 
 #endif  // PNTR_APP_RGFW_H__
@@ -308,6 +309,9 @@ bool pntr_app_platform_init(pntr_app* app) {
   pntr_app_rgfw_platform* platform = (pntr_app_rgfw_platform*)app->platform;
   platform->window = RGFW_createWindow(app->title, RGFW_RECT(0, 0, app->width, app->height), RGFW_CENTER);
 
+  // Initialize the timer.
+  platform->timerLast = RGFW_getTimeNS();
+
   return true;
 }
 
@@ -325,15 +329,23 @@ void pntr_app_platform_close(pntr_app* app) {
 }
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
-  // TODO: Make delta time get the actual delta time.
-  if (app->fps <= 0) {
-    app->deltaTime = 0.1f;
-    return true;
-  }
+    pntr_app_rgfw_platform* platform = (pntr_app_rgfw_platform*)app->platform;
+    u64 currentTime = RGFW_getTimeNS();
+    if (app->fps <= 0) {
+        app->deltaTime = (float)(currentTime - platform->timerLast) / 1000000000.0f;
+        platform->timerLast = currentTime;
+        return true;
+    }
+    else {
+        float deltaTime = (float)(currentTime - platform->timerLast) / 1000000000.0f;
+        if (deltaTime >= 1.0f / (float)app->fps) {
+            app->deltaTime = deltaTime;
+            platform->timerLast = currentTime;
+            return true;
+        }
+    }
 
-  app->deltaTime = 1.0f / (float)app->fps;
-
-  return true;
+    return false;
 }
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
