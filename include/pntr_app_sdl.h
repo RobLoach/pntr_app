@@ -583,17 +583,6 @@ bool pntr_app_platform_init(pntr_app* app) {
         }
     }
 
-    // Audio
-    #ifdef PNTR_APP_SDL_MIXER
-        #define PNTR_APP_AUDIO_FREQUENCY 44100
-        #define PNTR_APP_AUDIO_FORMAT MIX_DEFAULT_FORMAT
-        #define PNTR_APP_AUDIO_CHANNELS 2
-        #define PNTR_APP_AUDIO_CHUNKSIZE 1024
-        if (Mix_OpenAudio(PNTR_APP_AUDIO_FREQUENCY, PNTR_APP_AUDIO_FORMAT, PNTR_APP_AUDIO_CHANNELS, PNTR_APP_AUDIO_CHUNKSIZE) < 0) {
-            return false;
-        }
-    #endif
-
     // Start the tick counter for the delta time.
     platform->timerLastTime = SDL_GetTicks64();
     //platform->timerLastTime = SDL_GetPerformanceCounter();
@@ -636,15 +625,6 @@ void pntr_app_platform_close(pntr_app* app) {
             pntr_unload_memory(platform);
         }
     }
-
-    // Audio
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_HaltChannel(-1);
-        Mix_CloseAudio();
-    #else
-        SDL_PauseAudio(1);
-        SDL_CloseAudio();
-    #endif
 
     // SDL
     SDL_Quit();
@@ -729,6 +709,34 @@ void pntr_app_sdl_unload_sound(pntr_sound* sound) {
         SDL_FreeWAV(audio->audio_buf);
     #endif
     pntr_unload_memory((void*)sound);
+}
+#endif
+
+#ifndef PNTR_APP_INIT_AUDIO
+#define PNTR_APP_INIT_AUDIO pntr_app_sdl_init_audio
+void pntr_app_sdl_init_audio(pntr_app* app) {
+    (void)app;
+    #ifdef PNTR_APP_SDL_MIXER
+        #define PNTR_APP_AUDIO_FREQUENCY 44100
+        #define PNTR_APP_AUDIO_FORMAT MIX_DEFAULT_FORMAT
+        #define PNTR_APP_AUDIO_CHANNELS 2
+        #define PNTR_APP_AUDIO_CHUNKSIZE 1024
+        Mix_OpenAudio(PNTR_APP_AUDIO_FREQUENCY, PNTR_APP_AUDIO_FORMAT, PNTR_APP_AUDIO_CHANNELS, PNTR_APP_AUDIO_CHUNKSIZE);
+    #endif
+}
+#endif
+
+#ifndef PNTR_APP_CLOSE_AUDIO
+#define PNTR_APP_CLOSE_AUDIO pntr_app_sdl_close_audio
+void pntr_app_sdl_close_audio(pntr_app* app) {
+    (void)app;
+    #ifdef PNTR_APP_SDL_MIXER
+        Mix_HaltChannel(-1);
+        Mix_CloseAudio();
+    #else
+        SDL_PauseAudio(1);
+        SDL_CloseAudio();
+    #endif
 }
 #endif
 

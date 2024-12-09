@@ -370,6 +370,11 @@ struct pntr_app {
      * @see pntr_app_clipboard()
      */
     char* clipboard;
+
+    /**
+     * The audio system user data, if needed.
+     */
+    void* audioData;
 };
 
 typedef void pntr_sound;
@@ -872,6 +877,11 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
         return false;
     }
 
+    // Initialize the audio system.
+    #ifdef PNTR_APP_INIT_AUDIO
+        PNTR_APP_INIT_AUDIO(app);
+    #endif
+
     // Call the init callback.
     if (app->init != NULL) {
         // Check if initialization worked.
@@ -893,6 +903,10 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
     if (app->close != NULL) {
         app->close(app);
     }
+
+    #ifdef PNTR_APP_CLOSE_AUDIO
+    PNTR_APP_CLOSE_AUDIO(app);
+    #endif
 
     // Unload any other associated memory
     pntr_unload_image(app->screen);
