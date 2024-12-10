@@ -361,9 +361,6 @@ bool pntr_app_platform_events(pntr_app* app) {
                 }
             }
         }
-        else {
-            break;
-        }
     }
 
     // File Dropped
