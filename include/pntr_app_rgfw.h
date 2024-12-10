@@ -21,7 +21,7 @@ typedef struct pntr_app_rgfw_platform {
 #define PNTR_APP_RGFW_IMPLEMENTATION_ONCE
 
 // map RGFW_Key to pntr_app_key
-pntr_app_key pntr_app_rgfw_key(RGFW_Key key) {
+static inline pntr_app_key pntr_app_rgfw_key(RGFW_Key key) {
   switch(key) {
     case RGFW_Escape: return PNTR_APP_KEY_ESCAPE;
     case RGFW_F1: return PNTR_APP_KEY_F1;
@@ -134,25 +134,36 @@ pntr_app_key pntr_app_rgfw_key(RGFW_Key key) {
   }
 }
 
-pntr_app_gamepad_button pntr_app_rgfw_gamepad_button(RGFW_joystick_codes button) {
-    switch (button) {
-        case RGFW_JS_A: return PNTR_APP_GAMEPAD_BUTTON_A;
-        case RGFW_JS_B: return PNTR_APP_GAMEPAD_BUTTON_B;
-        case RGFW_JS_X: return PNTR_APP_GAMEPAD_BUTTON_X;
-        case RGFW_JS_Y: return PNTR_APP_GAMEPAD_BUTTON_Y;
-        case RGFW_JS_SELECT: return PNTR_APP_GAMEPAD_BUTTON_SELECT;
-        case RGFW_JS_HOME: return PNTR_APP_GAMEPAD_BUTTON_MENU;
-        case RGFW_JS_START: return PNTR_APP_GAMEPAD_BUTTON_START;
-        case RGFW_JS_L1: return PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB;
-        case RGFW_JS_R1: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
-        case RGFW_JS_L2: return PNTR_APP_GAMEPAD_BUTTON_LEFT_SHOULDER;
-        case RGFW_JS_R2: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_SHOULDER;
-        case RGFW_JS_UP: return PNTR_APP_GAMEPAD_BUTTON_UP;
-        case RGFW_JS_DOWN: return PNTR_APP_GAMEPAD_BUTTON_DOWN;
-        case RGFW_JS_LEFT: return PNTR_APP_GAMEPAD_BUTTON_LEFT;
-        case RGFW_JS_RIGHT: return PNTR_APP_GAMEPAD_BUTTON_RIGHT;
-    }
-    return PNTR_APP_GAMEPAD_BUTTON_UNKNOWN;
+static inline pntr_app_gamepad_button pntr_app_rgfw_gamepad_button(RGFW_joystick_codes button) {
+  switch (button) {
+    case RGFW_JS_A: return PNTR_APP_GAMEPAD_BUTTON_A;
+    case RGFW_JS_B: return PNTR_APP_GAMEPAD_BUTTON_B;
+    case RGFW_JS_X: return PNTR_APP_GAMEPAD_BUTTON_X;
+    case RGFW_JS_Y: return PNTR_APP_GAMEPAD_BUTTON_Y;
+    case RGFW_JS_SELECT: return PNTR_APP_GAMEPAD_BUTTON_SELECT;
+    case RGFW_JS_HOME: return PNTR_APP_GAMEPAD_BUTTON_MENU;
+    case RGFW_JS_START: return PNTR_APP_GAMEPAD_BUTTON_START;
+    case RGFW_JS_L1: return PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB;
+    case RGFW_JS_R1: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
+    case RGFW_JS_L2: return PNTR_APP_GAMEPAD_BUTTON_LEFT_SHOULDER;
+    case RGFW_JS_R2: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_SHOULDER;
+    case RGFW_JS_UP: return PNTR_APP_GAMEPAD_BUTTON_UP;
+    case RGFW_JS_DOWN: return PNTR_APP_GAMEPAD_BUTTON_DOWN;
+    case RGFW_JS_LEFT: return PNTR_APP_GAMEPAD_BUTTON_LEFT;
+    case RGFW_JS_RIGHT: return PNTR_APP_GAMEPAD_BUTTON_RIGHT;
+    default: return PNTR_APP_GAMEPAD_BUTTON_UNKNOWN;
+  }
+}
+
+static inline int pntr_app_rgfw_map_mouse(int rgfw_button) {
+  switch(rgfw_button) {
+    case RGFW_mouseScrollUp: return 1;
+    case RGFW_mouseScrollDown: return -1;
+    case RGFW_mouseLeft: return PNTR_APP_MOUSE_BUTTON_LEFT;
+    case RGFW_mouseMiddle: return PNTR_APP_MOUSE_BUTTON_MIDDLE;
+    case RGFW_mouseRight: return PNTR_APP_MOUSE_BUTTON_RIGHT;
+    default: return 0;
+  }
 }
 
 bool pntr_app_platform_events(pntr_app* app) {
@@ -163,106 +174,88 @@ bool pntr_app_platform_events(pntr_app* app) {
   pntr_app_rgfw_platform* platform = (pntr_app_rgfw_platform*)app->platform;
   while(RGFW_window_checkEvent(platform->window)) {
     if (platform->window->event.type == RGFW_quit) {
+      // stop processing events, just close app
       return false;
-    }
-
-    if (platform->window->event.type == RGFW_keyPressed && platform->window->event.keyCode == RGFW_F11){
-      // TODO: toggle fullscreen
     }
 
     pntr_app_event event = {0};
     event.app = app;
 
-    if (platform->window->event.type == RGFW_keyPressed){
-      event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
-      event.key = pntr_app_rgfw_key(platform->window->event.keyCode);
-      pntr_app_process_event(app, &event);
-    }
-
-    if (platform->window->event.type == RGFW_keyReleased){
-      event.type = PNTR_APP_EVENTTYPE_KEY_UP;
-      event.key = pntr_app_rgfw_key(platform->window->event.keyCode);
-      pntr_app_process_event(app, &event);
-    }
-
-    // wheel and button events are tied together
-    if (platform->window->event.type == RGFW_mouseButtonPressed) {
-      event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
-
-      if (platform->window->event.button == RGFW_mouseScrollUp) {
-        event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-        event.mouseWheel = -1;
-      }
-      if (platform->window->event.button == RGFW_mouseScrollDown) {
-        event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-        event.mouseWheel = 1;
-      }
-
-      if (platform->window->event.button == RGFW_mouseLeft){
-        event.mouseButton = PNTR_APP_MOUSE_BUTTON_LEFT;
-      }
-      if (platform->window->event.button == RGFW_mouseMiddle){
-        event.mouseButton = PNTR_APP_MOUSE_BUTTON_MIDDLE;
-      }
-      if (platform->window->event.button == RGFW_mouseRight){
-        event.mouseButton = PNTR_APP_MOUSE_BUTTON_RIGHT;
-      }
-      pntr_app_process_event(app, &event);
-    }
-
-    if (platform->window->event.type == RGFW_mouseButtonReleased) {
-      event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
-
-      // TODO: do i want to handle mouse wheel up/down both?
-
-      if (platform->window->event.button == RGFW_mouseScrollUp) {
-        event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-        event.mouseWheel = -1;
-      }
-      if (platform->window->event.button == RGFW_mouseScrollDown) {
-        event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-        event.mouseWheel = 1;
-      }
-
-      if (platform->window->event.button == RGFW_mouseLeft){
-        event.mouseButton = PNTR_APP_MOUSE_BUTTON_LEFT;
-      }
-      if (platform->window->event.button == RGFW_mouseMiddle){
-        event.mouseButton = PNTR_APP_MOUSE_BUTTON_MIDDLE;
-      }
-      if (platform->window->event.button == RGFW_mouseRight){
-        event.mouseButton = PNTR_APP_MOUSE_BUTTON_RIGHT;
-      }
-      pntr_app_process_event(app, &event);
-    }
-
-    if (platform->window->event.type == RGFW_mousePosChanged) {
-      event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-      event.mouseX = platform->window->event.point.x;
-      event.mouseY = platform->window->event.point.y;
-      pntr_app_process_event(app, &event);
-    }
-
-    if (platform->window->event.type == RGFW_jsButtonPressed) {
-      event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN;
-      event.gamepad = platform->window->event.joystick;
-      event.gamepadButton = pntr_app_rgfw_gamepad_button(platform->window->event.button);
-      pntr_app_process_event(app, &event);
-    }
-
-    if (platform->window->event.type == RGFW_jsButtonReleased) {
-      event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
-      event.gamepad = platform->window->event.joystick;
-      event.gamepadButton = pntr_app_rgfw_gamepad_button(platform->window->event.button);
-      pntr_app_process_event(app, &event);
-    }
-
-    // TODO: check this
-    if (platform->window->event.type == RGFW_dnd_init) {
-      event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
-      for(int i=0;i<platform->window->event.droppedFilesCount;i++) {
-        event.fileDropped = platform->window->event.droppedFiles[i];
+    switch(platform->window->event.type) {
+      case RGFW_keyPressed: {
+        if (platform->window->event.keyCode == RGFW_F11) {
+          // TODO: do fullscreen
+        }
+        event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
+        event.key = pntr_app_rgfw_key(platform->window->event.keyCode);
         pntr_app_process_event(app, &event);
+        break;
+      }
+      
+      case RGFW_keyReleased: {
+        event.type = PNTR_APP_EVENTTYPE_KEY_UP;
+        event.key = pntr_app_rgfw_key(platform->window->event.keyCode);
+        pntr_app_process_event(app, &event);
+        break;
+      }
+      
+      case RGFW_mouseButtonPressed: {
+        if (platform->window->event.button == RGFW_mouseScrollUp || platform->window->event.button == RGFW_mouseScrollDown) {
+          event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+          event.mouseWheel = pntr_app_rgfw_map_mouse(platform->window->event.button);
+        } else {
+          event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
+          event.mouseButton = pntr_app_rgfw_map_mouse(platform->window->event.button);
+        }
+        pntr_app_process_event(app, &event);
+        break;
+      }
+
+      case RGFW_mouseButtonReleased: {
+        if (platform->window->event.button != RGFW_mouseScrollUp && platform->window->event.button != RGFW_mouseScrollDown) {
+          event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
+          event.mouseButton = pntr_app_rgfw_map_mouse(platform->window->event.button);
+          pntr_app_process_event(app, &event);
+        }
+        break;
+      }
+      
+      case RGFW_mousePosChanged: {
+        event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+        event.mouseX = platform->window->event.point.x;
+        event.mouseY = platform->window->event.point.y;
+        pntr_app_process_event(app, &event);
+        break;
+      }
+      
+      case RGFW_jsButtonPressed: {
+        event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN;
+        event.gamepad = platform->window->event.joystick;
+        event.gamepadButton = pntr_app_rgfw_gamepad_button(platform->window->event.button);
+        pntr_app_process_event(app, &event);
+        break;
+      }
+      
+      case RGFW_jsButtonReleased: {
+        event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+        event.gamepad = platform->window->event.joystick;
+        event.gamepadButton = pntr_app_rgfw_gamepad_button(platform->window->event.button);
+        pntr_app_process_event(app, &event);
+        break;
+      }
+      
+      case RGFW_dnd_init: {
+        // TODO: do we need position? platform->window->event.point
+        break;
+      }
+      
+      case RGFW_dnd: {
+        event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
+        for(int i=0; i<platform->window->event.droppedFilesCount; i++) {
+          event.fileDropped = platform->window->event.droppedFiles[i];
+          pntr_app_process_event(app, &event);
+        }
+        break;
       }
     }
   }
@@ -290,7 +283,7 @@ bool pntr_app_platform_render(pntr_app* app) {
     memcpy(platform->window->buffer + index, bitmap + (4 * app->width * y), app->width * 4);
   }
 
-  RGFW_window_setGPURender(platform->window, 0);
+  // RGFW_window_setGPURender(platform->window, 0);
   RGFW_window_swapBuffers(platform->window);
   // RGFW_window_checkFPS(platform->window, 60);
 
