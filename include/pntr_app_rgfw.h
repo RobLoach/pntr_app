@@ -202,10 +202,11 @@ bool pntr_app_platform_events(pntr_app* app) {
 			case RGFW_mouseButtonPressed: {
 				if (platform->window->event.button == RGFW_mouseScrollUp || platform->window->event.button == RGFW_mouseScrollDown) {
 					event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+					event.mouseWheel = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
 				} else {
 					event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;
+					event.mouseButton = pntr_app_rgfw_map_mouse(platform->window->event.button);
 				}
-				event.mouseButton = pntr_app_rgfw_map_mouse(platform->window->event.button);
 				pntr_app_process_event(app, &event);
 				break;
 			}
