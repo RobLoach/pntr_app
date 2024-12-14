@@ -6,45 +6,42 @@ project(pntr_app
     LANGUAGES C
 )
 
-# pntr_app
-add_library(pntr_app INTERFACE)
-target_include_directories(pntr_app INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+option(PNTR_APP_BUILD_TEST "Build Unit-tests" TRUE)
+option(PNTR_APP_BUILD_DEMOS "Build Examples" TRUE)
 
-# Options
-if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
-    set(PNTR_APP_IS_MAIN TRUE)
-else()
-    set(PNTR_APP_IS_MAIN FALSE)
+# find cmake stuff in current dir/cmake
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+# general settings that make things build better
+
+# https://cmake.org/cmake/help/latest/policy/CMP0135.html
+if(POLICY CMP0135)
+  cmake_policy(SET CMP0135 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0135 NEW)
 endif()
 
-if (${PNTR_APP_IS_MAIN} AND EMSCRIPTEN)
-    set(PNTR_APP_BUILD_EXAMPLE_WEB_DEFAULT TRUE)
-else()
-    set(PNTR_APP_BUILD_EXAMPLE_WEB_DEFAULT FALSE)
+# https://cmake.org/cmake/help/latest/policy/CMP0077.html
+if(POLICY CMP0077)
+  cmake_policy(SET CMP0077 NEW)
+  set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 endif()
 
-option(PNTR_APP_BUILD_EXAMPLE "Example" ${PNTR_APP_IS_MAIN})
-option(PNTR_APP_BUILD_EXAMPLE_SDL "Example: SDL" ${PNTR_APP_IS_MAIN})
-option(PNTR_APP_BUILD_EXAMPLE_RAYLIB "Example: raylib" ${PNTR_APP_IS_MAIN})
-option(PNTR_APP_BUILD_EXAMPLE_RGFW "Example: RGFW" ${PNTR_APP_IS_MAIN})
-option(PNTR_APP_BUILD_EXAMPLE_CLI "Example: CLI" ${PNTR_APP_IS_MAIN})
-option(PNTR_APP_BUILD_EXAMPLE_WEB "Example: Emscripten" ${PNTR_APP_BUILD_EXAMPLE_WEB_DEFAULT})
-option(PNTR_APP_BUILD_TEST "Example: Test" ${PNTR_APP_IS_MAIN})
+# enable colors for ninja
+set(CMAKE_COLOR_DIAGNOSTICS ON)
 
-if (PNTR_APP_BUILD_EXAMPLE)
+# everyone wants to make an "uninstall" target
+set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS ON)
+
+# switch these for debugging
+# set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Release)
+
+# sub-projects
+
+if (PNTR_APP_BUILD_TEST)
+    add_subdirectory(test)
+endif()
+
+if (PNTR_APP_BUILD_DEMOS)
     add_subdirectory(example)
-endif()
-
-if (PNTR_APP_BUILD_TEST AND NOT EMSCRIPTEN)
-    # Testing
-    include(CTest)
-    enable_testing()
-    if (BUILD_TESTING)
-        # set(CTEST_CUSTOM_TESTS_IGNORE
-        #     pkg-config--static
-        # )
-        # Always print verbose output when tests fail if run using `make test`.
-        list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
-        add_subdirectory(test)
-    endif()
 endif()

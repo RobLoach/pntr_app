@@ -6,18 +6,17 @@ Build [pntr](https://github.com/robloach/pntr) applications with the same code f
 
 - Compile for a number of platforms...
     - [raylib](https://www.raylib.com/)
-    - [SDL](https://www.libsdl.org/)
+    - [SDL2](https://www.libsdl.org/)
     - Web with [Emscripten](https://emscripten.org/)
-    - [libretro](https://www.libretro.com/) and RetroArch
+    - [libretro core](https://www.libretro.com/) and RetroArch
     - Command Line Interfaces with [termbox2](https://github.com/termbox/termbox2)
 - Software rendering with [pntr](https://github.com/robloach/pntr)
-- Audio (*.wav* or *.ogg*)
+- Audio (*.wav* or *.ogg*, or more with seperate defines/backends)
 - Input with Mouse, Keyboard, or Gamepads
 
 ## Example
 
 ``` c
-#define PNTR_APP_IMPLEMENTATION
 #include "pntr_app.h"
 
 bool Init(pntr_app* app) {
@@ -55,14 +54,84 @@ pntr_app Main(int argc, char* argv[]) {
 
 ## Configuration
 
-When compiling, define one of the following to determine which platform you are targeting...
+The easiest way is to use our cmake function, which will define the correct stuff for you, and make a nice static lib that can be shared between multiple targets. If you don't want to use cmake, or want something more advanced, check out [ADVANCED](ADVANCED.md).
+
+Here is an example adding it to your project. First copy [Findpntr.cmake](cmake/Findpntr.cmake) into your project, then do this:
+
+```cmake
+cmake_minimum_required(VERSION 3.22)
+project(myproject)
+
+# find cmake stuff in current dir/cmake
+# this is wherever you put Findpntr.cmake
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+# this loads the helper
+find_package(pntr REQUIRED)
+
+# create myexe with pntr defaults setup
+add_executable(myexe src/main.c)
+add_pntr(myexe)
 ```
-PNTR_APP_SDL
-PNTR_APP_RAYLIB
-PNTR_APP_LIBRETRO
-PNTR_APP_CLI
-PNTR_APP_WEB
+
+It will download any dependencies it needs (even pntr & pntr_app) and build a static lib for the window/sound backends and link your program.
+
+If you want to load different backends, you can use the helper to make it easy. Here is a slightly more advanced config that will build a web-page, and a libretro core, and a native app, all from the same source:
+
+```cmake
+cmake_minimum_required(VERSION 3.22)
+project(myproject)
+
+# find cmake stuff in current dir/cmake
+# this is wherever you put Findpntr.cmake
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+
+# this loads the helper
+find_package(pntr REQUIRED)
+
+# create myexe with pntr defaults setup
+add_executable(myexe src/main.c)
+add_pntr(myexe)
+
+if (EMSCRIPTEN)
+  # build the web-page in my /docs dir.
+  # I set extension  .mjs here, which triggers modern module mode, and allows you to setup your own nicer shell more easily.
+  # you can put any other emscripten options you like here
+  set_target_properties(myexe
+    PROPERTIES
+    SUFFIX ".mjs"
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/docs"
+  )
+else()
+  # build the libretro core
+  add_library(myexe-libretro SHARED src/main.c)
+  add_pntr(myexe-libretro RETRO)
+  set_target_properties(myexe-libretro PROPERTIES PREFIX "")
+endif()
 ```
+
+In order to use these:
+
+```bash
+# configure for native
+cmake -B build -G Ninja
+
+# build for native
+cmake --build build
+
+# configure for web
+emcmake cmake -B wbuild -G Ninja
+
+# build for web
+cmake --build wbuild
+
+# run a little web-server on docs/ dir
+npx -y live-server docs
+```
+
+Here, I use Ninja, because it's much faster, but you can leave off the `-G Ninja` if you want to use your platform's default (`make`/etc.)
+
+It is highly recommended to keep emscritpen & native builds in a seperate roots, since they compile the same-name targets for differnt platforms, which does not really work, in general. Here I use `build/` vs `wbuild/` for that.
 
 ## API
 
@@ -114,52 +183,6 @@ void pntr_stop_sound(pntr_sound* sound);
 
 For drawing, see the [pntr API](https://github.com/RobLoach/pntr).
 
-## Build
-
-There are a few platforms supported by pntr_app, which have their own build methods...
-
-### Desktop
-
-To build the raylib and SDL applications, use [CMake](https://cmake.org/). Depends on either [raylib](https://www.raylib.com/), or [SDL](https://www.libsdl.org/) along with [SDL_mixer](https://github.com/libsdl-org/SDL_mixer)...
-
-``` bash
-cmake -B build
-cmake --build build
-```
-
-You can disable building some examples by using...
-
-``` bash
-cmake -B build -DPNTR_APP_BUILD_EXAMPLE_SDL=false -DPNTR_APP_BUILD_EXAMPLE_RAYLIB=false
-cmake --build build
-```
-
-### libretro
-
-To build the libretro core, use `make`. Depends on [libretro-common](https://github.com/libretro/libretro-common).
-
-``` bash
-git submodule update --init
-cd example
-make
-```
-
-#### libretro WASM
-
-``` bash
-cd example
-emmake make platform=emscripten
-```
-
-### Web
-
-Build for the web with [Emscripten](https://emscripten.org/) and raylib. Depends on [emsdk](https://emscripten.org/docs/tools_reference/emsdk.html).
-
-``` bash
-emcmake cmake -B build -DPNTR_APP_BUILD_EXAMPLE_RAYLIB=false -DPNTR_APP_BUILD_EXAMPLE_WEB=true
-emmake make -C build
-emrun build/example/index.html
-```
 
 ## License
 
