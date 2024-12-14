@@ -29,12 +29,11 @@ Here are the defines that make that work:
 #define PNTR_APP_WINDOW_WEB
 #define PNTR_APP_SOUND_WEB
 
-// make a libretro core. THese are sort of tied togehter for now
+// make a libretro core. These are sort of tied togehter for now
 #define PNTR_APP_WINDOW_RETRO
 #define PNTR_APP_SOUND_RETRO
 
-// don't use a driver. You probably don't want this, but it will allow you to disable sound, for example.
-#define PNTR_APP_WINDOW_NONE
+// don't use sound
 #define PNTR_APP_SOUND_NONE
 
 // nice TUI driver, no sound (so use PNTR_APP_SOUND_RAYLIB if you need that)
