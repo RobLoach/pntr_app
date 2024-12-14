@@ -8,7 +8,7 @@ pntr_app is built with the idea of window and sound drivers. You can use a diffe
 
 Window drivers are the frame of the app, like input, the event loop, and copying the pntr_image to the screen. Sound drivers make the sound work, and are mostly independant of the window (although SDL2 currently requires them to match.) You should only define 1 window/sound per build-target.
 
-Even if you are not using raylib, but need a sound engine, it's recommended to use `PNTR_APP_SOUND_RAYLIB`, since it's just a ncie wrapper around [miniaudio](https://miniaud.io/).
+Even if you are not using raylib, but need a sound engine, it's recommended to use `PNTR_APP_SOUND_RAYLIB`, since it's just a nice wrapper around [miniaudio](https://miniaud.io/).
 
 Here are the defines that make that work:
 
