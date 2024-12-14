@@ -6,7 +6,7 @@ Before diving into this stuff, have a look at the [README](README.md) and get fa
 
 pntr_app is built with the idea of window and sound drivers. You can use a differnt cmake setup, or no cmake at all, if you use the defines that trigger different drivers to tell the headers what backends to load.
 
-Window drvers are the frame of the app, like input, the event loop, and copying the pntr_image to the screen. Sound drivers make the sound work, and are mostly independant of the window. You should only define 1 window/sound per build-target.
+Window drivers are the frame of the app, like input, the event loop, and copying the pntr_image to the screen. Sound drivers make the sound work, and are mostly independant of the window (although SDL2 currently requires them to match.) You should only define 1 window/sound per build-target.
 
 Even if you are not using raylib, but need a sound engine, it's recommended to use `PNTR_APP_SOUND_RAYLIB`, since it's just a ncie wrapper around [miniaudio](https://miniaud.io/).
 
