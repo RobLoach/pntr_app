@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(pntr_app
     DESCRIPTION "pntr_app: Manage a pntr application across a number of different platforms."
     HOMEPAGE_URL "https://github.com/robloach/pntr_app"
-    VERSION 0.0.1
+    VERSION 0.1.0
     LANGUAGES C
 )
 
