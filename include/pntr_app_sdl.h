@@ -42,13 +42,11 @@ bool pntr_app_sdl_save_file(const char *fileName, const void *data, unsigned int
 #ifndef PNTR_APP_SDL_IMPLEMENTATION_ONCE
 #define PNTR_APP_SDL_IMPLEMENTATION_ONCE
 
-// SDL_mixer.h
-#ifdef PNTR_APP_SDL_MIXER
-    #ifndef PNTR_APP_SDL_MIXER_H
-        #define PNTR_APP_SDL_MIXER_H "SDL3_mixer/SDL_mixer.h"
-    #endif
-    #include PNTR_APP_SDL_MIXER_H
+// SDL_mixer
+#ifndef PNTR_APP_SDL_MIXER_H
+    #define PNTR_APP_SDL_MIXER_H "SDL3_mixer/SDL_mixer.h"
 #endif
+#include PNTR_APP_SDL_MIXER_H
 
 /**
  * Free the given memory pointer using SDL.
@@ -616,14 +614,8 @@ void pntr_app_platform_close(pntr_app* app) {
  * @internal
  */
 typedef struct pntr_sound_sdl {
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_Chunk* chunk;
-        int channel;
-    #else
-        Uint8* audio_buf;
-        Uint32 audio_len;
-        SDL_AudioDeviceID deviceId;
-    #endif
+    Mix_Chunk* chunk;
+    int channel;
 } pntr_sound_sdl;
 
 #ifndef PNTR_APP_LOAD_SOUND_FROM_MEMORY
@@ -646,28 +638,15 @@ pntr_sound* pntr_app_sdl_load_sound_from_memory(pntr_app_sound_type type, unsign
         return NULL;
     }
 
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_Chunk* chunk = Mix_LoadWAV_IO(io, 1);
-        pntr_unload_file(data);
-        if (chunk == NULL) {
-            pntr_unload_memory(output);
-            return NULL;
-        }
+    Mix_Chunk* chunk = Mix_LoadWAV_IO(io, 1);
+    pntr_unload_file(data);
+    if (chunk == NULL) {
+        pntr_unload_memory(output);
+        return NULL;
+    }
 
-        output->chunk = chunk;
-        output->channel = -1;
-    #else
-        if (!SDL_LoadWAV_IO(io,
-                1, // freesrc
-                &platform->audioSpec,
-                &output->audio_buf,
-                &output->audio_len)) {
-            pntr_unload_file(data);
-            pntr_unload_memory(output);
-            return NULL;
-        }
-        output->deviceId = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &output->audioSpec);
-    #endif
+    output->chunk = chunk;
+    output->channel = -1;
 
     return (pntr_sound*)output;
 }
@@ -681,12 +660,7 @@ void pntr_app_sdl_unload_sound(pntr_sound* sound) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_FreeChunk(audio->chunk);
-    #else
-        SDL_CloseAudioDevice(audio->deviceId);
-        SDL_FreeWAV(audio->audio_buf);
-    #endif
+    Mix_FreeChunk(audio->chunk);
     pntr_unload_memory((void*)sound);
 }
 #endif
@@ -695,12 +669,7 @@ void pntr_app_sdl_unload_sound(pntr_sound* sound) {
 #define PNTR_APP_INIT_AUDIO pntr_app_sdl_init_audio
 void pntr_app_sdl_init_audio(pntr_app* app) {
     pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-    #ifdef PNTR_APP_SDL_MIXER
-        // platform->spec.freq = MIX_DEFAULT_FREQUENCY;
-        // platform->spec.format = MIX_DEFAULT_FORMAT;
-        // platform->spec.channels = MIX_DEFAULT_CHANNELS;
-        Mix_OpenAudio(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &platform->audioSpec);
-    #endif
+    Mix_OpenAudio(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &platform->audioSpec);
 }
 #endif
 
@@ -708,13 +677,8 @@ void pntr_app_sdl_init_audio(pntr_app* app) {
 #define PNTR_APP_CLOSE_AUDIO pntr_app_sdl_close_audio
 void pntr_app_sdl_close_audio(pntr_app* app) {
     (void)app;
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_HaltChannel(-1);
-        Mix_CloseAudio();
-    #else
-        SDL_PauseAudio(1);
-        SDL_CloseAudio();
-    #endif
+    Mix_HaltChannel(-1);
+    Mix_CloseAudio();
 }
 #endif
 
@@ -726,14 +690,7 @@ void pntr_app_sdl_play_sound(pntr_sound* sound, bool loop) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    #ifdef PNTR_APP_SDL_MIXER
-        audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
-    #else
-        // TODO: Add sound looping to SDL Queue Audio.
-        pntr_stop_sound(sound);
-        /*int success =*/ SDL_QueueAudio(audio->deviceId, audio->audio_buf, audio->audio_len);
-        SDL_PauseAudioDevice(audio->deviceId, loop ? 0 : 0);
-    #endif
+    audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
 }
 #endif
 
@@ -745,14 +702,10 @@ void pntr_app_sdl_stop_sound(pntr_sound* sound) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    #ifdef PNTR_APP_SDL_MIXER
-        if (audio->channel >= 0) {
-            Mix_Pause(audio->channel);
-            audio->channel = -1;
-        }
-    #else
-        SDL_ClearQueuedAudio(audio->deviceId);
-    #endif
+    if (audio->channel >= 0) {
+        Mix_Pause(audio->channel);
+        audio->channel = -1;
+    }
 }
 #endif
 
@@ -763,13 +716,13 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 
     pntr_app_sdl_platform* platform = app->platform;
 
-    uint64_t now = SDL_GetTicksNS();
+    Uint64 now = SDL_GetTicksNS();
     uint64_t delta = now - platform->timerLastTime;
 
     // Calculate if it's time to update
-    if (app->fps <= 0 || (delta > (1000.0f / (float)app->fps))) {
+    if (app->fps <= 0 || (delta > (1000000000.0f / (float)app->fps))) {
         platform->timerLastTime = now;
-        app->deltaTime = (float)delta / 1000.0f;
+        app->deltaTime = (float)delta / 1000000000.0f;
         return true;
     }
 

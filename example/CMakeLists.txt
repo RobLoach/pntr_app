@@ -19,23 +19,11 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
 
     target_compile_definitions(pntr_app_example_sdl PUBLIC PNTR_APP_SDL)
 
-    # SDL3_mixer
-    set(SDLMIXER_BUILD_SHARED_LIBS false)
-
     # SDL
-    #set(SDL_SHARED FALSE)
-    #set(SDL2_SHARED FALSE)
-    #set(SDL_STATIC TRUE)
-    #set(SDL_TEST FALSE)
-    #set(SDL_TESTS FALSE)
-    #set(INTERFACE_SDL2_SHARED false)
-    #set(SDL2_DISABLE_UNINSTALL TRUE)
-    #set(SDL2_DISABLE_INSTALL TRUE)
-    #set(SDL_INSTALL_TESTS FALSE)
     find_package(SDL3 REQUIRED)
-    set(PNTR_SDL_LIBRARIES SDL3::SDL3 SDL3_mixer-static)
 
     # SDL_mixer
+    set(SDLMIXER_BUILD_SHARED_LIBS false)
     set(SDLMIXER_VORBIS STB)
     set(SDLMIXER_INSTALL OFF)
     set(SDLMIXER_DEPS_SHARED OFF)
@@ -60,19 +48,14 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
     set(SDLMIXER_SAMPLES_INSTALL OFF)
     set(SDLMIXER_BUILD_SHARED_LIBS OFF)
     find_package(SDL3_mixer REQUIRED)
-    set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer::SDL2_mixer-static)
-    #set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer)
-
-    target_compile_definitions(pntr_app_example_sdl PUBLIC
-        PNTR_APP_SDL_MIXER
-    )
 
     target_link_libraries(pntr_app_example_sdl PUBLIC
         pntr
         pntr_app
-        ${PNTR_SDL_LIBRARIES}
+        SDL3::SDL3
+        SDL3_mixer::SDL3_mixer-static
     )
-    
+
     set_property(TARGET pntr_app_example_sdl PROPERTY C_STANDARD 11)
     # Strict Warnings and Errors
     if(MSVC)
