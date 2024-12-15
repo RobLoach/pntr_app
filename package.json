@@ -1,0 +1,12 @@
+{
+    "scripts": {
+        "start": "npx -y run-all -p watch:web start:web",
+        "start:web": "npx -y live-server docs",
+        "build:web": "emcmake cmake -B wbuild -G Ninja && cmake --build wbuild",
+        "watch:web": "npx -y nodemon -w example -e 'c h png' --exec 'npm run build:web'",
+
+        "build:raylib": "cmake -B build -G Ninja -D EXAMPLES=RAYLIB && cmake --build build",
+        "build:sdl2": "cmake -B build -G Ninja -D EXAMPLES=SDL2 && cmake --build build",
+        "build:retro": "cmake -B build -G Ninja -D EXAMPLES=RETRO && cmake --build build"
+    }
+}

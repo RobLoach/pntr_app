@@ -36,6 +36,12 @@ set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS ON)
 # set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_BUILD_TYPE Release)
 
+if (EMSCRIPTEN)
+    option(EXAMPLE "For pntr_app: build all the examples with this sound/window system" "EMSCRIPTEN")
+else()
+    option(EXAMPLE "For pntr_app: build all the examples with this sound/window system" "RAYLIB")
+endif()
+
 # sub-projects
 
 if (PNTR_APP_BUILD_TEST)

@@ -54,7 +54,8 @@ pntr_app Main(int argc, char* argv[]) {
 
 ## Configuration
 
-The easiest way is to use our cmake function, which will define the correct stuff for you, and make a nice static lib that can be shared between multiple targets. If you don't want to use cmake, or want something more advanced, check out [ADVANCED](ADVANCED.md).
+The easiest way is to use our cmake function, which will define the correct stuff for you, and make a nice static-lib that can be shared between multiple targets. If you don't want to use cmake, or want something more advanced, check out [ADVANCED](ADVANCED.md).
+For more device-specific targeting, check out [RECIPES](RECIPES.md).
 
 Here is an example adding it to your project. First copy [Findpntr.cmake](cmake/Findpntr.cmake) into your project, then do this:
 
@@ -74,7 +75,7 @@ add_executable(myexe src/main.c)
 add_pntr(myexe)
 ```
 
-It will download any dependencies it needs (even pntr & pntr_app) and build a static lib for the window/sound backends and link your program.
+It will download any dependencies it needs (including pntr & pntr_app) and build a static lib for the window/sound backends and link your program.
 
 If you want to load different backends, you can use the helper to make it easy. Here is a slightly more advanced config that will build a web-page, and a libretro core, and a native app, all from the same source:
 
@@ -89,9 +90,9 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
 # this loads the helper
 find_package(pntr REQUIRED)
 
-# create myexe with pntr defaults setup
-add_executable(myexe src/main.c)
-add_pntr(myexe)
+# create mything EXE with pntr_app defaults setup (raylib)
+add_executable(mything src/main.c)
+add_pntr(mything)
 
 if (EMSCRIPTEN)
   # build the web-page in my /docs dir.
@@ -105,7 +106,7 @@ if (EMSCRIPTEN)
 else()
   # build the libretro core
   add_library(myexe-libretro SHARED src/main.c)
-  add_pntr(myexe-libretro RETRO)
+  add_pntr(mything-libretro RETRO)
   set_target_properties(myexe-libretro PROPERTIES PREFIX "")
 endif()
 ```
@@ -134,6 +135,30 @@ npx -y live-server docs
 Here, I use Ninja, because it's much faster, but you can leave off the `-G Ninja` if you want to use your platform's default (`make`/etc.)
 
 It is highly recommended to keep emscritpen & native builds in a seperate roots, since they compile the same-name targets for differnt platforms, which does not really work, in general. Here I use `build/` vs `wbuild/` for that.
+
+### Scripts
+
+We use npm scripts to keep track of common tasks. You can check out our [package.json](package.json) that might serve as inspiration for your own project:
+
+```
+# run a webserver. watch for changes to source, and rebuild/reload (using npm run build:web)
+# this is what I use to dev examples, since it's very quick to see changes
+npm start
+
+# just build the native raylib examples
+npm run build:raylib
+
+# just build the native SDL2 examples
+npm run build:sdl2
+
+# just build the native libretro-core examples
+npm run build:retro
+
+# just build the web stuff in docs/
+npm run build:web
+```
+
+These are designed to not require the user to install anything (other than node.js, which is already required for emscripten.)
 
 ## API
 
