@@ -133,6 +133,21 @@ if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
 endif()
 
 
+# Libretro core
+if (PNTR_APP_BUILD_EXAMPLE_RETRO AND NOT EMSCRIPTEN)
+    find_package(retro REQUIRED)
+
+    add_library(pntr_app_example-libretro SHARED pntr_app_example.c)
+    target_sources(pntr_app_example-libretro PRIVATE
+      "${retro_SOURCE_DIR}/audio/audio_mixer.c"
+      "${retro_SOURCE_DIR}/audio/conversion/float_to_s16.c"
+      "${retro_SOURCE_DIR}/memmap/memalign.c"
+    )
+    target_link_libraries(pntr_app_example-libretro PUBLIC pntr pntr_app)
+    target_compile_definitions(pntr_app_example-libretro PUBLIC PNTR_APP_LIBRETRO)
+    set_target_properties(pntr_app_example-libretro PROPERTIES PREFIX "" POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # Emscripten
 if (PNTR_APP_BUILD_EXAMPLE_WEB AND EMSCRIPTEN)
     add_executable(pntr_app_example_web pntr_app_example.c)
