@@ -1,5 +1,10 @@
 .vscode
 build
+wbuild
 *.so
 *.o
 *.bc
+
+# this is location of main output
+/pntr_app_example
+/pntr_app_example.exe

@@ -21,17 +21,17 @@ bool Init(pntr_app* app) {
     AppData* appData = pntr_load_memory(sizeof(AppData));
     pntr_app_set_userdata(app, appData);
 
-    appData->logo = pntr_load_image("resources/logo.png");
+    appData->logo = pntr_load_image("assets/logo.png");
     if (appData->logo == NULL) {
-        pntr_app_log(PNTR_APP_LOG_ERROR, "Failed to load resources/logo.png");
+        pntr_app_log(PNTR_APP_LOG_ERROR, "Failed to load assets/logo.png");
     }
     appData->droppedImage = NULL;
     appData->font = pntr_load_font_default();
     appData->spacePressed = false;
     appData->x = 0;
     appData->velocity = 60.0f;
-    appData->sound = pntr_load_sound("resources/sound.wav");
-    appData->music = pntr_load_sound("resources/music.ogg");
+    appData->sound = pntr_load_sound("assets/sound.wav");
+    appData->music = pntr_load_sound("assets/music.ogg");
     pntr_play_sound(appData->music, true);
 
     pntr_app_set_title(app, "pntr_app: Examples");

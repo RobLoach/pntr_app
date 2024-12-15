@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>pntr_app</title>
+    <link rel="icon" type="image/x-icon" href="https://github.com/RobLoach/pntr/raw/master/examples/resources/logo-55x55.png" />
+    <style type="text/css">
+        body {
+            color: #fff;
+            background: #000;
+            display: flex;
+            margin: 0;
+            min-height: 100vh;
+            align-items: center;
+            justify-contnet: center;
+
+        }
+        canvas {
+            flex: 1;
+            max-width: 100vw;
+        }
+    </style>
+</head>
+<body>
+<canvas id="screen"></canvas>
+</body>
+<script type="module">
+import setupDemo from './pntr_app_example.mjs'
+await setupDemo({canvas: document.getElementById('screen')})
+</script>
+</html>

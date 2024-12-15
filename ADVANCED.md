@@ -94,7 +94,7 @@ find_package(pntr REQUIRED)
 
 # this is your own C file that sets up the pntr_app entry-point
 # do this before calling add_pntr
-set(PNTR_APP_ENTRY "src/pntr_fullsound.c")
+set(PNTR_APP_ENTRY "${CMAKE_CURRENT_LIST_DIR}/src/pntr_fullsound.c" CACHE INTERNAL "")
 
 # create myexe with raylib pntr_app stuff
 add_executable(myexe src/main.c)

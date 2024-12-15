@@ -33,14 +33,8 @@ set(CMAKE_COLOR_DIAGNOSTICS ON)
 set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS ON)
 
 # switch these for debugging
-# set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_BUILD_TYPE Release)
-
-if (EMSCRIPTEN)
-    option(EXAMPLES "For pntr_app: build all the examples with this sound/window system" "EMSCRIPTEN")
-else()
-    option(EXAMPLES "For pntr_app: build all the examples with this sound/window system" "RAYLIB")
-endif()
+set(CMAKE_BUILD_TYPE Debug)
+# set(CMAKE_BUILD_TYPE Release)
 
 # sub-projects
 

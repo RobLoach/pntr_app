@@ -1,12 +1,15 @@
 {
     "scripts": {
-        "start": "npx -y run-all -p watch:web start:web",
+        "start": "npx -y npm-run-all -p watch:web start:web",
         "start:web": "npx -y live-server docs",
-        "build:web": "emcmake cmake -B wbuild -G Ninja && cmake --build wbuild",
+        "build:web": "emcmake cmake -B wbuild -G Ninja -D PNTR_APP_BUILD_DEMOS=ON -D PNTR_APP_BUILD_TEST=OFF && cmake --build wbuild",
         "watch:web": "npx -y nodemon -w example -e 'c h png' --exec 'npm run build:web'",
 
-        "build:raylib": "cmake -B build -G Ninja -D EXAMPLES=RAYLIB && cmake --build build",
-        "build:sdl2": "cmake -B build -G Ninja -D EXAMPLES=SDL2 && cmake --build build",
-        "build:retro": "cmake -B build -G Ninja -D EXAMPLES=RETRO && cmake --build build"
+        "build:raylib": "cmake -B build -G Ninja -D PNTR_APP_BUILD_DEMOS=ON -D EXAMPLE=RAYLIB -D PNTR_APP_BUILD_TEST=OFF && cmake --build build",
+        "build:sdl2": "cmake -B build -G Ninja -D PNTR_APP_BUILD_DEMOS=ON -D EXAMPLE=SDL2 -D PNTR_APP_BUILD_TEST=OFF && cmake --build build",
+        "build:retro": "cmake -B build -G Ninja -D PNTR_APP_BUILD_DEMOS=ON -D EXAMPLE=RETRO -D PNTR_APP_BUILD_TEST=OFF && cmake --build build",
+
+        "test": "cmake -B build -G Ninja -D PNTR_APP_BUILD_DEMOS=OFF -D PNTR_APP_BUILD_TEST=ON && cmake --build build",
+        "clean": "rm -rf build wbuild docs/*.mjs docs/*.wasm"
     }
 }
