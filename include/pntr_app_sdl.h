@@ -54,18 +54,14 @@ bool pntr_app_sdl_save_file(const char *fileName, const void *data, unsigned int
  * Free the given memory pointer using SDL.
  */
 void pntr_app_sdl_free(void* ptr) {
-    SDL_free_func free_func;
-    SDL_GetMemoryFunctions(NULL, NULL, NULL, &free_func);
-    free_func(ptr);
+    SDL_free(ptr);
 }
 
 /**
  * Allocate memory using SDL's malloc.
  */
 void* pntr_app_sdl_malloc(size_t size) {
-    SDL_malloc_func malloc_func;
-    SDL_GetMemoryFunctions(&malloc_func, NULL, NULL, NULL);
-    return malloc_func(size);
+    return SDL_malloc(size);
 }
 
 /**
@@ -74,9 +70,16 @@ void* pntr_app_sdl_malloc(size_t size) {
 unsigned char* pntr_app_sdl_load_file(const char* fileName, unsigned int* bytesRead) {
     size_t dataSize;
     void* output = SDL_LoadFile(fileName, &dataSize);
+
     if (bytesRead != NULL) {
-        *bytesRead = (unsigned int)dataSize;
+        if (output != NULL) {
+            *bytesRead = (unsigned int)dataSize;
+        }
+        else {
+            *bytesRead = 0;
+        }
     }
+
     return (unsigned char*)output;
 }
 
