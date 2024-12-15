@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.5)
 project(pntr_app
     DESCRIPTION "pntr_app: Manage a pntr application across a number of different platforms."
     HOMEPAGE_URL "https://github.com/robloach/pntr_app"
@@ -37,9 +37,9 @@ set_property(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS ON)
 set(CMAKE_BUILD_TYPE Release)
 
 if (EMSCRIPTEN)
-    option(EXAMPLE "For pntr_app: build all the examples with this sound/window system" "EMSCRIPTEN")
+    option(EXAMPLES "For pntr_app: build all the examples with this sound/window system" "EMSCRIPTEN")
 else()
-    option(EXAMPLE "For pntr_app: build all the examples with this sound/window system" "RAYLIB")
+    option(EXAMPLES "For pntr_app: build all the examples with this sound/window system" "RAYLIB")
 endif()
 
 # sub-projects

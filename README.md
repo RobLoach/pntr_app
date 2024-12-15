@@ -1,3 +1,5 @@
+![pntr logo](assets/logo.png)
+
 # pntr_app
 
 Build [pntr](https://github.com/robloach/pntr) applications with the same code for a number of different targets, including SDL, raylib, libretro, the web, and more.
@@ -60,7 +62,7 @@ For more device-specific targeting, check out [RECIPES](RECIPES.md).
 Here is an example adding it to your project. First copy [Findpntr.cmake](cmake/Findpntr.cmake) into your project, then do this:
 
 ```cmake
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.5)
 project(myproject)
 
 # find cmake stuff in current dir/cmake
@@ -80,7 +82,7 @@ It will download any dependencies it needs (including pntr & pntr_app) and build
 If you want to load different backends, you can use the helper to make it easy. Here is a slightly more advanced config that will build a web-page, and a libretro core, and a native app, all from the same source:
 
 ```cmake
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.5)
 project(myproject)
 
 # find cmake stuff in current dir/cmake

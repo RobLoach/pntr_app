@@ -1,6 +1,6 @@
 This is help for more advanced topics, with pntr_app.
 
-Before diving into this stuff, have a look at the [README](README.md) and get familiar with the basics, and make sure it doesn't already solve your user-case. For more device-specific targeting, check out [RECIPES](RECIPES.md).
+Before diving into this stuff, have a look at the [README](README.md) and get familiar with the basics, and make sure it doesn't already solve your user-case. For more device-specific targeting, also check out [RECIPES](RECIPES.md).
 
 ### Backend Drivers
 
