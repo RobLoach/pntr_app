@@ -959,11 +959,11 @@ PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName) {
     return pntr_load_sound_from_memory(type, data, bytesRead);
 }
 
-PNTR_APP_API inline void* pntr_app_userdata(pntr_app* app) {
+PNTR_APP_API void* pntr_app_userdata(pntr_app* app) {
     return app->userData;
 }
 
-PNTR_APP_API inline int pntr_app_width(pntr_app* app) {
+PNTR_APP_API int pntr_app_width(pntr_app* app) {
     if (app->screen == NULL) {
         return app->width;
     }
@@ -971,7 +971,7 @@ PNTR_APP_API inline int pntr_app_width(pntr_app* app) {
     return app->screen->width;
 }
 
-PNTR_APP_API inline int pntr_app_height(pntr_app* app) {
+PNTR_APP_API int pntr_app_height(pntr_app* app) {
     if (app->screen == NULL) {
         return app->height;
     }
@@ -979,11 +979,11 @@ PNTR_APP_API inline int pntr_app_height(pntr_app* app) {
     return app->screen->height;
 }
 
-PNTR_APP_API inline float pntr_app_delta_time(pntr_app* app) {
+PNTR_APP_API float pntr_app_delta_time(pntr_app* app) {
     return app->deltaTime;
 }
 
-PNTR_APP_API inline void pntr_app_set_userdata(pntr_app* app, void* userData) {
+PNTR_APP_API void pntr_app_set_userdata(pntr_app* app, void* userData) {
     if (app == NULL) {
         return;
     }
@@ -1369,14 +1369,14 @@ PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     return app->title;
 }
 
-PNTR_APP_API inline float pntr_app_random_float(pntr_app* app, float min, float max) {
+PNTR_APP_API float pntr_app_random_float(pntr_app* app, float min, float max) {
     if (app == NULL) {
         return 0.0f;
     }
     return prand_float(&app->prand, min, max);
 }
 
-PNTR_APP_API inline int pntr_app_random(pntr_app* app, int min, int max) {
+PNTR_APP_API int pntr_app_random(pntr_app* app, int min, int max) {
     if (app == NULL) {
         return 0;
     }
