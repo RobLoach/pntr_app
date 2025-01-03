@@ -863,6 +863,7 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     // Create the screen.
     app->screen = pntr_gen_image_color(app->width, app->height, PNTR_BLACK);
     if (app->screen == NULL) {
+        sargs_shutdown();
         return false;
     }
 
@@ -872,6 +873,7 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     // Initialize the platform.
     if (!pntr_app_platform_init(app)) {
         pntr_unload_image(app->screen);
+        sargs_shutdown();
         return false;
     }
 
@@ -885,6 +887,7 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
         // Check if initialization worked.
         if (!app->init(app)) {
             pntr_unload_image(app->screen);
+            sargs_shutdown();
             return false;
         }
     }
