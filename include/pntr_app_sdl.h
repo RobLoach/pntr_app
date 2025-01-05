@@ -2,11 +2,13 @@
 #ifndef PNTR_APP_SDL_H__
 #define PNTR_APP_SDL_H__
 
-// SDL.h
-#ifndef PNTR_APP_SDL_H
-#define PNTR_APP_SDL_H <SDL3/SDL.h>
+#ifndef PNTR_APP_NO_ENTRY
+#define PNTR_APP_NO_ENTRY
 #endif
-#include PNTR_APP_SDL_H
+
+// SDL.h
+#include <SDL3/SDL.h>
+#include <SDL3_mixer/SDL_mixer.h>
 
 // pntr configuration
 #ifndef PNTR_FREE
@@ -42,11 +44,155 @@ bool pntr_app_sdl_save_file(const char *fileName, const void *data, unsigned int
 #ifndef PNTR_APP_SDL_IMPLEMENTATION_ONCE
 #define PNTR_APP_SDL_IMPLEMENTATION_ONCE
 
-// SDL_mixer
-#ifndef PNTR_APP_SDL_MIXER_H
-    #define PNTR_APP_SDL_MIXER_H "SDL3_mixer/SDL_mixer.h"
-#endif
-#include PNTR_APP_SDL_MIXER_H
+// SDL.h
+#define SDL_MAIN_USE_CALLBACKS
+#include <SDL3/SDL_main.h>
+
+SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
+    // set up the application data
+    pntr_app* app = SDL_malloc(sizeof(pntr_app));
+    if (app == NULL) {
+        return SDL_APP_FAILURE;
+    }
+
+    *app = PNTR_APP_MAIN(argc, argv);
+    if (!pntr_app_init(app, argc, argv)) {
+        return SDL_APP_FAILURE;
+    }
+
+    *appstate = app;
+
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event) {
+    pntr_app_platform_sdl* app = (pntr_app_platform_sdl*)appstate;
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    pntr_app_event pntrEvent = {0};
+    pntrEvent.app = app;
+
+    switch (event->type) {
+        case SDL_EVENT_QUIT:
+        case SDL_EVENT_TERMINATING:
+            return SDL_APP_SUCCESS;
+
+        case SDL_EVENT_MOUSE_MOTION:
+            pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+            pntr_app_platform_fix_mouse_coordinates(app, &pntrEvent, platform->window, &event.motion);
+            pntrEvent.mouseWheel = 0;
+            pntr_app_process_event(app, &pntrEvent);
+        break;
+
+        case SDL_EVENT_MOUSE_WHEEL:
+            pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+            pntrEvent.mouseWheel = event->wheel.y > 0 ? 1 : -1;
+            pntr_app_process_event(app, &pntrEvent);
+        break;
+
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP: {
+            pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event.button.button);
+            if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
+                pntrEvent.type = (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
+                pntrEvent.mouseButton = button;
+                pntr_app_process_event(app, &pntrEvent);
+            }
+        }
+        break;
+
+        case SDL_EVENT_GAMEPAD_BUTTON_UP:
+        case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+            pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event.gbutton.button);
+            if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
+                pntrEvent.type = event->gbutton.down ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+                pntrEvent.gamepad = event->gbutton.which;
+                pntr_app_process_event(app, &pntrEvent);
+            }
+        break;
+
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP:
+            // Don't process key repeats.
+            if (event.type == SDL_EVENT_KEY_DOWN && event->key.repeat) {
+                return SDL_APP_CONTINUE;
+            }
+
+            // Escape key quits.
+            if (event.key.key == SDLK_ESCAPE) {
+                return SDL_APP_SUCCESS;
+            }
+
+            // Fullscreen
+            if (event.key.key == SDLK_F11) {
+                if (event.type == SDL_EVENT_KEY_UP) {
+                    uint32_t windowFlags = SDL_GetWindowFlags(platform->window);
+                    if ((windowFlags & SDL_WINDOW_FULLSCREEN) == SDL_WINDOW_FULLSCREEN) {
+                        SDL_SetWindowFullscreen(platform->window, false);
+                    }
+                    else {
+                        SDL_SetWindowFullscreen(platform->window, true);
+                    }
+                    break;
+                }
+            }
+
+            pntrEvent.key = pntr_app_sdl_key(event.key.key);
+            if (pntrEvent.key != PNTR_APP_KEY_INVALID) {
+                pntrEvent.type = event->key.down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
+                pntr_app_process_event(app, &pntrEvent);
+            }
+        break;
+
+        case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        case SDL_EVENT_WINDOW_EXPOSED:
+            if (platform->texture != NULL) {
+                SDL_DestroyTexture(platform->texture);
+                platform->texture = NULL;
+            }
+        break;
+
+        case SDL_EVENT_DROP_FILE: {
+            pntrEvent.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
+            pntrEvent.fileDropped = event->drop.data;
+            if (pntrEvent.fileDropped != NULL) {
+                pntr_app_process_event(app, &pntrEvent);
+            }
+        }
+        break;
+    }
+
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppIterate(void *appstate) {
+    pntr_app* app = appstate;
+
+    // Events
+    pntr_app_pre_events(app);
+    if (!pntr_app_platform_events(app)) {
+        return SDL_APP_SUCCESS;
+    }
+
+    // Update callback
+    if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
+        if (!app->update(app, app->screen)) {
+            return SDL_APP_SUCCESS;
+        }
+    }
+
+    // Render
+    if (!pntr_app_platform_render(app)) {
+        return SDL_APP_SUCCESS;
+    }
+
+    return SDL_APP_CONTINUE;
+}
+
+void SDL_AppQuit(void* appstate, SDL_AppResult result) {
+    (void)result;
+    pntr_app_platform_close(appstate);
+}
 
 /**
  * Free the given memory pointer using SDL.
@@ -398,108 +544,6 @@ bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
     }
-
-    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-    pntr_app_event pntrEvent = {0};
-    pntrEvent.app = app;
-    SDL_Event event;
-
-    while (SDL_PollEvent(&event) != 0) {
-        switch (event.type) {
-            case SDL_EVENT_QUIT:
-            case SDL_EVENT_TERMINATING:
-                return false;
-
-            case SDL_EVENT_MOUSE_MOTION:
-                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                pntr_app_platform_fix_mouse_coordinates(app, &pntrEvent, platform->window, &event.motion);
-                pntrEvent.mouseWheel = 0;
-                pntr_app_process_event(app, &pntrEvent);
-            break;
-
-            case SDL_EVENT_MOUSE_WHEEL:
-                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-                pntrEvent.mouseWheel = event.wheel.y > 0 ? 1 : -1;
-                pntr_app_process_event(app, &pntrEvent);
-            break;
-
-            case SDL_EVENT_MOUSE_BUTTON_DOWN:
-            case SDL_EVENT_MOUSE_BUTTON_UP: {
-                pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event.button.button);
-                if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
-                    pntrEvent.type = (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
-                    pntrEvent.mouseButton = button;
-                    pntr_app_process_event(app, &pntrEvent);
-                }
-            }
-            break;
-
-            case SDL_EVENT_GAMEPAD_BUTTON_UP:
-            case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
-                pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event.gbutton.button);
-                if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
-                    pntrEvent.type = event.gbutton.down ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
-                    pntrEvent.gamepad = event.gbutton.which;
-                    pntr_app_process_event(app, &pntrEvent);
-                }
-            break;
-
-            case SDL_EVENT_KEY_DOWN:
-            case SDL_EVENT_KEY_UP:
-                // Don't process key repeats.
-                if (event.type == SDL_EVENT_KEY_DOWN && event.key.repeat) {
-                    return true;
-                }
-
-                // Escape key quits.
-                if (event.key.key == SDLK_ESCAPE) {
-                    return false;
-                }
-
-                // Fullscreen
-                if (event.key.key == SDLK_F11) {
-                    if (event.type == SDL_EVENT_KEY_UP) {
-                        uint32_t windowFlags = SDL_GetWindowFlags(platform->window);
-                        if ((windowFlags & SDL_WINDOW_FULLSCREEN) == SDL_WINDOW_FULLSCREEN) {
-                            SDL_SetWindowFullscreen(platform->window, false);
-                        }
-                        else {
-                            SDL_SetWindowFullscreen(platform->window, true);
-                        }
-                        break;
-                    }
-                    else {
-                        break;
-                    }
-                }
-
-                pntrEvent.key = pntr_app_sdl_key(event.key.key);
-                if (pntrEvent.key != PNTR_APP_KEY_INVALID) {
-                    pntrEvent.type = event.key.down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
-                    pntr_app_process_event(app, &pntrEvent);
-                }
-            break;
-
-            case SDL_EVENT_WINDOW_RESIZED:
-            case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-            case SDL_EVENT_WINDOW_EXPOSED:
-                if (platform->texture != NULL) {
-                    SDL_DestroyTexture(platform->texture);
-                    platform->texture = NULL;
-                }
-            break;
-
-            case SDL_EVENT_DROP_FILE: {
-                pntrEvent.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
-                pntrEvent.fileDropped = event.drop.data;
-                if (pntrEvent.fileDropped != NULL) {
-                    pntr_app_process_event(app, &pntrEvent);
-                }
-            }
-            break;
-        }
-    }
-
     return true;
 }
 
