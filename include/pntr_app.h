@@ -515,6 +515,7 @@ PNTR_APP_API float pntr_app_mouse_x(pntr_app* app);
 PNTR_APP_API float pntr_app_mouse_y(pntr_app* app);
 PNTR_APP_API float pntr_app_mouse_delta_x(pntr_app* app);
 PNTR_APP_API float pntr_app_mouse_delta_y(pntr_app* app);
+PNTR_APP_API int pntr_app_mouse_wheel(pntr_app* app);
 PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
