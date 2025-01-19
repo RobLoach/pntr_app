@@ -319,6 +319,7 @@ struct pntr_app {
     void (*close)(pntr_app* app);
     void (*event)(pntr_app* app, pntr_app_event* event);
     int fps;                        // The desired framerate. Use 0 for a variable framerate.
+    int actualFPS;                  // The actual calculated FPS. @see pntr_app_fps()
     void* userData;                 // A pointer to a custom state in memory that is passed across all pntr_app callbacks.
     pntr_image* screen;             // The screen buffer to render to.
     void* platform;                 // Custom data that is specific to the platform.
@@ -462,6 +463,11 @@ PNTR_APP_API int pntr_app_height(pntr_app* app);
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
 
 /**
+ * Get the current actual FPS.
+ */
+PNTR_APP_API int pntr_app_fps(pntr_app* app);
+
+/**
  * Get a random value between min and max.
  *
  * @param min The minimum value.
@@ -578,6 +584,8 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]);
 
 /**
  * Initialize the platform.
+ *
+ * @internal
  */
 PNTR_APP_API bool pntr_app_platform_init(pntr_app* app);
 
@@ -640,6 +648,14 @@ PNTR_APP_API bool pntr_app_platform_set_size(pntr_app* app, int width, int heigh
 #ifdef PNTR_ENABLE_VARGS
 PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
 #endif
+
+/**
+ * Updates the internal FPS counter.
+ *
+ * @see pntr_app_fps()
+ * @internal
+ */
+void pntr_app_update_fps(pntr_app* app);
 
 #define PNTR_APP_HEADER_ONLY
 #include "pntr_app_cli.h"
@@ -722,6 +738,13 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 extern "C" {
 #endif
 
+void pntr_app_update_fps(pntr_app* app) {
+    if (app->deltaTime > 0.0f) {
+        // TODO: Switch to a frame counter instead?
+        app->actualFPS = (int)(1.0f / app->deltaTime);
+    }
+}
+
 // Whether or not the application uses int main().
 #ifndef PNTR_APP_NO_ENTRY
 
@@ -751,6 +774,7 @@ void pntr_app_emscripten_update_loop(void* application) {
 
     // Run the update function.
     if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
+        pntr_app_update_fps(app);
         if (!app->update(app, app->screen)) {
             emscripten_cancel_main_loop();
             return;
@@ -791,6 +815,7 @@ int main(int argc, char* argv[]) {
 
             // Update callback
             if (pntr_app_platform_update_delta_time(&app) && app.update != NULL) {
+                pntr_app_update_fps(&app);
                 if (!app.update(&app, app.screen)) {
                     break;
                 }
@@ -982,6 +1007,10 @@ PNTR_APP_API int pntr_app_height(pntr_app* app) {
 
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app) {
     return app->deltaTime;
+}
+
+PNTR_APP_API int pntr_app_fps(pntr_app* app) {
+    return app->actualFPS;
 }
 
 PNTR_APP_API void pntr_app_set_userdata(pntr_app* app, void* userData) {

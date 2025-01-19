@@ -874,6 +874,7 @@ void pntr_app_libretro_frame_time_cb(retro_usec_t usec) {
     }
 
     pntr_app_libretro->deltaTime = usec / 1000000.0f;
+    pntr_app_update_fps(pntr_app_libretro);
 }
 
 bool retro_load_game(const struct retro_game_info *info) {
