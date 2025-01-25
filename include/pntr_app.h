@@ -675,6 +675,8 @@ void pntr_app_update_fps(pntr_app* app);
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
 
+// Sokol Args
+#define SOKOL_ASSERT(c) (void)(c)
 #ifndef PNTR_APP_NO_SOKOL_ARGS_IMPL
 #define SOKOL_ARGS_IMPL
 #endif  // PNTR_APP_NO_SOKOL_ARGS_IMPL

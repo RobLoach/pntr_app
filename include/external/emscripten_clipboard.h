@@ -18,7 +18,7 @@
 *   emscripten_clipboard.h is licensed under an unmodified zlib/libpng license, which is an OSI-certified,
 *   BSD-like license that allows static linking with closed source software:
 *
-*   Copyright (c) 2024 Rob Loach (@RobLoach)
+*   Copyright 2024 Rob Loach (@RobLoach)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -115,19 +115,16 @@ EMSCRIPTEN_CLIPBOARD_API void emscripten_clipboard_set(emscripten_clipboard* cli
  * @param clipboard The clipboard object to register the events for.
  * @param text A pointer to the clipboard buffer.
  * @param text_size The size of the clipboard buffer.
+ *
+ * TODO(RobLoach): Add UTF-8 support to the web clipboard.
  */
 EM_JS(void, emscripten_clipboard__register, (void* clipboard, const char* text, int text_size), {
     function emscripten_clipboard__change_event(e) {
         const newText = e.clipboardData.getData('text/plain');
-
-        // Copy the string to memory.
         let i;
         for (i = 0; i < newText.length && i < text_size - 1; i++) {
-            // TODO: Add UTF-8 support for the web clipboard.
             Module.HEAPU8[text + i] = newText.charCodeAt(i);
         }
-
-        // Null-terminate the string.
         Module.HEAPU8[text + i] = 0;
     }
     document.addEventListener('clipboardchange', emscripten_clipboard__change_event);
@@ -138,6 +135,8 @@ EMSCRIPTEN_CLIPBOARD_API const char* emscripten_clipboard_get(emscripten_clipboa
     if (clipboard == NULL) {
         return NULL;
     }
+
+    // TODO(RobLoach): Add a way to indicate that new clipboard content is requested?
 
     return clipboard->text;
 }
@@ -178,6 +177,5 @@ EMSCRIPTEN_CLIPBOARD_API void emscripten_clipboard_init(emscripten_clipboard* cl
     emscripten_clipboard__register(clipboard, clipboard->text, EMSCRIPTEN_CLIPBOARD_MAX);
 }
 
-
-#endif /* EMSCRIPTEN_CLIPBOARD_IMPLEMENTATION_ONCE */
-#endif /* EMSCRIPTEN_CLIPBOARD_IMPLEMENTATION */
+#endif  // EMSCRIPTEN_CLIPBOARD_IMPLEMENTATION_ONCE
+#endif  // EMSCRIPTEN_CLIPBOARD_IMPLEMENTATION
