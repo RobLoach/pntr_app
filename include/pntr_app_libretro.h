@@ -868,13 +868,13 @@ bool retro_load_game(const struct retro_game_info *info) {
     struct retro_keyboard_callback keyboardCallback;
     keyboardCallback.callback = pntr_app_libretro_keyboard_callback;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback)) {
-        log_cb(RETRO_LOG_WARNING, "[pntr] Failed to set keyboard callback\n");
+        log_cb(RETRO_LOG_WARN, "[pntr] Failed to set keyboard callback\n");
     }
 
     // Set the audio callback.
 	struct retro_audio_callback retro_audio = { pntr_app_libretro_audio_cb, pntr_app_libretro_audio_set_state };
 	if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &retro_audio)) {
-        log_cb(RETRO_LOG_WARNING, "[pntr] Failed to set audio callback\n");
+        log_cb(RETRO_LOG_WARN, "[pntr] Failed to set audio callback\n");
     }
 
     // Build the command line arguments.
