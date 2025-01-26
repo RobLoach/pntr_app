@@ -1305,22 +1305,35 @@ PNTR_APP_API bool pntr_app_show_mouse(pntr_app* app, bool show) {
  * @param app The application to act on.
  * @param width The desired width of the screen.
  * @param height The desired height of the screen.
+ *
+ * @return True or false depending on if the screen size is now matching the desired width and height.
  */
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
     if (app == NULL || width <= 0 || height <= 0) {
         return false;
     }
 
+    // Make sure we're not resizing twice.
+    if (pntr_app_width(app) == width && pntr_app_height(app) == height) {
+        return true;
+    }
+
+    // Create a new backbuffer.
+    pntr_image* new_screen = pntr_image_resize(app->screen, width, height, PNTR_FILTER_NEARESTNEIGHBOR);
+    if (new_screen == NULL) {
+        return false;
+    }
+
     // Request that the platform resizes the window.
     if (!pntr_app_platform_set_size(app, width, height)) {
+        pntr_unload_image(new_screen);
         return false;
     }
 
-    // Resize the internal screen canvas.
-    if (!pntr_image_resize_canvas(app->screen, width, height, 0, 0, PNTR_BLACK)) {
-        return false;
-    }
-
+    // Swap the buffers
+    pntr_image* oldScreen = app->screen;
+    app->screen = new_screen;
+    pntr_unload_image(oldScreen);
     app->width = app->screen->width;
     app->height = app->screen->height;
 
