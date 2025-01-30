@@ -428,6 +428,12 @@ PNTR_APP_API void pntr_play_sound(pntr_sound* sound, bool loop);
  */
 PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
 
+/**
+ * Sets the volume, or loudness, of the given sound.
+ *
+ * @param sound The sound to change the volume for.
+ * @param volume The sound from 0.0f to 1.0f.
+ */
 PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume);
 
 /**
