@@ -121,6 +121,10 @@ void Event(pntr_app* app, pntr_app_event* event) {
 
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN: {
+            if (event->key == PNTR_APP_KEY_V) {
+                pntr_set_volume(appData->music, 0.25f);
+            }
+
             if (event->key == PNTR_APP_KEY_SPACE) {
                 appData->spacePressed = true;
             }

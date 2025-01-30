@@ -645,6 +645,7 @@ typedef struct pntr_sound_sdl {
         Uint32 audio_len;
         SDL_AudioDeviceID deviceId;
     #endif
+    float volume;
 } pntr_sound_sdl;
 
 #ifndef PNTR_APP_LOAD_SOUND_FROM_MEMORY
@@ -689,6 +690,8 @@ pntr_sound* pntr_app_sdl_load_sound_from_memory(pntr_app_sound_type type, unsign
         }
         output->deviceId = SDL_OpenAudioDevice(NULL, 0, &output->audioSpec, NULL, 0);
     #endif
+
+    output->volume = 1.0f;
 
     return (pntr_sound*)output;
 }
@@ -750,6 +753,7 @@ void pntr_app_sdl_play_sound(pntr_sound* sound, bool loop) {
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
     #ifdef PNTR_APP_SDL_MIXER
         audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
+        Mix_Volume(audio->channel, (int)(((float)SDL_MIX_MAXVOLUME) * audio->volume));
     #else
         // TODO: Add sound looping to SDL Queue Audio.
         pntr_stop_sound(sound);
@@ -774,6 +778,26 @@ void pntr_app_sdl_stop_sound(pntr_sound* sound) {
         }
     #else
         SDL_ClearQueuedAudio(audio->deviceId);
+    #endif
+}
+#endif
+
+#ifndef PNTR_APP_SET_VOLUME
+#define PNTR_APP_SET_VOLUME pntr_app_sdl_set_volume
+void pntr_app_sdl_set_volume(pntr_sound* sound, float volume) {
+    if (sound == NULL) {
+        return;
+    }
+
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    audio->volume = volume;
+    #ifdef PNTR_APP_SDL_MIXER
+        if (audio->channel >= 0) {
+            Mix_Volume(audio->channel, (int)(((float)SDL_MIX_MAXVOLUME) * volume));
+        }
+    #else
+        (void)audio; // TODO: Add set volume to SDL
+        (void)volume;
     #endif
 }
 #endif

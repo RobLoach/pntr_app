@@ -114,6 +114,14 @@ EM_JS(void, pntr_app_web_stop_sound, (pntr_sound* sound), {
     }
 })
 
+#define PNTR_APP_SET_VOLUME pntr_app_web_set_volume
+EM_JS(void, pntr_app_web_set_volume, (pntr_sound* sound, float volume), {
+    const audio = Module.pntr_sounds[sound - 1];
+    if (audio) {
+        audio.volume = volume;
+    }
+})
+
 #define PNTR_APP_UNLOAD_SOUND pntr_app_web_unload_sound
 EM_JS(void, pntr_app_web_unload_sound, (pntr_sound* sound), {
     const audio = Module.pntr_sounds[sound - 1];

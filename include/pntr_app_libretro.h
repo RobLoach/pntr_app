@@ -1004,6 +1004,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
 typedef struct pntr_sound_libretro {
     audio_mixer_sound_t* sound;
     audio_mixer_voice_t* voice;
+    float volume;
 } pntr_sound_libretro;
 
 #ifndef PNTR_APP_INIT_AUDIO
@@ -1057,6 +1058,7 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
 
     output->sound = sound;
     output->voice = NULL;
+    output->volume = 1.0f;
 
     return (pntr_sound*)output;
 }
@@ -1076,9 +1078,23 @@ void pntr_app_platform_unload_sound(pntr_sound* sound) {
 #define PNTR_APP_PLAY_SOUND(sound, loop) pntr_app_libretro_play_sound(sound, loop)
 void pntr_app_libretro_play_sound(pntr_sound* sound, bool loop) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
-    audio->voice = audio_mixer_play(audio->sound, loop, 1.0f, "", RESAMPLER_QUALITY_DONTCARE, NULL);
+    audio->voice = audio_mixer_play(audio->sound, loop, audio->volume, "", RESAMPLER_QUALITY_DONTCARE, NULL);
 
     // TODO: Set callback to set current voice to NULL
+}
+#endif
+
+#ifndef PNTR_APP_SET_VOLUME
+#define PNTR_APP_SET_VOLUME(sound, volume) pntr_app_libretro_set_volume(sound, volume)
+void pntr_app_libretro_set_volume(pntr_sound* sound, float volume) {
+    pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
+    if (audio == NULL) {
+        return;
+    }
+    audio->volume = volume;
+    if (audio->voice != NULL) {
+        audio_mixer_voice_set_volume(audio->voice, volume);
+	}
 }
 #endif
 

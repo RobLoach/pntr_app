@@ -428,6 +428,8 @@ PNTR_APP_API void pntr_play_sound(pntr_sound* sound, bool loop);
  */
 PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
 
+PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume);
+
 /**
  * Get the sound type of the given file from its file path.
  */
@@ -1543,6 +1545,23 @@ PNTR_APP_API void pntr_stop_sound(pntr_sound* sound) {
 
     #ifdef PNTR_APP_STOP_SOUND
         PNTR_APP_STOP_SOUND(sound);
+    #endif
+}
+
+PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume) {
+    if (sound == NULL) {
+        return;
+    }
+
+    if (volume < 0.0f) {
+        volume = 0.0f;
+    }
+    else if (volume > 1.0f) {
+        volume = 1.0f;
+    }
+
+    #ifdef PNTR_APP_SET_VOLUME
+        PNTR_APP_SET_VOLUME(sound, volume);
     #endif
 }
 
