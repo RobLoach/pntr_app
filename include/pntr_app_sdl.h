@@ -782,6 +782,24 @@ void pntr_app_sdl_stop_sound(pntr_sound* sound) {
 }
 #endif
 
+#ifndef PNTR_APP_SOUND_PLAYING
+#define PNTR_APP_SOUND_PLAYING pntr_app_sdl_sound_playing
+bool pntr_app_sdl_sound_playing(pntr_sound* sound) {
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    #ifdef PNTR_APP_SDL_MIXER
+        if (audio->channel >= 0) {
+            return Mix_Playing(audio->channel) != 0;
+        }
+    #else
+        if (audio->deviceId >= 0) {
+            return SDL_GetAudioDeviceStatus(audio->deviceId) == SDL_AUDIO_PLAYING;
+        }
+    #endif
+
+    return false;
+}
+#endif
+
 #ifndef PNTR_APP_SET_VOLUME
 #define PNTR_APP_SET_VOLUME pntr_app_sdl_set_volume
 void pntr_app_sdl_set_volume(pntr_sound* sound, float volume) {

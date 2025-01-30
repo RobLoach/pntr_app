@@ -113,6 +113,7 @@ void pntr_unload_sound(pntr_sound* sound);
 void pntr_play_sound(pntr_sound* sound, bool loop);
 void pntr_stop_sound(pntr_sound* sound);
 void pntr_set_volume(pntr_sound* sound, float volume);
+bool pntr_sound_playing(pntr_sound* sound);
 ```
 
 ## Build

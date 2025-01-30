@@ -610,6 +610,14 @@ void pntr_app_raylib_stop_sound(pntr_sound* sound) {
 }
 #endif
 
+#ifndef PNTR_APP_SOUND_PLAYING
+#define PNTR_APP_SOUND_PLAYING pntr_app_raylib_sound_playing
+bool pntr_app_raylib_sound_playing(pntr_sound* sound) {
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    return IsSoundPlaying(audio->sound);
+}
+#endif
+
 #ifndef PNTR_APP_SET_VOLUME
 #define PNTR_APP_SET_VOLUME pntr_app_raylib_set_volume
 void pntr_app_raylib_set_volume(pntr_sound* sound, float volume) {

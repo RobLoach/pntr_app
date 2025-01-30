@@ -122,6 +122,15 @@ EM_JS(void, pntr_app_web_set_volume, (pntr_sound* sound, float volume), {
     }
 })
 
+#define PNTR_APP_SOUND_PLAYING pntr_app_web_sound_playing
+EM_JS(bool, pntr_app_web_sound_playing, (pntr_sound* sound), {
+    const audio = Module.pntr_sounds[sound - 1];
+    if (audio) {
+        return !audio.paused;
+    }
+    return false;
+})
+
 #define PNTR_APP_UNLOAD_SOUND pntr_app_web_unload_sound
 EM_JS(void, pntr_app_web_unload_sound, (pntr_sound* sound), {
     const audio = Module.pntr_sounds[sound - 1];
