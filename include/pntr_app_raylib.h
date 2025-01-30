@@ -610,6 +610,18 @@ void pntr_app_raylib_stop_sound(pntr_sound* sound) {
 }
 #endif
 
+#ifndef PNTR_APP_SET_VOLUME
+#define PNTR_APP_SET_VOLUME pntr_app_raylib_set_volume
+void pntr_app_raylib_set_volume(pntr_sound* sound, float volume) {
+    if (sound == NULL) {
+        return;
+    }
+
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    SetSoundVolume(audio->sound, volume);
+}
+#endif
+
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     app->deltaTime = GetFrameTime();
     return true;
