@@ -129,7 +129,12 @@ void Event(pntr_app* app, pntr_app_event* event) {
                 appData->spacePressed = true;
             }
 
-            pntr_play_sound(appData->sound, false);
+            if (pntr_sound_playing(appData->sound)) {
+                pntr_app_log(PNTR_APP_LOG_INFO, "Sound is playing already.");
+            }
+            else {
+                pntr_play_sound(appData->sound, false);
+            }
 
             pntr_app_log_ex(PNTR_APP_LOG_INFO, "Key Pressed: %c", (char)event->key);
 

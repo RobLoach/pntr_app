@@ -58,6 +58,29 @@ retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
 
 pntr_app* pntr_app_libretro;
 
+/**
+ * Internal structure to handle libretro audio.
+ *
+ * @internal
+ */
+typedef struct pntr_sound_libretro {
+    audio_mixer_sound_t* sound;
+    audio_mixer_voice_t* voice;
+    float volume;
+    bool playing;
+} pntr_sound_libretro;
+
+/**
+ * From audio_mixer.c. We include this here because the definition isn't in the .h file.
+ *
+ * @see https://github.com/libretro/libretro-common/blob/master/audio/audio_mixer.c#L76
+ */
+struct audio_mixer_sound
+{
+   enum audio_mixer_type type;
+   void* user_data;
+};
+
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
 struct retro_vfs_interface* vfs = NULL;
@@ -996,17 +1019,6 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
     #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
 #endif
 
-/**
- * Internal structure to handle libretro audio.
- *
- * @internal
- */
-typedef struct pntr_sound_libretro {
-    audio_mixer_sound_t* sound;
-    audio_mixer_voice_t* voice;
-    float volume;
-} pntr_sound_libretro;
-
 #ifndef PNTR_APP_INIT_AUDIO
 #define PNTR_APP_INIT_AUDIO pntr_app_libretro_init_audio
 void pntr_app_libretro_init_audio(pntr_app* app) {
@@ -1026,6 +1038,11 @@ void pntr_app_libretro_close_audio(pntr_app* app) {
 pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
     if (type == PNTR_APP_SOUND_TYPE_UNKNOWN) {
         return pntr_set_error(PNTR_ERROR_INVALID_ARGS);
+    }
+
+    if (pntr_app_libretro == NULL) {
+        // libretro needs to be initialized before usage.
+        return pntr_set_error(PNTR_ERROR_FAILED_TO_OPEN);
     }
 
     // Load the sound.
@@ -1057,30 +1074,52 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
     }
 
     output->sound = sound;
+    sound->user_data = (void*)output;
     output->voice = NULL;
     output->volume = 1.0f;
+    output->playing = false;
 
     return (pntr_sound*)output;
 }
 #endif
 
 #ifndef PNTR_APP_UNLOAD_SOUND
-#define PNTR_APP_UNLOAD_SOUND(sound) pntr_app_platform_unload_sound(sound)
-void pntr_app_platform_unload_sound(pntr_sound* sound) {
+#define PNTR_APP_UNLOAD_SOUND(sound) pntr_app_libretro_unload_sound(sound)
+void pntr_app_libretro_unload_sound(pntr_sound* sound) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     pntr_stop_sound(sound);
     audio_mixer_destroy(audio->sound);
+    audio->sound = NULL;
+    audio->voice = NULL;
     pntr_unload_memory(audio);
 }
 #endif
 
 #ifndef PNTR_APP_PLAY_SOUND
+
+void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason) {
+    if (sound == NULL || sound->user_data == NULL) {
+        return;
+    }
+    pntr_sound_libretro* currentsound = (pntr_sound_libretro*)sound->user_data;
+    switch (reason) {
+        case AUDIO_MIXER_SOUND_FINISHED:
+        case AUDIO_MIXER_SOUND_STOPPED:
+            currentsound->playing = false;
+            break;
+        case AUDIO_MIXER_SOUND_REPEATED:
+            currentsound->playing = true;
+            break;
+    }
+}
+
 #define PNTR_APP_PLAY_SOUND(sound, loop) pntr_app_libretro_play_sound(sound, loop)
 void pntr_app_libretro_play_sound(pntr_sound* sound, bool loop) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
-    audio->voice = audio_mixer_play(audio->sound, loop, audio->volume, "", RESAMPLER_QUALITY_DONTCARE, NULL);
-
-    // TODO: Set callback to set current voice to NULL
+    audio->voice = audio_mixer_play(audio->sound, loop, audio->volume, "", RESAMPLER_QUALITY_DONTCARE, pntr_app_libretro_sound_stop_cb);
+    if (audio->voice != NULL) {
+        audio->playing = true;
+    }
 }
 #endif
 
@@ -1098,11 +1137,20 @@ void pntr_app_libretro_set_volume(pntr_sound* sound, float volume) {
 }
 #endif
 
+#ifndef PNTR_APP_SOUND_PLAYING
+#define PNTR_APP_SOUND_PLAYING(sound) pntr_app_libretro_sound_playing(sound)
+bool pntr_app_libretro_sound_playing(pntr_sound* sound) {
+    pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
+    return audio->playing;
+}
+#endif
+
 #ifndef PNTR_APP_PLAY_SOUND
 #define PNTR_APP_PLAY_SOUND(sound) pntr_app_libretro_stop_sound(sound)
 void pntr_app_libretro_stop_sound(pntr_sound* sound) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     audio_mixer_stop(audio->voice);
+    audio->playing = false;
 }
 #endif
 

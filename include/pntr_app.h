@@ -437,6 +437,14 @@ PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
 PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume);
 
 /**
+ * Get whether or not the given sound is actively playing.
+ *
+ * @param sound The sound to check if playing.
+ * @return True if the sound is actively playing, false otherwise.
+ */
+PNTR_APP_API bool pntr_sound_playing(pntr_sound*sound);
+
+/**
  * Get the sound type of the given file from its file path.
  */
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName);
@@ -1568,6 +1576,18 @@ PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume) {
 
     #ifdef PNTR_APP_SET_VOLUME
         PNTR_APP_SET_VOLUME(sound, volume);
+    #endif
+}
+
+PNTR_APP_API bool pntr_sound_playing(pntr_sound*sound) {
+    if (sound == NULL) {
+        return false;
+    }
+
+    #ifdef PNTR_APP_SOUND_PLAYING
+        return PNTR_APP_SOUND_PLAYING(sound);
+    #else
+        return false;
     #endif
 }
 
