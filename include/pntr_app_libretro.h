@@ -47,10 +47,6 @@ retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
 #ifndef PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
 #define PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
 
-#ifndef PNTR_APP_LIBRETRO_MAX_SOUNDS
-#define PNTR_APP_LIBRETRO_MAX_SOUNDS 100
-#endif  // PNTR_APP_LIBRETRO_MAX_SOUNDS
-
 #include "audio/audio_mixer.h"
 #include "audio/audio_resampler.h"
 #include "audio/conversion/float_to_s16.h"
@@ -1102,6 +1098,9 @@ void pntr_app_libretro_unload_sound(pntr_sound* sound) {
 #ifndef PNTR_APP_PLAY_SOUND
 
 void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason) {
+    if (sound == NULL || sound->user_data == NULL) {
+        return;
+    }
     pntr_sound_libretro* currentsound = (pntr_sound_libretro*)sound->user_data;
     switch (reason) {
         case AUDIO_MIXER_SOUND_FINISHED:
