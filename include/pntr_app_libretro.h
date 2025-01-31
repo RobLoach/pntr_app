@@ -30,8 +30,6 @@ typedef struct pntr_app_libretro_platform {
     int16_t* audioSamples2;
     int audioBufferSize;
     bool audioEnabled;
-
-    void** sounds;
 } pntr_app_libretro_platform;
 
 /**
@@ -75,6 +73,17 @@ typedef struct pntr_sound_libretro {
     float volume;
     bool playing;
 } pntr_sound_libretro;
+
+/**
+ * From audio_mixer.c. We include this here because the definition isn't in the .h file.
+ *
+ * @see https://github.com/libretro/libretro-common/blob/master/audio/audio_mixer.c#L76
+ */
+struct audio_mixer_sound
+{
+   enum audio_mixer_type type;
+   void* user_data;
+};
 
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
@@ -697,7 +706,6 @@ void pntr_app_platform_close(pntr_app* app) {
         pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
         pntr_unload_memory(platform->audioSamples);
         pntr_unload_memory(platform->audioSamples2);
-        pntr_unload_memory(platform->sounds);
         pntr_unload_memory(platform);
         app->platform = NULL;
     }
@@ -1019,14 +1027,6 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
 #define PNTR_APP_INIT_AUDIO pntr_app_libretro_init_audio
 void pntr_app_libretro_init_audio(pntr_app* app) {
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
-
-    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)app->platform;
-    platform->sounds = (pntr_sound**)pntr_load_memory(PNTR_APP_LIBRETRO_MAX_SOUNDS * sizeof(pntr_sound_libretro*));
-
-    // Initialize the pointes as nothing.
-    for (int i = 0; i < PNTR_APP_LIBRETRO_MAX_SOUNDS; i++) {
-        platform->sounds[i] = NULL;
-    }
 }
 #endif
 
@@ -1078,23 +1078,10 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
     }
 
     output->sound = sound;
+    sound->user_data = (void*)output;
     output->voice = NULL;
     output->volume = 1.0f;
     output->playing = false;
-
-    // Set the sound in the array
-    bool foundSlot = false;
-    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)pntr_app_libretro->platform;
-    for (int i = 0; i < PNTR_APP_LIBRETRO_MAX_SOUNDS; i++) {
-        if (platform->sounds[i] == NULL) {
-            platform->sounds[i] = (void*)output;
-            foundSlot = true;
-            break;
-        }
-    }
-    if (!foundSlot) {
-        pntr_app_log(PNTR_APP_LOG_WARNING, "Couldn't find slot for sound");
-    }
 
     return (pntr_sound*)output;
 }
@@ -1115,34 +1102,15 @@ void pntr_app_libretro_unload_sound(pntr_sound* sound) {
 #ifndef PNTR_APP_PLAY_SOUND
 
 void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason) {
-    // TODO: Add user_data to sound so we don't have to use the global: https://github.com/libretro/RetroArch/pull/17488
-    if (pntr_app_libretro == NULL || pntr_app_libretro->platform == NULL) {
-        return;
-    }
-
-    pntr_app_libretro_platform* platform = (pntr_app_libretro_platform*)pntr_app_libretro->platform;
-    if (platform->sounds == NULL) {
-        return;
-    }
-
-    pntr_sound_libretro** sounds = (pntr_sound_libretro**)platform->sounds;
-    for (int i = 0; i < PNTR_APP_LIBRETRO_MAX_SOUNDS; i++) {
-        pntr_sound_libretro* currentsound = (pntr_sound_libretro*)sounds[i];
-        if (currentsound == NULL) {
-            continue;
-        }
-
-        if (currentsound->sound == sound) {
-			switch (reason) {
-				case AUDIO_MIXER_SOUND_FINISHED:
-				case AUDIO_MIXER_SOUND_STOPPED:
-					currentsound->playing = false;
-					break;
-				case AUDIO_MIXER_SOUND_REPEATED:
-					currentsound->playing = true;
-					break;
-			}
-        }
+    pntr_sound_libretro* currentsound = (pntr_sound_libretro*)sound->user_data;
+    switch (reason) {
+        case AUDIO_MIXER_SOUND_FINISHED:
+        case AUDIO_MIXER_SOUND_STOPPED:
+            currentsound->playing = false;
+            break;
+        case AUDIO_MIXER_SOUND_REPEATED:
+            currentsound->playing = true;
+            break;
     }
 }
 
