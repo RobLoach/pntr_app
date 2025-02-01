@@ -1116,6 +1116,7 @@ void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason
 #define PNTR_APP_PLAY_SOUND(sound, loop) pntr_app_libretro_play_sound(sound, loop)
 void pntr_app_libretro_play_sound(pntr_sound* sound, bool loop) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
+    pntr_stop_sound(sound);
     audio->voice = audio_mixer_play(audio->sound, loop, audio->volume, "", RESAMPLER_QUALITY_DONTCARE, pntr_app_libretro_sound_stop_cb);
     if (audio->voice != NULL) {
         audio->playing = true;
@@ -1145,11 +1146,12 @@ bool pntr_app_libretro_sound_playing(pntr_sound* sound) {
 }
 #endif
 
-#ifndef PNTR_APP_PLAY_SOUND
-#define PNTR_APP_PLAY_SOUND(sound) pntr_app_libretro_stop_sound(sound)
+#ifndef PNTR_APP_STOP_SOUND
+#define PNTR_APP_STOP_SOUND(sound) pntr_app_libretro_stop_sound(sound)
 void pntr_app_libretro_stop_sound(pntr_sound* sound) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     audio_mixer_stop(audio->voice);
+    audio->voice = NULL;
     audio->playing = false;
 }
 #endif
