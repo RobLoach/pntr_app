@@ -263,7 +263,26 @@ typedef enum pntr_app_event_type {
      *
      * @see pntr_app_event::fileDropped
      */
-    PNTR_APP_EVENTTYPE_FILE_DROPPED
+    PNTR_APP_EVENTTYPE_FILE_DROPPED,
+
+    /**
+     * Evoked when a cheat is entered into the application.
+     *
+     * @see pntr_app_event::cheat
+     * TODO: Add cheat support to CLI, raylib, SDL, web.
+     */
+    PNTR_APP_EVENTTYPE_CHEAT,
+    /**
+     * Saves the current state of the application to pntr_app_event::save `void*`.
+     *
+     * @see pntr_app_event::save
+     */
+    PNTR_APP_EVENTTYPE_SAVE,
+
+    /**
+     * Loads the state of the application from pntr_app_event::save.
+     */
+    PNTR_APP_EVENTTYPE_LOAD,
 } pntr_app_event_type;
 
 typedef enum pntr_app_sound_type {
@@ -303,8 +322,35 @@ typedef struct pntr_app_event {
     pntr_app_gamepad_button gamepadButton;
     int gamepad;
 
-    // File Drag and Drop
-    const char* fileDropped; /** For `PNTR_APP_EVENTTYPE_DRAG_AND_DROP`, when a file is drag and dropped on the application, this contains the path to the file. */
+    /**
+     * Invoked when a file is drag and dropped on the application, this contains the path to the file.
+     *
+     * @see PNTR_APP_EVENTTYPE_DRAG_AND_DROP
+     */
+    const char* fileDropped;
+
+    /**
+     * Cheat code that has been entered.
+     *
+     * @see PNTR_APP_EVENTTYPE_CHEAT
+     */
+    const char* cheat;
+
+    /**
+     * The unserialized save data.
+     *
+     * @see PNTR_APP_EVENTTYPE_SAVE
+     * @see PNTR_APP_EVENTTYPE_LOAD
+     */
+    void* save;
+
+    /**
+     * The size of the save data.
+     *
+     * @see PNTR_APP_EVENTTYPE_SAVE
+     * @see PNTR_APP_EVENTTYPE_LOAD
+     */
+    size_t save_size;
 } pntr_app_event;
 
 /**
@@ -673,6 +719,13 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
  */
 void pntr_app_update_fps(pntr_app* app);
 
+/**
+ * Manually save/load the data.
+ *
+ * @internal
+ */
+void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName);
+
 #define PNTR_APP_HEADER_ONLY
 #include "pntr_app_cli.h"
 #include "pntr_app_libretro.h"
@@ -690,6 +743,10 @@ void pntr_app_update_fps(pntr_app* app);
 #ifdef PNTR_APP_IMPLEMENTATION
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
+
+#ifndef PNTR_APP_SAVE_SIZE
+    #define PNTR_APP_SAVE_SIZE 4096
+#endif
 
 // Sokol Args
 #define SOKOL_ASSERT(c) (void)(c)
@@ -746,6 +803,12 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 // prand: Pseudo Random Number Generator
 #define PRAND_IMPLEMENTATION
 #include "external/prand.h"
+
+#define PICO_B64_IMPLEMENTATION
+#define PICO_B64_ISALNUM(c) (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')))
+#define PICO_B64_FLOOR(x) PNTR_FLOORF((float)x)
+#define PICO_B64_CEIL(x) PNTR_CEILF((float)x)
+#include "external/pico_b64.h"
 
 /**
  * Retrieve a bit flag for the given button.
@@ -1589,6 +1652,56 @@ PNTR_APP_API bool pntr_sound_playing(pntr_sound*sound) {
     #else
         return false;
     #endif
+}
+
+void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName) {
+    if (event->type == PNTR_APP_EVENTTYPE_LOAD) {
+        unsigned int size;
+
+        void* data = pntr_load_file(fileName, &size);
+        if (data == NULL) {
+            return;
+        }
+        size_t decoded_size = b64_decoded_size(data, (size_t)size);
+        unsigned char* saveData = (unsigned char*)pntr_load_memory(decoded_size + (size_t)1);
+
+        // Clear out the data.
+        for (size_t i = 0; i < decoded_size; i++) {
+            saveData[i] = '\0';
+        }
+
+
+        // Decode the loaded data
+        event->save = (void*)saveData;
+        event->save_size = b64_decode((unsigned char*)event->save, (const char*)data, (size_t)size);
+
+        // Callback
+        pntr_app_process_event(app, event);
+
+        // Clean up
+        pntr_unload_memory(event->save);
+        event->save = NULL;
+        event->save_size = 0;
+        pntr_unload_file(data);
+    }
+    else if (event->type == PNTR_APP_EVENTTYPE_SAVE) {
+        // Load the memory
+        event->save_size = PNTR_APP_SAVE_SIZE;
+        event->save = pntr_load_memory(event->save_size);
+        pntr_app_process_event(app, event);
+
+        // Encode it
+        size_t encoded_size = b64_encoded_size(event->save_size);
+        char* encoded = (char*)pntr_load_memory(encoded_size);
+        size_t result_size = b64_encode(encoded, (const unsigned char*)event->save, encoded_size);
+
+        // Save
+        pntr_save_file(fileName, encoded, (unsigned int)result_size);
+
+        // Clean up
+        pntr_unload_memory(event->save);
+        pntr_unload_memory((void*)encoded);
+    }
 }
 
 #ifdef __cplusplus

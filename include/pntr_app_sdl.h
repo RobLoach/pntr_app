@@ -466,6 +466,22 @@ bool pntr_app_platform_events(pntr_app* app) {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
                     return false;
                 }
+                
+                // Save / Load
+                if (event.key.keysym.sym == SDLK_F5) {
+                    if (event.type == SDL_KEYUP) {
+                        pntrEvent.type = PNTR_APP_EVENTTYPE_SAVE;
+                        pntr_app_manual_save_load_data(app, &event, "state.save");
+                    }
+                    return true;
+                }
+                else if (event.key.keysym.sym == SDLK_F9) {
+                    if (event.type == SDL_KEYUP) {
+                        pntrEvent.type = PNTR_APP_EVENTTYPE_LOAD;
+                        pntr_app_manual_save_load_data(app, &event, "state.save");
+                    }
+                    return true;
+                }
 
                 // Fullscreen
                 if (event.key.keysym.sym == SDLK_F11) {

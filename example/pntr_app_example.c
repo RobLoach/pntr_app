@@ -17,6 +17,10 @@ typedef struct AppData {
     pntr_image* droppedImage;
 } AppData;
 
+typedef struct AppDataSaveData {
+    float x;
+} AppDataSaveData;
+
 bool Init(pntr_app* app) {
     AppData* appData = pntr_load_memory(sizeof(AppData));
     pntr_app_set_userdata(app, appData);
@@ -208,6 +212,18 @@ void Event(pntr_app* app, pntr_app_event* event) {
             }
 
             appData->droppedImage = pntr_load_image(event->fileDropped);
+        }
+        break;
+
+        case PNTR_APP_EVENTTYPE_SAVE: {
+            AppDataSaveData* data = (AppDataSaveData*)event->save;
+            data->x = appData->x;
+            event->save_size = sizeof(AppDataSaveData);
+        }
+        break;
+        case PNTR_APP_EVENTTYPE_LOAD: {
+            AppDataSaveData* data = (AppDataSaveData*)event->save;
+            appData->x = data->x;
         }
         break;
 
