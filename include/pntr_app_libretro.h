@@ -47,6 +47,8 @@ retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
 #ifndef PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
 #define PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
 
+#include "external/pico_b64.h"
+
 #include "audio/audio_mixer.h"
 #include "audio/audio_resampler.h"
 #include "audio/conversion/float_to_s16.h"
@@ -970,14 +972,15 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 }
 
 size_t retro_serialize_size(void) {
-    return PNTR_APP_SAVE_SIZE;
+    return 4096; // PNTR_APP_SAVE_SIZE;
 }
 
 bool retro_serialize(void *data, size_t size) {
-    if (pntr_app_libretro == NULL) {
+    if (pntr_app_libretro == NULL || size < retro_serialize_size()) {
         return false;
     }
 
+    /*
     pntr_app_event event;
     event.type = PNTR_APP_EVENTTYPE_SAVE;
     event.save = pntr_load_memory(size);
@@ -991,14 +994,29 @@ bool retro_serialize(void *data, size_t size) {
 
     size_t encoded_size = b64_encode(data, (const unsigned char*)event.save, event.save_size);
     pntr_unload_memory(event.save);
+    */
+
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_SAVE;
+    event.save = data;
+    event.save_size = size;
+    pntr_app_process_event(pntr_app_libretro, &event);
+
     return true;
 }
 
 bool retro_unserialize(const void *data, size_t size) {
-    if (pntr_app_libretro == NULL) {
+    if (pntr_app_libretro == NULL || size < retro_serialize_size()) {
         return false;
     }
 
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_LOAD;
+    event.save = (void*)data;
+    event.save_size = size;
+    pntr_app_process_event(pntr_app_libretro, &event);
+
+/*
     size_t decoded_size = b64_decoded_size((const char*)data, size);
 
     pntr_app_event event;
@@ -1018,6 +1036,7 @@ bool retro_unserialize(const void *data, size_t size) {
 
     pntr_unload_memory(event.save);
     event.save = NULL;
+*/
     return true;
 }
 
