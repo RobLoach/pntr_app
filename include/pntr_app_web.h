@@ -363,13 +363,14 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
     event.key = pntr_app_emscripten_key_from_event(keyEvent);
 
     if (event.key <= 0) {
+        // Ignore the event
         return EM_FALSE;
     }
 
     // Invoke the event
     pntr_app_process_event(app, &event);
 
-    // Return false as we're taking over the event.
+    // Return true as we're taking over the event.
     return EM_TRUE;
 }
 
@@ -398,6 +399,10 @@ EM_BOOL pntr_app_emscripten_mouse_wheel(int eventType, const struct EmscriptenWh
 
     return EM_TRUE;
 }
+
+EM_JS(void, pntr_app_emscripten_set_app, (void* app), {
+    Module.pntr_app = app;
+})
 
 EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *mouseEvent, void *userData) {
     pntr_app* app = (pntr_app*)userData;
@@ -464,6 +469,18 @@ EMSCRIPTEN_KEEPALIVE void* pntr_app_emscripten_load_memory(size_t size) {
 
 EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_unload_memory(void* ptr) {
     pntr_unload_memory(ptr);
+}
+
+EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_load_state(void* app) {
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_LOAD;
+    pntr_app_manual_save_load_data((pntr_app*)app, &event, PNTR_APP_SAVE_FILENAME);
+}
+
+EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_save_state(void* app) {
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_SAVE;
+    pntr_app_manual_save_load_data((pntr_app*)app, &event, PNTR_APP_SAVE_FILENAME);
 }
 
 EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
@@ -535,6 +552,9 @@ bool pntr_app_platform_init(pntr_app* app) {
 
     // Intialize the clipboard
     emscripten_clipboard_init(&platform->clipboard);
+
+    // Set the global application state.
+    pntr_app_emscripten_set_app(app);
 
     return true;
 }

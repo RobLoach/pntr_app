@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
 #define PNTR_ENABLE_VARGS
@@ -16,6 +14,10 @@ typedef struct AppData {
     pntr_image* loadedImage;
     pntr_image* droppedImage;
 } AppData;
+
+typedef struct AppDataSaveData {
+    float x;
+} AppDataSaveData;
 
 bool Init(pntr_app* app) {
     AppData* appData = pntr_load_memory(sizeof(AppData));
@@ -200,14 +202,25 @@ void Event(pntr_app* app, pntr_app_event* event) {
         break;
 
         case PNTR_APP_EVENTTYPE_FILE_DROPPED: {
-            sprintf(message, "File Dropped: %s", event->fileDropped);
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "File Dropped: %s", event->fileDropped);
 
             if (appData->droppedImage != NULL) {
                 pntr_unload_image(appData->droppedImage);
             }
 
             appData->droppedImage = pntr_load_image(event->fileDropped);
+        }
+        break;
+
+        case PNTR_APP_EVENTTYPE_SAVE: {
+            AppDataSaveData* data = (AppDataSaveData*)event->save;
+            data->x = appData->x;
+            event->save_size = sizeof(AppDataSaveData);
+        }
+        break;
+        case PNTR_APP_EVENTTYPE_LOAD: {
+            AppDataSaveData* data = (AppDataSaveData*)event->save;
+            appData->x = data->x;
         }
         break;
 

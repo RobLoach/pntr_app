@@ -303,6 +303,26 @@ bool pntr_app_platform_events(pntr_app* app) {
             continue;
         }
 
+        // Save State
+        if (event.key == PNTR_APP_KEY_F5) {
+            if (IsKeyReleased(event.key)) {
+                event.type = PNTR_APP_EVENTTYPE_SAVE;
+                pntr_app_manual_save_load_data(app, &event, PNTR_APP_SAVE_FILENAME);
+                // Save the data to the .save file
+            }
+            continue;
+        }
+
+        if (event.key == PNTR_APP_KEY_F9) {
+            if (IsKeyReleased(event.key)) {
+                event.type = PNTR_APP_EVENTTYPE_LOAD;
+                // Load the file from the .save file
+                pntr_app_manual_save_load_data(app, &event, PNTR_APP_SAVE_FILENAME);
+            }
+            continue;
+        }
+
+        // Process the normal key events
         if (IsKeyPressed(event.key)) {
             event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
             pntr_app_process_event(app, &event);
