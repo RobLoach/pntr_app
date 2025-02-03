@@ -272,15 +272,24 @@ typedef enum pntr_app_event_type {
      * TODO: Add cheat support to CLI, raylib, SDL, web.
      */
     PNTR_APP_EVENTTYPE_CHEAT,
+
     /**
-     * Saves the current state of the application to pntr_app_event::save `void*`.
+     * Evoked when the application is requested to save its current state.
+     *
+     * The `pntr_app_event::save` `void*` variable will point to a memory bucket where the sta
      *
      * @see pntr_app_event::save
+     * @see pntr_app_event::save_size
      */
     PNTR_APP_EVENTTYPE_SAVE,
 
     /**
-     * Loads the state of the application from pntr_app_event::save.
+     * The application requests to load the active state from the from the `pntr_app_event::save` variable.
+     *
+     * The `pntr_app_event::save` `void*` variable aill point to the memory bucket where the save data is to be loaded from.
+     *
+     * @see pntr_app_event::save
+     * @see pntr_app_event::save_size
      */
     PNTR_APP_EVENTTYPE_LOAD,
 } pntr_app_event_type;
