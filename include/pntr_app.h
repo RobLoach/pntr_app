@@ -1662,7 +1662,7 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
         if (data == NULL) {
             return;
         }
-        size_t decoded_size = b64_decoded_size(data, (size_t)size);
+        size_t decoded_size = b64_decoded_size((const char*)data, (size_t)size);
         unsigned char* saveData = (unsigned char*)pntr_load_memory(decoded_size + (size_t)1);
 
         // Clear out the data.
@@ -1682,7 +1682,7 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
         pntr_unload_memory(event->save);
         event->save = NULL;
         event->save_size = 0;
-        pntr_unload_file(data);
+        pntr_unload_file((unsigned char*)data);
     }
     else if (event->type == PNTR_APP_EVENTTYPE_SAVE) {
         // Load the memory
