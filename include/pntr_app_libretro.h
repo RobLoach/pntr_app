@@ -1018,11 +1018,7 @@ void retro_cheat_reset(void) {
 }
 
 void retro_cheat_set(unsigned index, bool enabled, const char *code) {
-    if (!enabled) {
-        return;
-    }
-
-    if (pntr_app_libretro == NULL) {
+    if (!enabled || pntr_app_libretro == NULL) {
         return;
     }
 
