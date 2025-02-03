@@ -133,6 +133,19 @@
         background-color: #f5f5f5ff;
         border-color: black;
       }
+
+      button {
+        margin: 0.5em 0.5em;
+        padding: 0.2em 0.4em;
+        font-size: 2em;
+        background-color: #F8F8F2;
+        color: #282A36;
+        cursor: pointer;
+        border: #282A36;
+      }
+      button:active {
+        background-color: #44475A;
+      }
     </style>
   </head>
   <body>
@@ -151,6 +164,15 @@
       <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()" tabindex=-1></canvas>
     </div>
 
+    <div class="controls">
+        <button type="button" onclick="Module._pntr_app_emscripten_save_state(Module.pntr_app); return false;">Save</button>
+        <button type="button" onclick="Module._pntr_app_emscripten_load_state(Module.pntr_app); return false;">Load</button>
+    </div>
+
+    <!--
+        TODO: Add File Saver?
+    -->
+    <!--
     <script type='text/javascript' src="https://cdn.jsdelivr.net/gh/eligrey/FileSaver.js/dist/FileSaver.min.js"> </script>
     <script type='text/javascript'>
         function saveFileFromMEMFSToDisk(memoryFSname, localFSname)     // This can be called by C/C++ code
@@ -170,6 +192,8 @@
             saveAs(blob, localFSname);
         }
     </script>
+    -->
+
     <script type='text/javascript'>
         var headerElement = document.querySelector("#header");
         var statusElement = document.querySelector('#status');

@@ -980,22 +980,6 @@ bool retro_serialize(void *data, size_t size) {
         return false;
     }
 
-    /*
-    pntr_app_event event;
-    event.type = PNTR_APP_EVENTTYPE_SAVE;
-    event.save = pntr_load_memory(size);
-    event.save_size = size;
-    pntr_app_process_event(pntr_app_libretro, &event);
-
-    if (event.save_size == 0) {
-        pntr_unload_memory(event.save);
-        return false;
-    }
-
-    size_t encoded_size = b64_encode(data, (const unsigned char*)event.save, event.save_size);
-    pntr_unload_memory(event.save);
-    */
-
     pntr_app_event event;
     event.type = PNTR_APP_EVENTTYPE_SAVE;
     event.save = data;
@@ -1015,28 +999,7 @@ bool retro_unserialize(const void *data, size_t size) {
     event.save = (void*)data;
     event.save_size = size;
     pntr_app_process_event(pntr_app_libretro, &event);
-
-/*
-    size_t decoded_size = b64_decoded_size((const char*)data, size);
-
-    pntr_app_event event;
-    event.type = PNTR_APP_EVENTTYPE_LOAD;
-
-    char* decoded = (char*)pntr_load_memory(decoded_size);
-    for (int i = 0; i < decoded_size; i++) {
-        decoded[i] = '\0';
-    }
-
-    size_t final_size = b64_decode((unsigned char*)decoded, (const char *)data, size);
-
-    event.save = (void*)decoded;
-    event.save_size = final_size;
-
-    pntr_app_process_event(pntr_app_libretro, &event);
-
-    pntr_unload_memory(event.save);
-    event.save = NULL;
-*/
+    
     return true;
 }
 

@@ -1,5 +1,3 @@
-#include <stdio.h>
-
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
 #define PNTR_ENABLE_VARGS
@@ -204,8 +202,7 @@ void Event(pntr_app* app, pntr_app_event* event) {
         break;
 
         case PNTR_APP_EVENTTYPE_FILE_DROPPED: {
-            sprintf(message, "File Dropped: %s", event->fileDropped);
-            pntr_app_log(PNTR_APP_LOG_INFO, message);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "File Dropped: %s", event->fileDropped);
 
             if (appData->droppedImage != NULL) {
                 pntr_unload_image(appData->droppedImage);
