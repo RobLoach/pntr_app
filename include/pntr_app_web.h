@@ -474,13 +474,13 @@ EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_unload_memory(void* ptr) {
 EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_load_state(void* app) {
     pntr_app_event event;
     event.type = PNTR_APP_EVENTTYPE_LOAD;
-    pntr_app_manual_save_load_data((pntr_app*)app, &event, "state.save");
+    pntr_app_manual_save_load_data((pntr_app*)app, &event, PNTR_APP_SAVE_FILENAME);
 }
 
 EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_save_state(void* app) {
     pntr_app_event event;
     event.type = PNTR_APP_EVENTTYPE_SAVE;
-    pntr_app_manual_save_load_data((pntr_app*)app, &event, "state.save");
+    pntr_app_manual_save_load_data((pntr_app*)app, &event, PNTR_APP_SAVE_FILENAME);
 }
 
 EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {

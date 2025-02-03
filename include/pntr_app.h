@@ -757,6 +757,10 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
     #define PNTR_APP_SAVE_SIZE 4096
 #endif
 
+#ifndef PNTR_APP_SAVE_FILENAME
+    #define PNTR_APP_SAVE_FILENAME "pntr_app.save"
+#endif
+
 // Sokol Args
 #define SOKOL_ASSERT(c) (void)(c)
 #ifndef PNTR_APP_NO_SOKOL_ARGS_IMPL
