@@ -1128,6 +1128,7 @@ void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason
         case AUDIO_MIXER_SOUND_FINISHED:
         case AUDIO_MIXER_SOUND_STOPPED:
             currentsound->playing = false;
+            currentsound->voice = NULL;
             break;
         case AUDIO_MIXER_SOUND_REPEATED:
             currentsound->playing = true;
@@ -1138,7 +1139,6 @@ void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason
 #define PNTR_APP_PLAY_SOUND(sound, loop) pntr_app_libretro_play_sound(sound, loop)
 void pntr_app_libretro_play_sound(pntr_sound* sound, bool loop) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
-    pntr_stop_sound(sound);
     audio->voice = audio_mixer_play(audio->sound, loop, audio->volume, "audio", RESAMPLER_QUALITY_DONTCARE, pntr_app_libretro_sound_stop_cb);
     if (audio->voice != NULL) {
         audio->playing = true;
