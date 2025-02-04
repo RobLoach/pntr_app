@@ -945,14 +945,13 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     }
 
     // Parse the command line arguments.
-    sargs_desc desc = PNTR_CLITERAL(sargs_desc) {
-        .argc = argc,
-        .argv = argv,
-        .allocator = {
-            .alloc_fn = pntr_app_sokol_args_alloc,
-            .free_fn = pntr_app_sokol_args_free
-        }
-    };
+    sargs_desc desc;
+    desc.argc = argc,
+    desc.argv = argv,
+    desc.max_args = 0;
+    desc.buf_size = 0;
+    desc.allocator.alloc_fn = pntr_app_sokol_args_alloc;
+    desc.allocator.free_fn = pntr_app_sokol_args_free;
     sargs_setup(&desc);
 
     // Search for the file provided.
