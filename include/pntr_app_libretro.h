@@ -999,7 +999,7 @@ bool retro_unserialize(const void *data, size_t size) {
     event.save = (void*)data;
     event.save_size = size;
     pntr_app_process_event(pntr_app_libretro, &event);
-    
+
     return true;
 }
 
@@ -1139,7 +1139,7 @@ void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason
 void pntr_app_libretro_play_sound(pntr_sound* sound, bool loop) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     pntr_stop_sound(sound);
-    audio->voice = audio_mixer_play(audio->sound, loop, audio->volume, "", RESAMPLER_QUALITY_DONTCARE, pntr_app_libretro_sound_stop_cb);
+    audio->voice = audio_mixer_play(audio->sound, loop, audio->volume, "audio", RESAMPLER_QUALITY_DONTCARE, pntr_app_libretro_sound_stop_cb);
     if (audio->voice != NULL) {
         audio->playing = true;
     }
