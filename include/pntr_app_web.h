@@ -98,7 +98,7 @@ EM_JS(void, pntr_app_web_play_sound, (pntr_sound* sound, bool loop), {
             if (error.name === "NotAllowedError") {
                 setTimeout(function() {
                     // TODO: Figure out a clean way to handle delayed sounds with currentTime.
-                    pntr_play_sound(sound, loop);
+                     pntr_app_web_play_sound(sound, loop);
                 }, 500);
             }
         });
