@@ -66,6 +66,8 @@ PNTR_APP_WEB
 
 ## API
 
+For rendering, see the [pntr API](https://github.com/RobLoach/pntr).
+
 ``` c
 // Application
 pntr_app Main(int argc, char* argv[]);
@@ -110,9 +112,9 @@ pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char*
 void pntr_unload_sound(pntr_sound* sound);
 void pntr_play_sound(pntr_sound* sound, bool loop);
 void pntr_stop_sound(pntr_sound* sound);
+void pntr_set_volume(pntr_sound* sound, float volume);
+bool pntr_sound_playing(pntr_sound* sound);
 ```
-
-For drawing, see the [pntr API](https://github.com/RobLoach/pntr).
 
 ## Build
 

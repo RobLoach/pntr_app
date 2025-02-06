@@ -47,6 +47,8 @@ retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
 #ifndef PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
 #define PNTR_APP_LIBRETRO_IMPLEMENTATION_ONCE
 
+#include "external/pico_b64.h"
+
 #include "audio/audio_mixer.h"
 #include "audio/audio_resampler.h"
 #include "audio/conversion/float_to_s16.h"
@@ -57,6 +59,29 @@ retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
 #endif
 
 pntr_app* pntr_app_libretro;
+
+/**
+ * Internal structure to handle libretro audio.
+ *
+ * @internal
+ */
+typedef struct pntr_sound_libretro {
+    audio_mixer_sound_t* sound;
+    audio_mixer_voice_t* voice;
+    float volume;
+    bool playing;
+} pntr_sound_libretro;
+
+/**
+ * From audio_mixer.c. We include this here because the definition isn't in the .h file.
+ *
+ * @see https://github.com/libretro/libretro-common/blob/master/audio/audio_mixer.c#L76
+ */
+struct audio_mixer_sound
+{
+   enum audio_mixer_type type;
+   void* user_data;
+};
 
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
@@ -740,74 +765,53 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
  * libretro callback; Load the labels for the input buttons.
  */
 void pntr_app_libretro_init_descriptors() {
+    #define PNTR_APP_LIBRETRO_GAMEPAD_DEF(num) \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "D-Pad Down" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "B" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "A" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "X" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Y" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Left Shoulder" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Right Shoulder" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" }, \
+		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
+
     // TODO: Update the input descriptions to match the header
 	struct retro_input_descriptor desc[] = {
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "D-Pad Down" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "B" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "A" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "X" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Y" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Left Shoulder" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Right Shoulder" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" },
-		{ 0, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
+        #if PNTR_APP_MAX_GAMEPADS > 0
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(0)
+        #endif
+        #if PNTR_APP_MAX_GAMEPADS > 1
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(1)
+        #endif
+        #if PNTR_APP_MAX_GAMEPADS > 2
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(2)
+        #endif
+        #if PNTR_APP_MAX_GAMEPADS > 3
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(3)
+        #endif
+        #if PNTR_APP_MAX_GAMEPADS > 4
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(4)
+        #endif
+        #if PNTR_APP_MAX_GAMEPADS > 5
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(5)
+        #endif
+        #if PNTR_APP_MAX_GAMEPADS > 6
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(6)
+        #endif
+        #if PNTR_APP_MAX_GAMEPADS > 7
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(7)
+        #endif
+        #if PNTR_APP_MAX_GAMEPADS > 8
+            PNTR_APP_LIBRETRO_GAMEPAD_DEF(8)
+        #endif
 
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "D-Pad Down" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "B" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "A" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "X" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Y" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Left Shoulder" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Right Shoulder" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" },
-		{ 1, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
-
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "D-Pad Down" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "B" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "A" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "X" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Y" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Left Shoulder" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Right Shoulder" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" },
-		{ 2, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
-
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "D-Pad Down" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "B" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "A" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "X" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Y" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Left Shoulder" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Right Shoulder" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" },
-		{ 3, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
-
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "D-Pad Down" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "B" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "A" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "X" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Y" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Left Shoulder" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Right Shoulder" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" },
-		{ 4, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
 		{ 0 },
 	};
+    #undef PNTR_APP_LIBRETRO_GAMEPAD_DEF
 
     environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
 }
@@ -874,13 +878,14 @@ void pntr_app_libretro_frame_time_cb(retro_usec_t usec) {
     }
 
     pntr_app_libretro->deltaTime = usec / 1000000.0f;
+    pntr_app_update_fps(pntr_app_libretro);
 }
 
 bool retro_load_game(const struct retro_game_info *info) {
     // Pixel Format
     enum retro_pixel_format fmt = RETRO_PIXEL_FORMAT_XRGB8888;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_PIXEL_FORMAT, &fmt)) {
-        log_cb(RETRO_LOG_INFO, "[pntr] XRGB8888 is not supported.\n");
+        log_cb(RETRO_LOG_ERROR, "[pntr] XRGB8888 is not supported\n");
         return false;
     }
 
@@ -888,16 +893,13 @@ bool retro_load_game(const struct retro_game_info *info) {
     struct retro_keyboard_callback keyboardCallback;
     keyboardCallback.callback = pntr_app_libretro_keyboard_callback;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_KEYBOARD_CALLBACK, &keyboardCallback)) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to set keyboard callback.\n");
-        return false;
+        log_cb(RETRO_LOG_WARN, "[pntr] Failed to set keyboard callback\n");
     }
 
     // Set the audio callback.
 	struct retro_audio_callback retro_audio = { pntr_app_libretro_audio_cb, pntr_app_libretro_audio_set_state };
 	if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &retro_audio)) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to set audio callback.\n");
-        // Don't quit if audio is not supported.
-        //return false;
+        log_cb(RETRO_LOG_WARN, "[pntr] Failed to set audio callback\n");
     }
 
     // Build the command line arguments.
@@ -970,19 +972,34 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 }
 
 size_t retro_serialize_size(void) {
-    return 0;
+    return 4096; // PNTR_APP_SAVE_SIZE;
 }
 
 bool retro_serialize(void *data, size_t size) {
-    // TODO: libretro: Add serialize and unserialize support.
-    (void)data;
-    (void)size;
+    if (pntr_app_libretro == NULL || size < retro_serialize_size()) {
+        return false;
+    }
+
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_SAVE;
+    event.save = data;
+    event.save_size = size;
+    pntr_app_process_event(pntr_app_libretro, &event);
+
     return true;
 }
 
 bool retro_unserialize(const void *data, size_t size) {
-    (void)data;
-    (void)size;
+    if (pntr_app_libretro == NULL || size < retro_serialize_size()) {
+        return false;
+    }
+
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_LOAD;
+    event.save = (void*)data;
+    event.save_size = size;
+    pntr_app_process_event(pntr_app_libretro, &event);
+
     return true;
 }
 
@@ -1001,9 +1018,14 @@ void retro_cheat_reset(void) {
 }
 
 void retro_cheat_set(unsigned index, bool enabled, const char *code) {
-    (void)index;
-    (void)enabled;
-    (void)code;
+    if (!enabled || pntr_app_libretro == NULL) {
+        return;
+    }
+
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_CHEAT;
+    event.cheat = code;
+    pntr_app_process_event(pntr_app_libretro, &event);
 }
 
 #ifndef PNTR_APP_SHOW_MOUSE
@@ -1018,16 +1040,6 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
     }
     #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
 #endif
-
-/**
- * Internal structure to handle libretro audio.
- *
- * @internal
- */
-typedef struct pntr_sound_libretro {
-    audio_mixer_sound_t* sound;
-    audio_mixer_voice_t* voice;
-} pntr_sound_libretro;
 
 #ifndef PNTR_APP_INIT_AUDIO
 #define PNTR_APP_INIT_AUDIO pntr_app_libretro_init_audio
@@ -1048,6 +1060,11 @@ void pntr_app_libretro_close_audio(pntr_app* app) {
 pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
     if (type == PNTR_APP_SOUND_TYPE_UNKNOWN) {
         return pntr_set_error(PNTR_ERROR_INVALID_ARGS);
+    }
+
+    if (pntr_app_libretro == NULL) {
+        // libretro needs to be initialized before usage.
+        return pntr_set_error(PNTR_ERROR_FAILED_TO_OPEN);
     }
 
     // Load the sound.
@@ -1079,37 +1096,85 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
     }
 
     output->sound = sound;
+    sound->user_data = (void*)output;
     output->voice = NULL;
+    output->volume = 1.0f;
+    output->playing = false;
 
     return (pntr_sound*)output;
 }
 #endif
 
 #ifndef PNTR_APP_UNLOAD_SOUND
-#define PNTR_APP_UNLOAD_SOUND(sound) pntr_app_platform_unload_sound(sound)
-void pntr_app_platform_unload_sound(pntr_sound* sound) {
+#define PNTR_APP_UNLOAD_SOUND(sound) pntr_app_libretro_unload_sound(sound)
+void pntr_app_libretro_unload_sound(pntr_sound* sound) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     pntr_stop_sound(sound);
     audio_mixer_destroy(audio->sound);
+    audio->sound = NULL;
+    audio->voice = NULL;
     pntr_unload_memory(audio);
 }
 #endif
 
 #ifndef PNTR_APP_PLAY_SOUND
+
+void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason) {
+    if (sound == NULL || sound->user_data == NULL) {
+        return;
+    }
+    pntr_sound_libretro* currentsound = (pntr_sound_libretro*)sound->user_data;
+    switch (reason) {
+        case AUDIO_MIXER_SOUND_FINISHED:
+        case AUDIO_MIXER_SOUND_STOPPED:
+            currentsound->playing = false;
+            currentsound->voice = NULL;
+            break;
+        case AUDIO_MIXER_SOUND_REPEATED:
+            currentsound->playing = true;
+            break;
+    }
+}
+
 #define PNTR_APP_PLAY_SOUND(sound, loop) pntr_app_libretro_play_sound(sound, loop)
 void pntr_app_libretro_play_sound(pntr_sound* sound, bool loop) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
-    audio->voice = audio_mixer_play(audio->sound, loop, 1.0f, "", RESAMPLER_QUALITY_DONTCARE, NULL);
-
-    // TODO: Set callback to set current voice to NULL
+    audio->voice = audio_mixer_play(audio->sound, loop, audio->volume, "audio", RESAMPLER_QUALITY_DONTCARE, pntr_app_libretro_sound_stop_cb);
+    if (audio->voice != NULL) {
+        audio->playing = true;
+    }
 }
 #endif
 
-#ifndef PNTR_APP_PLAY_SOUND
-#define PNTR_APP_PLAY_SOUND(sound) pntr_app_libretro_stop_sound(sound)
+#ifndef PNTR_APP_SET_VOLUME
+#define PNTR_APP_SET_VOLUME(sound, volume) pntr_app_libretro_set_volume(sound, volume)
+void pntr_app_libretro_set_volume(pntr_sound* sound, float volume) {
+    pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
+    if (audio == NULL) {
+        return;
+    }
+    audio->volume = volume;
+    if (audio->voice != NULL) {
+        audio_mixer_voice_set_volume(audio->voice, volume);
+	}
+}
+#endif
+
+#ifndef PNTR_APP_SOUND_PLAYING
+#define PNTR_APP_SOUND_PLAYING(sound) pntr_app_libretro_sound_playing(sound)
+bool pntr_app_libretro_sound_playing(pntr_sound* sound) {
+    pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
+    return audio->playing;
+}
+#endif
+
+#ifndef PNTR_APP_STOP_SOUND
+#define PNTR_APP_STOP_SOUND(sound) pntr_app_libretro_stop_sound(sound)
 void pntr_app_libretro_stop_sound(pntr_sound* sound) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     audio_mixer_stop(audio->voice);
+    audio->voice = NULL;
+    audio->playing = false;
 }
 #endif
 

@@ -544,6 +544,134 @@ bool pntr_app_platform_events(pntr_app* app) {
     if (app == NULL || app->platform == NULL) {
         return false;
     }
+
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    pntr_app_event pntrEvent = {0};
+    pntrEvent.app = app;
+    SDL_Event event;
+
+    while (SDL_PollEvent(&event) != 0) {
+        switch (event.type) {
+            case SDL_QUIT:
+            case SDL_APP_TERMINATING:
+                return false;
+
+            case SDL_MOUSEMOTION: {
+                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+                pntr_app_platform_fix_mouse_coordinates(app, &pntrEvent, &event.motion);
+                pntrEvent.mouseWheel = 0;
+                pntr_app_process_event(app, &pntrEvent);
+            }
+            break;
+
+            case SDL_MOUSEWHEEL: {
+                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+                pntrEvent.mouseWheel = event.wheel.y > 0 ? 1 : -1;
+                pntr_app_process_event(app, &pntrEvent);
+            }
+            break;
+
+            case SDL_MOUSEBUTTONDOWN:
+            case SDL_MOUSEBUTTONUP: {
+                pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event.button.button);
+                if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
+                    pntrEvent.type = (event.type == SDL_MOUSEBUTTONDOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
+                    pntrEvent.mouseButton = button;
+                    pntr_app_process_event(app, &pntrEvent);
+                }
+            }
+            break;
+
+            case SDL_CONTROLLERBUTTONDOWN:
+            case SDL_CONTROLLERBUTTONUP: {
+                pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event.cbutton.button);
+                if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
+                    pntrEvent.type = (event.cbutton.state == SDL_PRESSED) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+                    pntrEvent.gamepad = event.cbutton.which;
+                    pntr_app_process_event(app, &pntrEvent);
+                }
+            }
+            break;
+
+            case SDL_KEYDOWN:
+            case SDL_KEYUP: {
+                // Don't process key repeats.
+                if (event.type == SDL_KEYDOWN && event.key.repeat == 1) {
+                    return true;
+                }
+
+                // Escape key quits.
+                if (event.key.keysym.sym == SDLK_ESCAPE) {
+                    return false;
+                }
+
+                // Save / Load
+                if (event.key.keysym.sym == SDLK_F5) {
+                    if (event.type == SDL_KEYUP) {
+                        pntrEvent.type = PNTR_APP_EVENTTYPE_SAVE;
+                        pntr_app_manual_save_load_data(app, &pntrEvent, PNTR_APP_SAVE_FILENAME);
+                    }
+                    return true;
+                }
+                else if (event.key.keysym.sym == SDLK_F9) {
+                    if (event.type == SDL_KEYUP) {
+                        pntrEvent.type = PNTR_APP_EVENTTYPE_LOAD;
+                        pntr_app_manual_save_load_data(app, &pntrEvent, PNTR_APP_SAVE_FILENAME);
+                    }
+                    return true;
+                }
+
+                // Fullscreen
+                if (event.key.keysym.sym == SDLK_F11) {
+                    if (event.type == SDL_KEYUP) {
+                        uint32_t windowFlags = SDL_GetWindowFlags(platform->window);
+                        if ((windowFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP) {
+                            SDL_SetWindowFullscreen(platform->window, 0);
+                        }
+                        else {
+                            SDL_SetWindowFullscreen(platform->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
+                        }
+                        break;
+                    }
+                    else {
+                        break;
+                    }
+                }
+
+                pntrEvent.key = pntr_app_sdl_key(event.key.keysym.sym);
+                if (pntrEvent.key != PNTR_APP_KEY_INVALID) {
+                    pntrEvent.type = (event.type == SDL_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
+                    pntr_app_process_event(app, &pntrEvent);
+                }
+            }
+            break;
+
+            case SDL_WINDOWEVENT: {
+                switch (event.window.event) {
+                    case SDL_WINDOWEVENT_RESIZED:
+                    case SDL_WINDOWEVENT_SIZE_CHANGED:
+                    case SDL_WINDOWEVENT_EXPOSED: {
+                        if (platform->texture != NULL) {
+                            SDL_DestroyTexture(platform->texture);
+                            platform->texture = NULL;
+                        }
+                    }
+                    break;
+                }
+            }
+            break;
+
+            case SDL_DROPFILE: {
+                pntrEvent.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
+                pntrEvent.fileDropped = event.drop.file;
+                if (pntrEvent.fileDropped != NULL) {
+                    pntr_app_process_event(app, &pntrEvent);
+                }
+            }
+            break;
+        }
+    }
+
     return true;
 }
 
@@ -658,8 +786,16 @@ void pntr_app_platform_close(pntr_app* app) {
  * @internal
  */
 typedef struct pntr_sound_sdl {
-    Mix_Chunk* chunk;
-    int channel;
+    #ifdef PNTR_APP_SDL_MIXER
+        Mix_Chunk* chunk;
+        int channel;
+    #else
+        SDL_AudioSpec audioSpec;
+        Uint8* audio_buf;
+        Uint32 audio_len;
+        SDL_AudioDeviceID deviceId;
+    #endif
+    float volume;
 } pntr_sound_sdl;
 
 #ifndef PNTR_APP_LOAD_SOUND_FROM_MEMORY
@@ -682,15 +818,26 @@ pntr_sound* pntr_app_sdl_load_sound_from_memory(pntr_app_sound_type type, unsign
         return NULL;
     }
 
-    Mix_Chunk* chunk = Mix_LoadWAV_IO(io, 1);
-    pntr_unload_file(data);
-    if (chunk == NULL) {
-        pntr_unload_memory(output);
-        return NULL;
-    }
+    #ifdef PNTR_APP_SDL_MIXER
+        Mix_Chunk* chunk = Mix_LoadWAV_IO(io, true);
+        pntr_unload_file(data);
+        if (chunk == NULL) {
+            pntr_unload_memory(output);
+            return NULL;
+        }
 
-    output->chunk = chunk;
-    output->channel = -1;
+        output->chunk = chunk;
+        output->channel = -1;
+    #else
+        if (SDL_LoadWAV_IO(io, true, &output->audioSpec, &output->audio_buf, &output->audio_len) == NULL) {
+            pntr_unload_file(data);
+            pntr_unload_memory(output);
+            return NULL;
+        }
+        output->deviceId = SDL_OpenAudioDevice(NULL, 0, &output->audioSpec, NULL, 0);
+    #endif
+
+    output->volume = 1.0f;
 
     return (pntr_sound*)output;
 }
@@ -734,7 +881,15 @@ void pntr_app_sdl_play_sound(pntr_sound* sound, bool loop) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
+    #ifdef PNTR_APP_SDL_MIXER
+        audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
+        Mix_Volume(audio->channel, (int)(((float)SDL_MIX_MAXVOLUME) * audio->volume));
+    #else
+        // TODO: Add sound looping to SDL Queue Audio.
+        pntr_stop_sound(sound);
+        /*int success =*/ SDL_QueueAudio(audio->deviceId, audio->audio_buf, audio->audio_len);
+        SDL_PauseAudioDevice(audio->deviceId, loop ? 0 : 0);
+    #endif
 }
 #endif
 
@@ -750,6 +905,82 @@ void pntr_app_sdl_stop_sound(pntr_sound* sound) {
         Mix_Pause(audio->channel);
         audio->channel = -1;
     }
+}
+#endif
+
+#ifndef PNTR_APP_SOUND_PLAYING
+#define PNTR_APP_SOUND_PLAYING pntr_app_sdl_sound_playing
+bool pntr_app_sdl_sound_playing(pntr_sound* sound) {
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    #ifdef PNTR_APP_SDL_MIXER
+        if (audio->channel >= 0) {
+            return Mix_Playing(audio->channel) != 0;
+        }
+    #else
+        if (audio->deviceId >= 0) {
+            return SDL_GetAudioDeviceStatus(audio->deviceId) == SDL_AUDIO_PLAYING;
+        }
+    #endif
+
+    return false;
+}
+#endif
+
+#ifndef PNTR_APP_SET_VOLUME
+#define PNTR_APP_SET_VOLUME pntr_app_sdl_set_volume
+void pntr_app_sdl_set_volume(pntr_sound* sound, float volume) {
+    if (sound == NULL) {
+        return;
+    }
+
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    audio->volume = volume;
+    #ifdef PNTR_APP_SDL_MIXER
+        if (audio->channel >= 0) {
+            Mix_Volume(audio->channel, (int)(((float)SDL_MIX_MAXVOLUME) * volume));
+        }
+    #else
+        (void)audio; // TODO: Add set volume to SDL
+        (void)volume;
+    #endif
+}
+#endif
+
+#ifndef PNTR_APP_SOUND_PLAYING
+#define PNTR_APP_SOUND_PLAYING pntr_app_sdl_sound_playing
+bool pntr_app_sdl_sound_playing(pntr_sound* sound) {
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    #ifdef PNTR_APP_SDL_MIXER
+        if (audio->channel >= 0) {
+            return Mix_Playing(audio->channel) != 0;
+        }
+    #else
+        if (audio->deviceId >= 0) {
+            return SDL_GetAudioDeviceStatus(audio->deviceId) == SDL_AUDIO_PLAYING;
+        }
+    #endif
+
+    return false;
+}
+#endif
+
+#ifndef PNTR_APP_SET_VOLUME
+#define PNTR_APP_SET_VOLUME pntr_app_sdl_set_volume
+void pntr_app_sdl_set_volume(pntr_sound* sound, float volume) {
+    if (sound == NULL) {
+        return;
+    }
+
+    pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
+    audio->volume = volume;
+    #ifdef PNTR_APP_SDL_MIXER
+        if (audio->channel >= 0) {
+            Mix_Volume(audio->channel, (int)(((float)SDL_MIX_MAXVOLUME) * volume));
+        }
+    #else
+        (void)audio; // TODO: Add set volume to SDL
+        (void)volume;
+    #endif
 }
 #endif
 

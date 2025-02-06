@@ -303,6 +303,26 @@ bool pntr_app_platform_events(pntr_app* app) {
             continue;
         }
 
+        // Save State
+        if (event.key == PNTR_APP_KEY_F5) {
+            if (IsKeyReleased(event.key)) {
+                event.type = PNTR_APP_EVENTTYPE_SAVE;
+                pntr_app_manual_save_load_data(app, &event, PNTR_APP_SAVE_FILENAME);
+                // Save the data to the .save file
+            }
+            continue;
+        }
+
+        if (event.key == PNTR_APP_KEY_F9) {
+            if (IsKeyReleased(event.key)) {
+                event.type = PNTR_APP_EVENTTYPE_LOAD;
+                // Load the file from the .save file
+                pntr_app_manual_save_load_data(app, &event, PNTR_APP_SAVE_FILENAME);
+            }
+            continue;
+        }
+
+        // Process the normal key events
         if (IsKeyPressed(event.key)) {
             event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
             pntr_app_process_event(app, &event);
@@ -607,6 +627,26 @@ void pntr_app_raylib_stop_sound(pntr_sound* sound) {
     pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
     audio->loop = false;
     PlaySound(audio->sound);
+}
+#endif
+
+#ifndef PNTR_APP_SOUND_PLAYING
+#define PNTR_APP_SOUND_PLAYING pntr_app_raylib_sound_playing
+bool pntr_app_raylib_sound_playing(pntr_sound* sound) {
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    return IsSoundPlaying(audio->sound);
+}
+#endif
+
+#ifndef PNTR_APP_SET_VOLUME
+#define PNTR_APP_SET_VOLUME pntr_app_raylib_set_volume
+void pntr_app_raylib_set_volume(pntr_sound* sound, float volume) {
+    if (sound == NULL) {
+        return;
+    }
+
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    SetSoundVolume(audio->sound, volume);
 }
 #endif
 

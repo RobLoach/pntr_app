@@ -98,7 +98,7 @@ EM_JS(void, pntr_app_web_play_sound, (pntr_sound* sound, bool loop), {
             if (error.name === "NotAllowedError") {
                 setTimeout(function() {
                     // TODO: Figure out a clean way to handle delayed sounds with currentTime.
-                    pntr_play_sound(sound, loop);
+                     pntr_app_web_play_sound(sound, loop);
                 }, 500);
             }
         });
@@ -112,6 +112,23 @@ EM_JS(void, pntr_app_web_stop_sound, (pntr_sound* sound), {
         audio.pause();
         audio.currentTime = 0;
     }
+})
+
+#define PNTR_APP_SET_VOLUME pntr_app_web_set_volume
+EM_JS(void, pntr_app_web_set_volume, (pntr_sound* sound, float volume), {
+    const audio = Module.pntr_sounds[sound - 1];
+    if (audio) {
+        audio.volume = volume;
+    }
+})
+
+#define PNTR_APP_SOUND_PLAYING pntr_app_web_sound_playing
+EM_JS(bool, pntr_app_web_sound_playing, (pntr_sound* sound), {
+    const audio = Module.pntr_sounds[sound - 1];
+    if (audio) {
+        return !audio.paused;
+    }
+    return false;
 })
 
 #define PNTR_APP_UNLOAD_SOUND pntr_app_web_unload_sound
@@ -346,13 +363,14 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
     event.key = pntr_app_emscripten_key_from_event(keyEvent);
 
     if (event.key <= 0) {
+        // Ignore the event
         return EM_FALSE;
     }
 
     // Invoke the event
     pntr_app_process_event(app, &event);
 
-    // Return false as we're taking over the event.
+    // Return true as we're taking over the event.
     return EM_TRUE;
 }
 
@@ -381,6 +399,10 @@ EM_BOOL pntr_app_emscripten_mouse_wheel(int eventType, const struct EmscriptenWh
 
     return EM_TRUE;
 }
+
+EM_JS(void, pntr_app_emscripten_set_app, (void* app), {
+    Module.pntr_app = app;
+})
 
 EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEvent *mouseEvent, void *userData) {
     pntr_app* app = (pntr_app*)userData;
@@ -447,6 +469,18 @@ EMSCRIPTEN_KEEPALIVE void* pntr_app_emscripten_load_memory(size_t size) {
 
 EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_unload_memory(void* ptr) {
     pntr_unload_memory(ptr);
+}
+
+EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_load_state(void* app) {
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_LOAD;
+    pntr_app_manual_save_load_data((pntr_app*)app, &event, PNTR_APP_SAVE_FILENAME);
+}
+
+EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_save_state(void* app) {
+    pntr_app_event event;
+    event.type = PNTR_APP_EVENTTYPE_SAVE;
+    pntr_app_manual_save_load_data((pntr_app*)app, &event, PNTR_APP_SAVE_FILENAME);
 }
 
 EM_JS(void, pntr_app_emscripten_init_filedropped, (void* app), {
@@ -518,6 +552,9 @@ bool pntr_app_platform_init(pntr_app* app) {
 
     // Intialize the clipboard
     emscripten_clipboard_init(&platform->clipboard);
+
+    // Set the global application state.
+    pntr_app_emscripten_set_app(app);
 
     return true;
 }

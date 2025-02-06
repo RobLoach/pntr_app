@@ -119,6 +119,63 @@ if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
 endif()
 
 
+# Libretro core
+if (PNTR_APP_BUILD_EXAMPLE_RETRO AND NOT EMSCRIPTEN)
+    find_package(libretro_common REQUIRED)
+    find_package(libretro_deps REQUIRED)
+
+    add_library(pntr_app_example_libretro SHARED
+        pntr_app_example.c
+	    "${libretro_common_SOURCE_DIR}/audio/audio_mix.c"
+	    "${libretro_common_SOURCE_DIR}/audio/audio_mixer.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/float_to_s16_neon.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/float_to_s16.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/mono_to_stereo_float.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/s16_to_float_neon.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/s16_to_float.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/stereo_to_mono_float.c"
+	    "${libretro_common_SOURCE_DIR}/audio/resampler/audio_resampler.c"
+	    "${libretro_common_SOURCE_DIR}/audio/resampler/drivers/nearest_resampler.c"
+	    "${libretro_common_SOURCE_DIR}/audio/resampler/drivers/sinc_resampler.c"
+	    "${libretro_common_SOURCE_DIR}/compat/compat_posix_string.c"
+	    "${libretro_common_SOURCE_DIR}/compat/compat_snprintf.c"
+	    "${libretro_common_SOURCE_DIR}/compat/compat_strcasestr.c"
+	    "${libretro_common_SOURCE_DIR}/compat/compat_strl.c"
+	    "${libretro_common_SOURCE_DIR}/compat/fopen_utf8.c"
+	    "${libretro_common_SOURCE_DIR}/formats/wav/rwav.c"
+	    "${libretro_common_SOURCE_DIR}/features/features_cpu.c"
+	    "${libretro_common_SOURCE_DIR}/encodings/encoding_utf.c"
+	    "${libretro_common_SOURCE_DIR}/file/config_file_userdata.c"
+	    "${libretro_common_SOURCE_DIR}/file/config_file.c"
+	    "${libretro_common_SOURCE_DIR}/file/file_path.c"
+	    "${libretro_common_SOURCE_DIR}/file/file_path_io.c"
+	    "${libretro_common_SOURCE_DIR}/memmap/memalign.c"
+	    "${libretro_common_SOURCE_DIR}/lists/string_list.c"
+	    "${libretro_common_SOURCE_DIR}/streams/file_stream.c"
+	    "${libretro_common_SOURCE_DIR}/streams/file_stream_transforms.c"
+	    "${libretro_common_SOURCE_DIR}/streams/memory_stream.c"
+	    "${libretro_common_SOURCE_DIR}/string/stdstring.c"
+	    #"${libretro_common_SOURCE_DIR}/time/rtime.c"
+	    "${libretro_common_SOURCE_DIR}/vfs/vfs_implementation.c"
+    )
+    target_link_libraries(pntr_app_example_libretro PUBLIC pntr pntr_app)
+
+    target_include_directories(pntr_app_example_libretro PUBLIC
+        "${libretro_common_SOURCE_DIR}/include"
+        "${libretro_deps_SOURCE_DIR}"
+    )
+
+    target_compile_definitions(pntr_app_example_libretro PUBLIC
+        PNTR_APP_LIBRETRO
+        HAVE_RWAV=1
+        PATH_MAX=1024
+        __LIBRETRO__
+        HAVE_STB_VORBIS
+    )
+
+    set_target_properties(pntr_app_example_libretro PROPERTIES PREFIX "" POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # Emscripten
 if (PNTR_APP_BUILD_EXAMPLE_WEB AND EMSCRIPTEN)
     add_executable(pntr_app_example_web pntr_app_example.c)
