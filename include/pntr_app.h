@@ -431,6 +431,15 @@ struct pntr_app {
      * The audio system user data, if needed.
      */
     void* audioData;
+
+    /**
+     * A list of valid extensions that can be loaded with the application, seperated by a |.
+     *
+     * Example: txt|md
+     *
+     * Can be NULL.
+     */
+    const char* extensions;
 };
 
 typedef void pntr_sound;

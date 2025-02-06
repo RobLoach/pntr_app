@@ -392,12 +392,15 @@ void retro_get_system_info(struct retro_system_info *info) {
         argv[0] = "pntr_app";
         pntr_app app = PNTR_APP_MAIN(1, argv);
         info->library_name = app.title;
+        info->valid_extensions = app.extensions;
     }
     else if (pntr_app_libretro->title != NULL) {
         info->library_name = pntr_app_libretro->title;
+        info->valid_extensions = pntr_app_libretro->extensions;
     }
     else {
         info->library_name = "pntr_app";
+        info->valid_extensions = NULL;
     }
 
     // Grab a version from the application.
@@ -409,9 +412,6 @@ void retro_get_system_info(struct retro_system_info *info) {
     #endif
     info->library_version  = PROJECT_VERSION GIT_VERSION;
     info->need_fullpath    = false;
-
-    // TODO(RobLoach): Add valid_extensions to PNTR_APP_MAIN()?
-    info->valid_extensions = NULL; // Anything is fine, we don't care.
 }
 
 static retro_video_refresh_t video_cb;
