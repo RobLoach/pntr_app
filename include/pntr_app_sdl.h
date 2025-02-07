@@ -2,11 +2,13 @@
 #ifndef PNTR_APP_SDL_H__
 #define PNTR_APP_SDL_H__
 
-// SDL.h
-#ifndef PNTR_APP_SDL_H
-#define PNTR_APP_SDL_H <SDL2/SDL.h>
+#ifndef PNTR_APP_NO_ENTRY
+#define PNTR_APP_NO_ENTRY
 #endif
-#include PNTR_APP_SDL_H
+
+// SDL.h
+#include <SDL3/SDL.h>
+#include <SDL3_mixer/SDL_mixer.h>
 
 // pntr configuration
 #ifndef PNTR_FREE
@@ -23,11 +25,12 @@
 #endif
 
 typedef struct pntr_app_sdl_platform {
-    SDL_GameController* gameControllers[PNTR_APP_MAX_GAMEPADS];
+    SDL_Gamepad* gameControllers[PNTR_APP_MAX_GAMEPADS];
     SDL_Window* window;
     SDL_Renderer* renderer;
     SDL_Texture* texture;
     uint64_t timerLastTime;
+    SDL_AudioSpec audioSpec;
 } pntr_app_sdl_platform;
 
 void pntr_app_sdl_free(void* ptr);
@@ -41,33 +44,192 @@ bool pntr_app_sdl_save_file(const char *fileName, const void *data, unsigned int
 #ifndef PNTR_APP_SDL_IMPLEMENTATION_ONCE
 #define PNTR_APP_SDL_IMPLEMENTATION_ONCE
 
-// SDL_mixer.h
-#ifdef PNTR_APP_SDL_MIXER
-    #ifndef PNTR_APP_SDL_MIXER_H
-        #define PNTR_APP_SDL_MIXER_H "SDL_mixer.h"
-    #endif
-    #include PNTR_APP_SDL_MIXER_H
-#endif
+// SDL.h
+#define SDL_MAIN_USE_CALLBACKS
+#include <SDL3/SDL_main.h>
 
-// Random Number Generator
-#include <time.h> // time()
+void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event, SDL_Window* window, SDL_MouseMotionEvent* mouseMotion);
+pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button);
+pntr_app_mouse_button pntr_app_sdl_mouse_button(int button);
+pntr_app_key pntr_app_sdl_key(SDL_Keycode key);
+
+SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
+    // set up the application data
+    pntr_app* app = SDL_malloc(sizeof(pntr_app));
+    if (app == NULL) {
+        return SDL_APP_FAILURE;
+    }
+
+    *app = PNTR_APP_MAIN(argc, argv);
+    if (!pntr_app_init(app, argc, argv)) {
+        return SDL_APP_FAILURE;
+    }
+
+    *appstate = app;
+
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event) {
+    pntr_app* app = (pntr_app*)appstate;
+    if (app == NULL) {
+        return SDL_APP_CONTINUE;
+    }
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    pntr_app_event pntrEvent = {0};
+    pntrEvent.app = app;
+
+    switch (event->type) {
+        case SDL_EVENT_QUIT:
+        case SDL_EVENT_TERMINATING:
+            return SDL_APP_SUCCESS;
+
+        case SDL_EVENT_MOUSE_MOTION:
+            pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+            pntr_app_platform_fix_mouse_coordinates(app, &pntrEvent, platform->window, &event->motion);
+            pntrEvent.mouseWheel = 0;
+            pntr_app_process_event(app, &pntrEvent);
+        break;
+
+        case SDL_EVENT_MOUSE_WHEEL:
+            pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+            pntrEvent.mouseWheel = event->wheel.y > 0 ? 1 : -1;
+            pntr_app_process_event(app, &pntrEvent);
+        break;
+
+        case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        case SDL_EVENT_MOUSE_BUTTON_UP: {
+            pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event->button.button);
+            if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
+                pntrEvent.type = (event->type == SDL_EVENT_MOUSE_BUTTON_DOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
+                pntrEvent.mouseButton = button;
+                pntr_app_process_event(app, &pntrEvent);
+            }
+        }
+        break;
+
+        case SDL_EVENT_GAMEPAD_BUTTON_UP:
+        case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+            pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event->gbutton.button);
+            if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
+                pntrEvent.type = event->gbutton.down ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
+                pntrEvent.gamepad = event->gbutton.which;
+                pntr_app_process_event(app, &pntrEvent);
+            }
+        break;
+
+        case SDL_EVENT_KEY_DOWN:
+        case SDL_EVENT_KEY_UP:
+            // Don't process key repeats.
+            if (event->type == SDL_EVENT_KEY_DOWN && event->key.repeat) {
+                return SDL_APP_CONTINUE;
+            }
+
+            // Escape key quits.
+            if (event->key.key == SDLK_ESCAPE) {
+                return SDL_APP_SUCCESS;
+            }
+
+            // Save / Load
+            if (event->key.key == SDLK_F5) {
+                if (event->type == SDL_EVENT_KEY_UP) {
+                    pntrEvent.type = PNTR_APP_EVENTTYPE_SAVE;
+                    pntr_app_manual_save_load_data(app, &pntrEvent, PNTR_APP_SAVE_FILENAME);
+                }
+                return SDL_APP_CONTINUE;
+            }
+            else if (event->key.key == SDLK_F9) {
+                if (event->type == SDL_EVENT_KEY_UP) {
+                    pntrEvent.type = PNTR_APP_EVENTTYPE_LOAD;
+                    pntr_app_manual_save_load_data(app, &pntrEvent, PNTR_APP_SAVE_FILENAME);
+                }
+                return SDL_APP_CONTINUE;
+            }
+
+            // Fullscreen
+            if (event->key.key == SDLK_F11) {
+                if (event->type == SDL_EVENT_KEY_UP) {
+                    uint32_t windowFlags = SDL_GetWindowFlags(platform->window);
+                    if ((windowFlags & SDL_WINDOW_FULLSCREEN) == SDL_WINDOW_FULLSCREEN) {
+                        SDL_SetWindowFullscreen(platform->window, false);
+                    }
+                    else {
+                        SDL_SetWindowFullscreen(platform->window, true);
+                    }
+                    break;
+                }
+                return SDL_APP_CONTINUE;
+            }
+
+            pntrEvent.key = pntr_app_sdl_key(event->key.key);
+            if (pntrEvent.key != PNTR_APP_KEY_INVALID) {
+                pntrEvent.type = event->key.down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
+                pntr_app_process_event(app, &pntrEvent);
+            }
+        break;
+
+        case SDL_EVENT_WINDOW_RESIZED:
+        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+            if (platform->texture != NULL) {
+                SDL_DestroyTexture(platform->texture);
+                platform->texture = NULL;
+            }
+        break;
+
+        case SDL_EVENT_DROP_FILE: {
+            pntrEvent.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
+            pntrEvent.fileDropped = event->drop.data;
+            if (pntrEvent.fileDropped != NULL) {
+                pntr_app_process_event(app, &pntrEvent);
+            }
+        }
+        break;
+    }
+
+    return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppIterate(void *appstate) {
+    pntr_app* app = appstate;
+
+    // // Events
+    // pntr_app_pre_events(app);
+    // if (!pntr_app_platform_events(app)) {
+    //     return SDL_APP_SUCCESS;
+    // }
+
+    // Update callback
+    if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
+        if (!app->update(app, app->screen)) {
+            return SDL_APP_SUCCESS;
+        }
+    }
+
+    // Render
+    if (!pntr_app_platform_render(app)) {
+        return SDL_APP_SUCCESS;
+    }
+
+    return SDL_APP_CONTINUE;
+}
+
+void SDL_AppQuit(void* appstate, SDL_AppResult result) {
+    (void)result;
+    pntr_app_platform_close(appstate);
+}
 
 /**
  * Free the given memory pointer using SDL.
  */
 void pntr_app_sdl_free(void* ptr) {
-    SDL_free_func free_func;
-    SDL_GetMemoryFunctions(NULL, NULL, NULL, &free_func);
-    free_func(ptr);
+    SDL_free(ptr);
 }
 
 /**
  * Allocate memory using SDL's malloc.
  */
 void* pntr_app_sdl_malloc(size_t size) {
-    SDL_malloc_func malloc_func;
-    SDL_GetMemoryFunctions(&malloc_func, NULL, NULL, NULL);
-    return malloc_func(size);
+    return SDL_malloc(size);
 }
 
 /**
@@ -76,9 +238,16 @@ void* pntr_app_sdl_malloc(size_t size) {
 unsigned char* pntr_app_sdl_load_file(const char* fileName, unsigned int* bytesRead) {
     size_t dataSize;
     void* output = SDL_LoadFile(fileName, &dataSize);
+
     if (bytesRead != NULL) {
-        *bytesRead = (unsigned int)dataSize;
+        if (output != NULL) {
+            *bytesRead = (unsigned int)dataSize;
+        }
+        else {
+            *bytesRead = 0;
+        }
     }
+
     return (unsigned char*)output;
 }
 
@@ -86,14 +255,7 @@ unsigned char* pntr_app_sdl_load_file(const char* fileName, unsigned int* bytesR
  * Save a file using SDL.
  */
 bool pntr_app_sdl_save_file(const char *fileName, const void *data, unsigned int bytesToWrite) {
-    SDL_RWops* file = SDL_RWFromFile(fileName, "w+b");
-    if (file == NULL) {
-        return false;
-    }
-
-    size_t written = SDL_RWwrite(file, data, bytesToWrite, 1);
-    SDL_RWclose(file);
-    return written > 0;
+    return SDL_SaveFile(fileName, data, (size_t)bytesToWrite);
 }
 
 #ifndef PNTR_APP_LOG
@@ -118,21 +280,21 @@ bool pntr_app_sdl_save_file(const char *fileName, const void *data, unsigned int
 
 pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button) {
     switch (button) {
-        case SDL_CONTROLLER_BUTTON_A: return PNTR_APP_GAMEPAD_BUTTON_A;
-        case SDL_CONTROLLER_BUTTON_B: return PNTR_APP_GAMEPAD_BUTTON_B;
-        case SDL_CONTROLLER_BUTTON_X: return PNTR_APP_GAMEPAD_BUTTON_X;
-        case SDL_CONTROLLER_BUTTON_Y: return PNTR_APP_GAMEPAD_BUTTON_Y;
-        case SDL_CONTROLLER_BUTTON_BACK: return PNTR_APP_GAMEPAD_BUTTON_SELECT;
-        case SDL_CONTROLLER_BUTTON_GUIDE: return PNTR_APP_GAMEPAD_BUTTON_MENU;
-        case SDL_CONTROLLER_BUTTON_START: return PNTR_APP_GAMEPAD_BUTTON_START;
-        case SDL_CONTROLLER_BUTTON_LEFTSTICK: return PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB;
-        case SDL_CONTROLLER_BUTTON_RIGHTSTICK: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
-        case SDL_CONTROLLER_BUTTON_LEFTSHOULDER: return PNTR_APP_GAMEPAD_BUTTON_LEFT_SHOULDER;
-        case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_SHOULDER;
-        case SDL_CONTROLLER_BUTTON_DPAD_UP: return PNTR_APP_GAMEPAD_BUTTON_UP;
-        case SDL_CONTROLLER_BUTTON_DPAD_DOWN: return PNTR_APP_GAMEPAD_BUTTON_DOWN;
-        case SDL_CONTROLLER_BUTTON_DPAD_LEFT: return PNTR_APP_GAMEPAD_BUTTON_LEFT;
-        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT: return PNTR_APP_GAMEPAD_BUTTON_RIGHT;
+        case SDL_GAMEPAD_BUTTON_SOUTH: return PNTR_APP_GAMEPAD_BUTTON_A;
+        case SDL_GAMEPAD_BUTTON_EAST: return PNTR_APP_GAMEPAD_BUTTON_B;
+        case SDL_GAMEPAD_BUTTON_WEST: return PNTR_APP_GAMEPAD_BUTTON_X;
+        case SDL_GAMEPAD_BUTTON_NORTH: return PNTR_APP_GAMEPAD_BUTTON_Y;
+        case SDL_GAMEPAD_BUTTON_BACK: return PNTR_APP_GAMEPAD_BUTTON_SELECT;
+        case SDL_GAMEPAD_BUTTON_GUIDE: return PNTR_APP_GAMEPAD_BUTTON_MENU;
+        case SDL_GAMEPAD_BUTTON_START: return PNTR_APP_GAMEPAD_BUTTON_START;
+        case SDL_GAMEPAD_BUTTON_LEFT_STICK: return PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB;
+        case SDL_GAMEPAD_BUTTON_RIGHT_STICK: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
+        case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: return PNTR_APP_GAMEPAD_BUTTON_LEFT_SHOULDER;
+        case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_SHOULDER;
+        case SDL_GAMEPAD_BUTTON_DPAD_UP: return PNTR_APP_GAMEPAD_BUTTON_UP;
+        case SDL_GAMEPAD_BUTTON_DPAD_DOWN: return PNTR_APP_GAMEPAD_BUTTON_DOWN;
+        case SDL_GAMEPAD_BUTTON_DPAD_LEFT: return PNTR_APP_GAMEPAD_BUTTON_LEFT;
+        case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: return PNTR_APP_GAMEPAD_BUTTON_RIGHT;
     }
     return PNTR_APP_GAMEPAD_BUTTON_UNKNOWN;
 }
@@ -147,10 +309,10 @@ pntr_app_mouse_button pntr_app_sdl_mouse_button(int button) {
     }
 }
 
-pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
+pntr_app_key pntr_app_sdl_key(SDL_Keycode key) {
     switch (key) {
         case SDLK_SPACE: return PNTR_APP_KEY_SPACE;
-        case SDLK_QUOTE: return PNTR_APP_KEY_APOSTROPHE;
+        case SDLK_APOSTROPHE: return PNTR_APP_KEY_APOSTROPHE;
         case SDLK_COMMA: return PNTR_APP_KEY_COMMA;
         case SDLK_MINUS: return PNTR_APP_KEY_MINUS;
         case SDLK_PERIOD: return PNTR_APP_KEY_PERIOD;
@@ -167,32 +329,32 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
         case SDLK_9: return PNTR_APP_KEY_9;
         case SDLK_SEMICOLON: return PNTR_APP_KEY_SEMICOLON;
         case SDLK_EQUALS: return PNTR_APP_KEY_EQUAL;
-        case SDLK_a: return PNTR_APP_KEY_A;
-        case SDLK_b: return PNTR_APP_KEY_B;
-        case SDLK_c: return PNTR_APP_KEY_C;
-        case SDLK_d: return PNTR_APP_KEY_D;
-        case SDLK_e: return PNTR_APP_KEY_E;
-        case SDLK_f: return PNTR_APP_KEY_F;
-        case SDLK_g: return PNTR_APP_KEY_G;
-        case SDLK_h: return PNTR_APP_KEY_H;
-        case SDLK_i: return PNTR_APP_KEY_I;
-        case SDLK_j: return PNTR_APP_KEY_J;
-        case SDLK_k: return PNTR_APP_KEY_K;
-        case SDLK_l: return PNTR_APP_KEY_L;
-        case SDLK_m: return PNTR_APP_KEY_M;
-        case SDLK_n: return PNTR_APP_KEY_N;
-        case SDLK_o: return PNTR_APP_KEY_O;
-        case SDLK_p: return PNTR_APP_KEY_P;
-        case SDLK_q: return PNTR_APP_KEY_Q;
-        case SDLK_r: return PNTR_APP_KEY_R;
-        case SDLK_s: return PNTR_APP_KEY_S;
-        case SDLK_t: return PNTR_APP_KEY_T;
-        case SDLK_u: return PNTR_APP_KEY_U;
-        case SDLK_v: return PNTR_APP_KEY_V;
-        case SDLK_w: return PNTR_APP_KEY_W;
-        case SDLK_x: return PNTR_APP_KEY_X;
-        case SDLK_y: return PNTR_APP_KEY_Y;
-        case SDLK_z: return PNTR_APP_KEY_Z;
+        case SDLK_A: return PNTR_APP_KEY_A;
+        case SDLK_B: return PNTR_APP_KEY_B;
+        case SDLK_C: return PNTR_APP_KEY_C;
+        case SDLK_D: return PNTR_APP_KEY_D;
+        case SDLK_E: return PNTR_APP_KEY_E;
+        case SDLK_F: return PNTR_APP_KEY_F;
+        case SDLK_G: return PNTR_APP_KEY_G;
+        case SDLK_H: return PNTR_APP_KEY_H;
+        case SDLK_I: return PNTR_APP_KEY_I;
+        case SDLK_J: return PNTR_APP_KEY_J;
+        case SDLK_K: return PNTR_APP_KEY_K;
+        case SDLK_L: return PNTR_APP_KEY_L;
+        case SDLK_M: return PNTR_APP_KEY_M;
+        case SDLK_N: return PNTR_APP_KEY_N;
+        case SDLK_O: return PNTR_APP_KEY_O;
+        case SDLK_P: return PNTR_APP_KEY_P;
+        case SDLK_Q: return PNTR_APP_KEY_Q;
+        case SDLK_R: return PNTR_APP_KEY_R;
+        case SDLK_S: return PNTR_APP_KEY_S;
+        case SDLK_T: return PNTR_APP_KEY_T;
+        case SDLK_U: return PNTR_APP_KEY_U;
+        case SDLK_V: return PNTR_APP_KEY_V;
+        case SDLK_W: return PNTR_APP_KEY_W;
+        case SDLK_X: return PNTR_APP_KEY_X;
+        case SDLK_Y: return PNTR_APP_KEY_Y;
+        case SDLK_Z: return PNTR_APP_KEY_Z;
         case SDLK_LEFTBRACKET: return PNTR_APP_KEY_LEFT_BRACKET;
         case SDLK_BACKSLASH: return PNTR_APP_KEY_BACKSLASH;
         case SDLK_RIGHTBRACKET: return PNTR_APP_KEY_RIGHT_BRACKET;
@@ -270,7 +432,7 @@ pntr_app_key pntr_app_sdl_key(SDL_KeyCode key) {
     return PNTR_APP_KEY_INVALID;
 }
 
-void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_Rect* outRect) {
+void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_FRect* outRect) {
     // Find the aspect ratio.
     float aspect = (float)screen->width / (float)screen->height;
     if (aspect <= 0) {
@@ -279,7 +441,7 @@ void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform
 
     int windowWidth;
     int windowHeight;
-    SDL_GetRendererOutputSize(platform->renderer, &windowWidth, &windowHeight);
+    SDL_GetRenderOutputSize(platform->renderer, &windowWidth, &windowHeight);
 
     // Calculate the optimal width/height to display in the screen size.
     float height = (float)windowHeight;
@@ -290,8 +452,8 @@ void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform
     }
 
     // Draw the texture in the middle of the screen.
-    outRect->x = (windowWidth - width) / 2;
-    outRect->y = (windowHeight - height) / 2;
+    outRect->x = ((float)windowWidth - width) / 2.0f;
+    outRect->y = ((float)windowHeight - height) / 2.0f;
     outRect->w = width;
     outRect->h = height;
 }
@@ -319,7 +481,7 @@ void pntr_app_platform_render_surface(pntr_app* app, pntr_app_sdl_platform* plat
     }
 
     // Update the Texture
-    if (SDL_LockTexture(platform->texture, NULL, &pixels, &pitch) != 0) {
+    if (!SDL_LockTexture(platform->texture, NULL, &pixels, &pitch)) {
         SDL_RenderClear(platform->renderer);
         SDL_RenderPresent(platform->renderer);
         return;
@@ -332,20 +494,19 @@ void pntr_app_platform_render_surface(pntr_app* app, pntr_app_sdl_platform* plat
     }
     SDL_UnlockTexture(platform->texture);
 
-    SDL_Rect dstRect;
+    SDL_FRect dstRect;
     pntr_app_platform_get_destination(app->screen, platform, &dstRect);
 
     SDL_RenderClear(platform->renderer);
-    SDL_RenderCopy(platform->renderer, platform->texture, NULL, &dstRect);
+    SDL_RenderTexture(platform->renderer, platform->texture, NULL, &dstRect);
     SDL_RenderPresent(platform->renderer);
 }
 
-
-void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event, SDL_MouseMotionEvent* mouseMotion) {
-    SDL_Rect dstRect;
+void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event, SDL_Window* window, SDL_MouseMotionEvent* mouseMotion) {
+    SDL_FRect dstRect;
     pntr_app_platform_get_destination(app->screen, app->platform, &dstRect);
 
-    if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
+    if (SDL_GetWindowRelativeMouseMode(window)) {
         event->mouseDeltaX = (float)mouseMotion->xrel;
         event->mouseDeltaY = (float)mouseMotion->yrel;
     }
@@ -373,10 +534,10 @@ void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* even
     bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
         (void)app;
         if (show) {
-            return SDL_ShowCursor(SDL_TRUE) >= 0 && SDL_SetRelativeMouseMode(SDL_FALSE) >= 0;
+            return SDL_ShowCursor();
         }
 
-        return SDL_ShowCursor(SDL_FALSE) >= 0 && SDL_SetRelativeMouseMode(SDL_TRUE) >= 0;
+        return SDL_HideCursor();
     }
     #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
 #endif
@@ -392,7 +553,7 @@ void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* even
 #ifndef PNTR_APP_CLIPBOARD
     const char* pntr_app_platform_clipboard(pntr_app* app) {
         (void)app;
-        if (SDL_HasClipboardText() == SDL_FALSE) {
+        if (!SDL_HasClipboardText()) {
             return NULL;
         }
 
@@ -401,141 +562,6 @@ void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* even
     }
     #define PNTR_APP_CLIPBOARD pntr_app_platform_clipboard
 #endif
-
-bool pntr_app_platform_events(pntr_app* app) {
-    if (app == NULL || app->platform == NULL) {
-        return false;
-    }
-
-    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-    pntr_app_event pntrEvent = {0};
-    pntrEvent.app = app;
-    SDL_Event event;
-
-    while (SDL_PollEvent(&event) != 0) {
-        switch (event.type) {
-            case SDL_QUIT:
-            case SDL_APP_TERMINATING:
-                return false;
-
-            case SDL_MOUSEMOTION: {
-                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                pntr_app_platform_fix_mouse_coordinates(app, &pntrEvent, &event.motion);
-                pntrEvent.mouseWheel = 0;
-                pntr_app_process_event(app, &pntrEvent);
-            }
-            break;
-
-            case SDL_MOUSEWHEEL: {
-                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-                pntrEvent.mouseWheel = event.wheel.y > 0 ? 1 : -1;
-                pntr_app_process_event(app, &pntrEvent);
-            }
-            break;
-
-            case SDL_MOUSEBUTTONDOWN:
-            case SDL_MOUSEBUTTONUP: {
-                pntr_app_mouse_button button = pntr_app_sdl_mouse_button(event.button.button);
-                if (button != PNTR_APP_MOUSE_BUTTON_UNKNOWN) {
-                    pntrEvent.type = (event.type == SDL_MOUSEBUTTONDOWN) ? PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN : PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP;
-                    pntrEvent.mouseButton = button;
-                    pntr_app_process_event(app, &pntrEvent);
-                }
-            }
-            break;
-
-            case SDL_CONTROLLERBUTTONDOWN:
-            case SDL_CONTROLLERBUTTONUP: {
-                pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event.cbutton.button);
-                if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
-                    pntrEvent.type = (event.cbutton.state == SDL_PRESSED) ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
-                    pntrEvent.gamepad = event.cbutton.which;
-                    pntr_app_process_event(app, &pntrEvent);
-                }
-            }
-            break;
-
-            case SDL_KEYDOWN:
-            case SDL_KEYUP: {
-                // Don't process key repeats.
-                if (event.type == SDL_KEYDOWN && event.key.repeat == 1) {
-                    return true;
-                }
-
-                // Escape key quits.
-                if (event.key.keysym.sym == SDLK_ESCAPE) {
-                    return false;
-                }
-
-                // Save / Load
-                if (event.key.keysym.sym == SDLK_F5) {
-                    if (event.type == SDL_KEYUP) {
-                        pntrEvent.type = PNTR_APP_EVENTTYPE_SAVE;
-                        pntr_app_manual_save_load_data(app, &pntrEvent, PNTR_APP_SAVE_FILENAME);
-                    }
-                    return true;
-                }
-                else if (event.key.keysym.sym == SDLK_F9) {
-                    if (event.type == SDL_KEYUP) {
-                        pntrEvent.type = PNTR_APP_EVENTTYPE_LOAD;
-                        pntr_app_manual_save_load_data(app, &pntrEvent, PNTR_APP_SAVE_FILENAME);
-                    }
-                    return true;
-                }
-
-                // Fullscreen
-                if (event.key.keysym.sym == SDLK_F11) {
-                    if (event.type == SDL_KEYUP) {
-                        uint32_t windowFlags = SDL_GetWindowFlags(platform->window);
-                        if ((windowFlags & SDL_WINDOW_FULLSCREEN_DESKTOP) == SDL_WINDOW_FULLSCREEN_DESKTOP) {
-                            SDL_SetWindowFullscreen(platform->window, 0);
-                        }
-                        else {
-                            SDL_SetWindowFullscreen(platform->window, SDL_WINDOW_FULLSCREEN_DESKTOP);
-                        }
-                        break;
-                    }
-                    else {
-                        break;
-                    }
-                }
-
-                pntrEvent.key = pntr_app_sdl_key(event.key.keysym.sym);
-                if (pntrEvent.key != PNTR_APP_KEY_INVALID) {
-                    pntrEvent.type = (event.type == SDL_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
-                    pntr_app_process_event(app, &pntrEvent);
-                }
-            }
-            break;
-
-            case SDL_WINDOWEVENT: {
-                switch (event.window.event) {
-                    case SDL_WINDOWEVENT_RESIZED:
-                    case SDL_WINDOWEVENT_SIZE_CHANGED:
-                    case SDL_WINDOWEVENT_EXPOSED: {
-                        if (platform->texture != NULL) {
-                            SDL_DestroyTexture(platform->texture);
-                            platform->texture = NULL;
-                        }
-                    }
-                    break;
-                }
-            }
-            break;
-
-            case SDL_DROPFILE: {
-                pntrEvent.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
-                pntrEvent.fileDropped = event.drop.file;
-                if (pntrEvent.fileDropped != NULL) {
-                    pntr_app_process_event(app, &pntrEvent);
-                }
-            }
-            break;
-        }
-    }
-
-    return true;
-}
 
 /**
  * Pushes the given image to the screen.
@@ -564,22 +590,19 @@ bool pntr_app_platform_init(pntr_app* app) {
     }
 
     // SDL_Init
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0) {
+    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMEPAD | SDL_INIT_AUDIO)) {
         pntr_unload_memory(platform);
         app->platform = NULL;
         return false;
     }
 
     // Window and Renderer
-    if (SDL_CreateWindowAndRenderer(app->width * 2, app->height * 2, SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE, &platform->window, &platform->renderer) == -1) {
+    if (!SDL_CreateWindowAndRenderer(app->title, app->width * 2, app->height * 2, SDL_WINDOW_RESIZABLE, &platform->window, &platform->renderer)) {
         SDL_Quit();
         pntr_unload_memory(platform);
         app->platform = NULL;
         return false;
     }
-
-    // Window Title
-    SDL_SetWindowTitle(platform->window, app->title);
 
     // Texture
     platform->texture = SDL_CreateTexture(platform->renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, app->width, app->height);
@@ -594,17 +617,16 @@ bool pntr_app_platform_init(pntr_app* app) {
 
     // GamePads
     for (int i = 0; i < 4; i++) {
-        if (SDL_IsGameController(i)) {
-            platform->gameControllers[i] = SDL_GameControllerOpen(i);
+        if (SDL_IsGamepad(i)) {
+            platform->gameControllers[i] = SDL_OpenGamepad(i);
         }
     }
 
     // Start the tick counter for the delta time.
-    platform->timerLastTime = SDL_GetTicks64();
-    //platform->timerLastTime = SDL_GetPerformanceCounter();
+    platform->timerLastTime = SDL_GetTicksNS();
 
     // Random Number Generator
-    pntr_app_random_set_seed(app, (uint64_t)time(NULL));
+    pntr_app_random_set_seed(app, (uint64_t)SDL_GetPerformanceCounter());
 
     return true;
 }
@@ -616,8 +638,8 @@ void pntr_app_platform_close(pntr_app* app) {
             // Close Gamepads
             for (int i = 0; i < 4; i++) {
                 if (platform->gameControllers[i] != NULL) {
-                    if (SDL_IsGameController(i)) {
-                        SDL_GameControllerClose(platform->gameControllers[i]);
+                    if (SDL_IsGamepad(i)) {
+                        SDL_CloseGamepad(platform->gameControllers[i]);
                         platform->gameControllers[i] = NULL;
                     }
                 }
@@ -652,15 +674,8 @@ void pntr_app_platform_close(pntr_app* app) {
  * @internal
  */
 typedef struct pntr_sound_sdl {
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_Chunk* chunk;
-        int channel;
-    #else
-        SDL_AudioSpec audioSpec;
-        Uint8* audio_buf;
-        Uint32 audio_len;
-        SDL_AudioDeviceID deviceId;
-    #endif
+    Mix_Chunk* chunk;
+    int channel;
     float volume;
 } pntr_sound_sdl;
 
@@ -672,41 +687,27 @@ pntr_sound* pntr_app_sdl_load_sound_from_memory(pntr_app_sound_type type, unsign
         return NULL;
     }
 
-    SDL_RWops* rwops = SDL_RWFromMem(data, dataSize);
-    if (rwops == NULL) {
+    SDL_IOStream* io = SDL_IOFromMem(data, (size_t)dataSize);
+    if (io == NULL) {
         pntr_unload_file(data);
         return NULL;
     }
 
     pntr_sound_sdl* output = (pntr_sound_sdl*)pntr_load_memory(sizeof(pntr_sound_sdl));
     if (output == NULL) {
-        SDL_RWclose(rwops);
+        SDL_CloseIO(io);
         return NULL;
     }
 
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_Chunk* chunk = Mix_LoadWAV_RW(rwops, 1);
-        pntr_unload_file(data);
-        if (chunk == NULL) {
-            pntr_unload_memory(output);
-            return NULL;
-        }
+    Mix_Chunk* chunk = Mix_LoadWAV_IO(io, true);
+    pntr_unload_file(data);
+    if (chunk == NULL) {
+        pntr_unload_memory(output);
+        return NULL;
+    }
 
-        output->chunk = chunk;
-        output->channel = -1;
-    #else
-        if (SDL_LoadWAV_RW(rwops,
-                1, // freesrc
-                &output->audioSpec,
-                &output->audio_buf,
-                &output->audio_len) == NULL) {
-            pntr_unload_file(data);
-            pntr_unload_memory(output);
-            return NULL;
-        }
-        output->deviceId = SDL_OpenAudioDevice(NULL, 0, &output->audioSpec, NULL, 0);
-    #endif
-
+    output->chunk = chunk;
+    output->channel = -1;
     output->volume = 1.0f;
 
     return (pntr_sound*)output;
@@ -721,12 +722,7 @@ void pntr_app_sdl_unload_sound(pntr_sound* sound) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_FreeChunk(audio->chunk);
-    #else
-        SDL_CloseAudioDevice(audio->deviceId);
-        SDL_FreeWAV(audio->audio_buf);
-    #endif
+    Mix_FreeChunk(audio->chunk);
     pntr_unload_memory((void*)sound);
 }
 #endif
@@ -734,14 +730,8 @@ void pntr_app_sdl_unload_sound(pntr_sound* sound) {
 #ifndef PNTR_APP_INIT_AUDIO
 #define PNTR_APP_INIT_AUDIO pntr_app_sdl_init_audio
 void pntr_app_sdl_init_audio(pntr_app* app) {
-    (void)app;
-    #ifdef PNTR_APP_SDL_MIXER
-        #define PNTR_APP_AUDIO_FREQUENCY 44100
-        #define PNTR_APP_AUDIO_FORMAT MIX_DEFAULT_FORMAT
-        #define PNTR_APP_AUDIO_CHANNELS 2
-        #define PNTR_APP_AUDIO_CHUNKSIZE 1024
-        Mix_OpenAudio(PNTR_APP_AUDIO_FREQUENCY, PNTR_APP_AUDIO_FORMAT, PNTR_APP_AUDIO_CHANNELS, PNTR_APP_AUDIO_CHUNKSIZE);
-    #endif
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    Mix_OpenAudio(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &platform->audioSpec);
 }
 #endif
 
@@ -749,13 +739,8 @@ void pntr_app_sdl_init_audio(pntr_app* app) {
 #define PNTR_APP_CLOSE_AUDIO pntr_app_sdl_close_audio
 void pntr_app_sdl_close_audio(pntr_app* app) {
     (void)app;
-    #ifdef PNTR_APP_SDL_MIXER
-        Mix_HaltChannel(-1);
-        Mix_CloseAudio();
-    #else
-        SDL_PauseAudio(1);
-        SDL_CloseAudio();
-    #endif
+    Mix_HaltChannel(-1);
+    Mix_CloseAudio();
 }
 #endif
 
@@ -767,15 +752,8 @@ void pntr_app_sdl_play_sound(pntr_sound* sound, bool loop) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    #ifdef PNTR_APP_SDL_MIXER
-        audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
-        Mix_Volume(audio->channel, (int)(((float)SDL_MIX_MAXVOLUME) * audio->volume));
-    #else
-        // TODO: Add sound looping to SDL Queue Audio.
-        pntr_stop_sound(sound);
-        /*int success =*/ SDL_QueueAudio(audio->deviceId, audio->audio_buf, audio->audio_len);
-        SDL_PauseAudioDevice(audio->deviceId, loop ? 0 : 0);
-    #endif
+    audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
+    Mix_Volume(audio->channel, (int)(((float)MIX_MAX_VOLUME) * audio->volume));
 }
 #endif
 
@@ -787,14 +765,10 @@ void pntr_app_sdl_stop_sound(pntr_sound* sound) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    #ifdef PNTR_APP_SDL_MIXER
-        if (audio->channel >= 0) {
-            Mix_Pause(audio->channel);
-            audio->channel = -1;
-        }
-    #else
-        SDL_ClearQueuedAudio(audio->deviceId);
-    #endif
+    if (audio->channel >= 0) {
+        Mix_Pause(audio->channel);
+        audio->channel = -1;
+    }
 }
 #endif
 
@@ -802,15 +776,9 @@ void pntr_app_sdl_stop_sound(pntr_sound* sound) {
 #define PNTR_APP_SOUND_PLAYING pntr_app_sdl_sound_playing
 bool pntr_app_sdl_sound_playing(pntr_sound* sound) {
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    #ifdef PNTR_APP_SDL_MIXER
-        if (audio->channel >= 0) {
-            return Mix_Playing(audio->channel) != 0;
-        }
-    #else
-        if (audio->deviceId >= 0) {
-            return SDL_GetAudioDeviceStatus(audio->deviceId) == SDL_AUDIO_PLAYING;
-        }
-    #endif
+    if (audio != NULL && audio->channel >= 0) {
+        return Mix_Playing(audio->channel) != 0;
+    }
 
     return false;
 }
@@ -825,14 +793,9 @@ void pntr_app_sdl_set_volume(pntr_sound* sound, float volume) {
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
     audio->volume = volume;
-    #ifdef PNTR_APP_SDL_MIXER
-        if (audio->channel >= 0) {
-            Mix_Volume(audio->channel, (int)(((float)SDL_MIX_MAXVOLUME) * volume));
-        }
-    #else
-        (void)audio; // TODO: Add set volume to SDL
-        (void)volume;
-    #endif
+    if (audio->channel >= 0) {
+        Mix_Volume(audio->channel, (int)(((float)MIX_MAX_VOLUME) * volume));
+    }
 }
 #endif
 
@@ -843,13 +806,13 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 
     pntr_app_sdl_platform* platform = app->platform;
 
-    uint64_t now = SDL_GetTicks64();
+    Uint64 now = SDL_GetTicksNS();
     uint64_t delta = now - platform->timerLastTime;
 
     // Calculate if it's time to update
-    if (app->fps <= 0 || (delta > (1000.0f / (float)app->fps))) {
+    if (app->fps <= 0 || (delta > (1000000000.0f / (float)app->fps))) {
         platform->timerLastTime = now;
-        app->deltaTime = (float)delta / 1000.0f;
+        app->deltaTime = (float)delta / 1000000000.0f;
         return true;
     }
 
@@ -866,10 +829,10 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
         return;
     }
 
-    SDL_Surface* sdlIcon = SDL_CreateRGBSurfaceWithFormatFrom(icon->data, icon->width, icon->height, 4, icon->pitch, SDL_PIXELFORMAT_ARGB8888);
+    SDL_Surface* sdlIcon = SDL_CreateSurfaceFrom(icon->width, icon->height, SDL_PIXELFORMAT_ARGB8888, icon->data, icon->pitch);
     if (sdlIcon != NULL) {
         SDL_SetWindowIcon(platform->window, sdlIcon);
-        SDL_FreeSurface(sdlIcon);
+        SDL_DestroySurface(sdlIcon);
     }
 }
 
