@@ -6,7 +6,7 @@ Build [pntr](https://github.com/robloach/pntr) applications with the same code f
 
 - Compile for a number of platforms...
     - [raylib](https://www.raylib.com/)
-    - [SDL](https://www.libsdl.org/)
+    - [SDL 3](https://www.libsdl.org/)
     - Web with [Emscripten](https://emscripten.org/)
     - [libretro](https://www.libretro.com/) and RetroArch
     - Command Line Interfaces with [termbox2](https://github.com/termbox/termbox2)
