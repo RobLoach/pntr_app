@@ -349,12 +349,6 @@ bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     return true;
 }
 
-PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
-    // Nothing.
-    (void)app;
-    (void)icon;
-}
-
 #ifndef PNTR_APP_LOG
     #define PNTR_APP_LOG pntr_app_cli_log
     void pntr_app_cli_log(pntr_app_log_type type, const char* message) {

@@ -1601,6 +1601,15 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
     return app->clipboard;
 }
 
+PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
+    #ifdef PNTR_APP_SET_ICON
+        PNTR_APP_SET_ICON(app, icon);
+    #else
+    (void)app;
+    (void)icon;
+    #endif
+}
+
 PNTR_APP_API pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
     if (data == NULL || dataSize <= 0) {
         return NULL;

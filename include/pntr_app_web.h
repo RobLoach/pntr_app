@@ -591,12 +591,10 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
     return false;
 }
 
-PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
-    (void)app;
-    (void)icon;
-    // TODO: Add base64 version of the icon.
-    // <link href="data:image/x-icon;base64,BASE64STRINGHERE" rel="icon" type="image/x-icon" />
-}
+#ifndef PNTR_APP_SET_ICON
+// TODO: Add base64 version of the icon.
+// <link href="data:image/x-icon;base64,BASE64STRINGHERE" rel="icon" type="image/x-icon" />
+#endif
 
 void pntr_app_set_title(pntr_app* app, const char* title) {
     if (app != NULL) {

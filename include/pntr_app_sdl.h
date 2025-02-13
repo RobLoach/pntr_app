@@ -37,6 +37,7 @@ void pntr_app_sdl_free(void* ptr);
 void* pntr_app_sdl_malloc(size_t size);
 unsigned char* pntr_app_sdl_load_file(const char* fileName, unsigned int* bytesRead);
 bool pntr_app_sdl_save_file(const char *fileName, const void *data, unsigned int bytesToWrite);
+void pntr_app_sdl_set_icon(pntr_app* app, pntr_image* icon);
 
 #endif  // PNTR_APP_SDL_H__
 
@@ -478,6 +479,7 @@ void pntr_app_platform_render_surface(pntr_app* app, pntr_app_sdl_platform* plat
             SDL_RenderPresent(platform->renderer);
             return;
         }
+        SDL_SetTextureScaleMode(platform->texture, SDL_SCALEMODE_NEAREST);
     }
 
     // Update the Texture
@@ -614,6 +616,7 @@ bool pntr_app_platform_init(pntr_app* app) {
         app->platform = NULL;
         return false;
     }
+    SDL_SetTextureScaleMode(platform->texture, SDL_SCALEMODE_NEAREST);
 
     // GamePads
     for (int i = 0; i < 4; i++) {
@@ -819,7 +822,9 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
     return false;
 }
 
-PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
+#ifndef PNTR_APP_SET_ICON
+#define PNTR_APP_SET_ICON pntr_app_sdl_set_icon
+void pntr_app_sdl_set_icon(pntr_app* app, pntr_image* icon) {
     if (app == NULL || icon == NULL || app->platform == NULL) {
         return;
     }
@@ -835,6 +840,7 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
         SDL_DestroySurface(sdlIcon);
     }
 }
+#endif
 
 PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     if (app == NULL || title == NULL || app->platform == NULL) {

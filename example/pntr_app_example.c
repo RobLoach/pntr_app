@@ -17,6 +17,7 @@ typedef struct AppData {
 
 typedef struct AppDataSaveData {
     float x;
+    float velocity;
 } AppDataSaveData;
 
 bool Init(pntr_app* app) {
@@ -31,9 +32,10 @@ bool Init(pntr_app* app) {
     appData->font = pntr_load_font_default();
     appData->spacePressed = false;
     appData->x = 0;
-    appData->velocity = 60.0f;
+    appData->velocity = 30.0f;
     appData->sound = pntr_load_sound("resources/sound.wav");
     appData->music = pntr_load_sound("resources/music.ogg");
+
     pntr_play_sound(appData->music, true);
 
     pntr_app_set_title(app, "pntr_app: Examples");
@@ -54,14 +56,22 @@ bool Update(pntr_app* app, pntr_image* screen) {
     // Clear the screen
     pntr_clear_background(screen, PNTR_RAYWHITE);
 
-    // Draw some text
-    pntr_draw_text(screen, appData->font, "Congrats! You created your first pntr_app!", 35, screen->height - 30, PNTR_DARKGRAY);
-
     appData->x += appData->velocity * deltaTime;
 
     // Draw the logo
     if (appData->logo) {
         pntr_draw_image(screen, appData->logo, (int)appData->x, screen->height / 2 - appData->logo->height / 2);
+
+        if (appData->velocity > 0.0f) {
+            if (appData->x > screen->width) {
+                appData->velocity *= -1.0f;
+                appData->x = screen->width;
+            }
+        }
+        else if (appData->x < -appData->logo->width) {
+            appData->velocity *= -1.0f;
+            appData->x = -appData->logo->width;
+        }
     }
 
     if (appData->spacePressed) {
@@ -100,6 +110,9 @@ bool Update(pntr_app* app, pntr_image* screen) {
     if (appData->loadedImage != NULL) {
         pntr_draw_image(screen, appData->loadedImage, screen->width / 2 - appData->loadedImage->width / 2, screen->height / 2 - appData->loadedImage->height / 2);
     }
+
+    // Draw some text
+    pntr_draw_text(screen, appData->font, "Welcome to pntr_app", 30, screen->height - 30, PNTR_DARKGRAY);
 
     return true;
 }
@@ -215,12 +228,14 @@ void Event(pntr_app* app, pntr_app_event* event) {
         case PNTR_APP_EVENTTYPE_SAVE: {
             AppDataSaveData* data = (AppDataSaveData*)event->save;
             data->x = appData->x;
+            data->velocity = appData->velocity;
             event->save_size = sizeof(AppDataSaveData);
         }
         break;
         case PNTR_APP_EVENTTYPE_LOAD: {
             AppDataSaveData* data = (AppDataSaveData*)event->save;
             appData->x = data->x;
+            appData->velocity = data->velocity;
         }
         break;
 
@@ -235,8 +250,8 @@ pntr_app Main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
     return (pntr_app) {
-        .width = 400,
-        .height = 225,
+        .width = 200,
+        .height = 125,
         .title = "pntr_app: Example",
         .init = Init,
         .update = Update,

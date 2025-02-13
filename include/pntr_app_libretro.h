@@ -972,7 +972,7 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
 }
 
 size_t retro_serialize_size(void) {
-    return 4096; // PNTR_APP_SAVE_SIZE;
+    return PNTR_APP_SAVE_SIZE;
 }
 
 bool retro_serialize(void *data, size_t size) {
@@ -1189,12 +1189,6 @@ PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
     }
 
     app->title = title;
-}
-
-PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
-    // Nothing.
-    (void)app;
-    (void)icon;
 }
 
 bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
