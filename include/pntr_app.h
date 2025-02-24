@@ -1514,6 +1514,18 @@ PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     return app->title;
 }
 
+PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+    if (app == NULL || title == NULL) {
+        return;
+    }
+
+    app->title = title;
+
+    #ifdef PNTR_APP_SET_TITLE
+        PNTR_APP_SET_TITLE(app, title);
+    #endif
+}
+
 PNTR_APP_API float pntr_app_random_float(pntr_app* app, float min, float max) {
     if (app == NULL) {
         return 0.0f;

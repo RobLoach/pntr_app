@@ -842,12 +842,13 @@ void pntr_app_sdl_set_icon(pntr_app* app, pntr_image* icon) {
 }
 #endif
 
-PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
-    if (app == NULL || title == NULL || app->platform == NULL) {
+#ifndef PNTR_APP_SET_TITLE
+#define PNTR_APP_SET_TITLE pntr_app_platform_set_title
+void pntr_app_platform_set_title(pntr_app* app, const char* title) {
+    if (app->platform == NULL) {
         return;
     }
 
-    app->title = title;
     pntr_app_sdl_platform* platform = app->platform;
     if (platform->window == NULL) {
         return;
@@ -855,6 +856,7 @@ PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
 
     SDL_SetWindowTitle(platform->window, title);
 }
+#endif
 
 bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     if (app == NULL || app->platform == NULL) {

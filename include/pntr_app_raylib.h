@@ -657,13 +657,13 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
     return true;
 }
 
-PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
-    if (app != NULL) {
-        app->title = title;
-    }
-
+#ifndef PNTR_APP_SET_TITLE
+#define PNTR_APP_SET_TITLE pntr_app_platform_set_title
+PNTR_APP_API void pntr_app_platform_set_title(pntr_app* app, const char* title) {
+    (void)app;
     SetWindowTitle(title);
 }
+#endif
 
 #ifndef PNTR_APP_SET_ICON
 #define PNTR_APP_SET_ICON pntr_app_raylib_set_icon

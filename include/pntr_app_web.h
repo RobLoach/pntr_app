@@ -661,13 +661,13 @@ void pntr_app_platform_set_icon(pntr_app* app, pntr_image* icon) {
 }
 #endif
 
-void pntr_app_set_title(pntr_app* app, const char* title) {
-    if (app != NULL) {
-        app->title = title;
-    }
-
+#ifndef PNTR_APP_SET_TITLE
+#define PNTR_APP_SET_TITLE pntr_app_platform_set_title
+void pntr_app_platform_set_title(pntr_app* app, const char* title) {
+    (void)app;
     emscripten_set_window_title(title);
 }
+#endif
 
 #ifndef PNTR_APP_CLIPBOARD
     const char* pntr_app_platform_clipboard(pntr_app* app) {
