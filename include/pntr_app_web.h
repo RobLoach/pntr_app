@@ -6,6 +6,7 @@
 #include <emscripten/html5.h>
 
 #include "external/emscripten_clipboard.h"
+#include "external/pico_b64.h"
 
 typedef struct pntr_app_platform_emscripten {
     emscripten_clipboard clipboard;
@@ -592,8 +593,72 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 }
 
 #ifndef PNTR_APP_SET_ICON
-// TODO: Add base64 version of the icon.
-// <link href="data:image/x-icon;base64,BASE64STRINGHERE" rel="icon" type="image/x-icon" />
+#define PNTR_APP_SET_ICON pntr_app_platform_set_icon
+/**
+ * JavaScript function that will create a link rel favicon.
+ *
+ * @param app The application.
+ * @param width The width of the image.
+ * @param height The height of the image.
+ * @param encodedData Base64 encoded representation of the image.
+ */
+EM_JS(void, pntr_app_emscripten_set_icon, (void* app, int width, int height, char* encodedData), {
+    // Get the encoded icon
+    const text = UTF8ToString(encodedData);
+
+    // Create the link element.
+    const link = document.createElement('link');
+    link.id = 'pntr-app-set-icon';
+    link.rel = 'icon';
+    link.type = 'image/png';
+    link.sizes = width + 'x' + height;
+    link.href = 'data:image/png;base64,' + text;
+
+    const oldLink = document.getElementById('pntr-app-set-icon');
+    if (oldLink) {
+        document.head.removeChild(oldLink);
+    }
+
+    document.head.appendChild(link);
+})
+
+/**
+ * Set an image as the window icon.
+ *
+ * @param app The application.
+ * @param icon The image to have represent the window's icon.
+ */
+void pntr_app_platform_set_icon(pntr_app* app, pntr_image* icon) {
+    // Save a PNG to memory.
+    unsigned int imageSize;
+    unsigned char* imageData = pntr_save_image_to_memory(icon, PNTR_IMAGE_TYPE_PNG, &imageSize);
+    if (imageData == NULL) {
+        return;
+    }
+
+    // Encode it as base64.
+    size_t iconSize = b64_encoded_size(imageSize);
+    char* iconData = (char*)pntr_load_memory(iconSize + (size_t)1);
+    if (iconData == NULL) {
+        pntr_unload_memory(imageData);
+        return;
+    }
+
+    size_t encodedSize = b64_encode(iconData, imageData, imageSize);
+    if (encodedSize == 0) {
+        pntr_unload_memory(imageData);
+        pntr_unload_memory(iconData);
+        return;
+    }
+    pntr_unload_memory(imageData);
+
+    // Null-terminate the string.
+    iconData[iconSize] = '\0';
+
+    // Tell JavaScript to add the link element.
+    pntr_app_emscripten_set_icon(app, icon->width, icon->height, (char*)iconData);
+    pntr_unload_memory(iconData);
+}
 #endif
 
 void pntr_app_set_title(pntr_app* app, const char* title) {
