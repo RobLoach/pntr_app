@@ -263,7 +263,35 @@ typedef enum pntr_app_event_type {
      *
      * @see pntr_app_event::fileDropped
      */
-    PNTR_APP_EVENTTYPE_FILE_DROPPED
+    PNTR_APP_EVENTTYPE_FILE_DROPPED,
+
+    /**
+     * Evoked when a cheat is entered into the application.
+     *
+     * @see pntr_app_event::cheat
+     * TODO: Add cheat support to CLI, raylib, SDL, web.
+     */
+    PNTR_APP_EVENTTYPE_CHEAT,
+
+    /**
+     * Evoked when the application is requested to save its current state.
+     *
+     * The `pntr_app_event::save` `void*` variable will point to a memory bucket where the sta
+     *
+     * @see pntr_app_event::save
+     * @see pntr_app_event::save_size
+     */
+    PNTR_APP_EVENTTYPE_SAVE,
+
+    /**
+     * The application requests to load the active state from the from the `pntr_app_event::save` variable.
+     *
+     * The `pntr_app_event::save` `void*` variable aill point to the memory bucket where the save data is to be loaded from.
+     *
+     * @see pntr_app_event::save
+     * @see pntr_app_event::save_size
+     */
+    PNTR_APP_EVENTTYPE_LOAD,
 } pntr_app_event_type;
 
 typedef enum pntr_app_sound_type {
@@ -303,8 +331,35 @@ typedef struct pntr_app_event {
     pntr_app_gamepad_button gamepadButton;
     int gamepad;
 
-    // File Drag and Drop
-    const char* fileDropped; /** For `PNTR_APP_EVENTTYPE_DRAG_AND_DROP`, when a file is drag and dropped on the application, this contains the path to the file. */
+    /**
+     * Invoked when a file is drag and dropped on the application, this contains the path to the file.
+     *
+     * @see PNTR_APP_EVENTTYPE_DRAG_AND_DROP
+     */
+    const char* fileDropped;
+
+    /**
+     * Cheat code that has been entered.
+     *
+     * @see PNTR_APP_EVENTTYPE_CHEAT
+     */
+    const char* cheat;
+
+    /**
+     * The unserialized save data.
+     *
+     * @see PNTR_APP_EVENTTYPE_SAVE
+     * @see PNTR_APP_EVENTTYPE_LOAD
+     */
+    void* save;
+
+    /**
+     * The size of the save data.
+     *
+     * @see PNTR_APP_EVENTTYPE_SAVE
+     * @see PNTR_APP_EVENTTYPE_LOAD
+     */
+    size_t save_size;
 } pntr_app_event;
 
 /**
@@ -319,6 +374,7 @@ struct pntr_app {
     void (*close)(pntr_app* app);
     void (*event)(pntr_app* app, pntr_app_event* event);
     int fps;                        // The desired framerate. Use 0 for a variable framerate.
+    int actualFPS;                  // The actual calculated FPS. @see pntr_app_fps()
     void* userData;                 // A pointer to a custom state in memory that is passed across all pntr_app callbacks.
     pntr_image* screen;             // The screen buffer to render to.
     void* platform;                 // Custom data that is specific to the platform.
@@ -375,6 +431,15 @@ struct pntr_app {
      * The audio system user data, if needed.
      */
     void* audioData;
+
+    /**
+     * A list of valid extensions that can be loaded with the application, seperated by a |.
+     *
+     * Example: txt|md
+     *
+     * Can be NULL.
+     */
+    const char* extensions;
 };
 
 typedef void pntr_sound;
@@ -428,6 +493,22 @@ PNTR_APP_API void pntr_play_sound(pntr_sound* sound, bool loop);
 PNTR_APP_API void pntr_stop_sound(pntr_sound* sound);
 
 /**
+ * Sets the volume, or loudness, of the given sound.
+ *
+ * @param sound The sound to change the volume for.
+ * @param volume The sound from 0.0f to 1.0f.
+ */
+PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume);
+
+/**
+ * Get whether or not the given sound is actively playing.
+ *
+ * @param sound The sound to check if playing.
+ * @return True if the sound is actively playing, false otherwise.
+ */
+PNTR_APP_API bool pntr_sound_playing(pntr_sound*sound);
+
+/**
  * Get the sound type of the given file from its file path.
  */
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName);
@@ -460,6 +541,11 @@ PNTR_APP_API int pntr_app_height(pntr_app* app);
  * Retrieves the change in time in seconds since the last update run.
  */
 PNTR_APP_API float pntr_app_delta_time(pntr_app* app);
+
+/**
+ * Get the current actual FPS.
+ */
+PNTR_APP_API int pntr_app_fps(pntr_app* app);
 
 /**
  * Get a random value between min and max.
@@ -515,6 +601,7 @@ PNTR_APP_API float pntr_app_mouse_x(pntr_app* app);
 PNTR_APP_API float pntr_app_mouse_y(pntr_app* app);
 PNTR_APP_API float pntr_app_mouse_delta_x(pntr_app* app);
 PNTR_APP_API float pntr_app_mouse_delta_y(pntr_app* app);
+PNTR_APP_API int pntr_app_mouse_wheel(pntr_app* app);
 PNTR_APP_API bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
 PNTR_APP_API bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
@@ -577,6 +664,8 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]);
 
 /**
  * Initialize the platform.
+ *
+ * @internal
  */
 PNTR_APP_API bool pntr_app_platform_init(pntr_app* app);
 
@@ -640,6 +729,21 @@ PNTR_APP_API bool pntr_app_platform_set_size(pntr_app* app, int width, int heigh
 PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
 #endif
 
+/**
+ * Updates the internal FPS counter.
+ *
+ * @see pntr_app_fps()
+ * @internal
+ */
+void pntr_app_update_fps(pntr_app* app);
+
+/**
+ * Manually save/load the data.
+ *
+ * @internal
+ */
+void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName);
+
 #define PNTR_APP_HEADER_ONLY
 #include "pntr_app_cli.h"
 #include "pntr_app_libretro.h"
@@ -659,6 +763,16 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
 #ifndef PNTR_APP_IMPLEMENTATION_ONCE
 #define PNTR_APP_IMPLEMENTATION_ONCE
 
+#ifndef PNTR_APP_SAVE_SIZE
+    #define PNTR_APP_SAVE_SIZE 4096
+#endif
+
+#ifndef PNTR_APP_SAVE_FILENAME
+    #define PNTR_APP_SAVE_FILENAME "pntr_app.save"
+#endif
+
+// Sokol Args
+#define SOKOL_ASSERT(c) (void)(c)
 #ifndef PNTR_APP_NO_SOKOL_ARGS_IMPL
 #define SOKOL_ARGS_IMPL
 #endif  // PNTR_APP_NO_SOKOL_ARGS_IMPL
@@ -714,6 +828,12 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #define PRAND_IMPLEMENTATION
 #include "external/prand.h"
 
+#define PICO_B64_IMPLEMENTATION
+#define PICO_B64_ISALNUM(c) (((c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')))
+#define PICO_B64_FLOOR(x) PNTR_FLOORF((float)x)
+#define PICO_B64_CEIL(x) PNTR_CEILF((float)x)
+#include "external/pico_b64.h"
+
 /**
  * Retrieve a bit flag for the given button.
  */
@@ -722,6 +842,13 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+void pntr_app_update_fps(pntr_app* app) {
+    if (app->deltaTime > 0.0f) {
+        // TODO: Switch to a frame counter instead?
+        app->actualFPS = (int)(1.0f / app->deltaTime);
+    }
+}
 
 // Whether or not the application uses int main().
 #ifndef PNTR_APP_NO_ENTRY
@@ -752,6 +879,7 @@ void pntr_app_emscripten_update_loop(void* application) {
 
     // Run the update function.
     if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
+        pntr_app_update_fps(app);
         if (!app->update(app, app->screen)) {
             emscripten_cancel_main_loop();
             return;
@@ -792,6 +920,7 @@ int main(int argc, char* argv[]) {
 
             // Update callback
             if (pntr_app_platform_update_delta_time(&app) && app.update != NULL) {
+                pntr_app_update_fps(&app);
                 if (!app.update(&app, app.screen)) {
                     break;
                 }
@@ -827,14 +956,13 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     }
 
     // Parse the command line arguments.
-    sargs_desc desc = PNTR_CLITERAL(sargs_desc) {
-        .argc = argc,
-        .argv = argv,
-        .allocator = {
-            .alloc_fn = pntr_app_sokol_args_alloc,
-            .free_fn = pntr_app_sokol_args_free
-        }
-    };
+    sargs_desc desc;
+    desc.argc = argc,
+    desc.argv = argv,
+    desc.max_args = 0;
+    desc.buf_size = 0;
+    desc.allocator.alloc_fn = pntr_app_sokol_args_alloc;
+    desc.allocator.free_fn = pntr_app_sokol_args_free;
     sargs_setup(&desc);
 
     // Search for the file provided.
@@ -865,6 +993,7 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     // Create the screen.
     app->screen = pntr_gen_image_color(app->width, app->height, PNTR_BLACK);
     if (app->screen == NULL) {
+        sargs_shutdown();
         return false;
     }
 
@@ -874,6 +1003,7 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     // Initialize the platform.
     if (!pntr_app_platform_init(app)) {
         pntr_unload_image(app->screen);
+        sargs_shutdown();
         return false;
     }
 
@@ -887,6 +1017,7 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
         // Check if initialization worked.
         if (!app->init(app)) {
             pntr_unload_image(app->screen);
+            sargs_shutdown();
             return false;
         }
     }
@@ -958,11 +1089,11 @@ PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName) {
     return pntr_load_sound_from_memory(type, data, bytesRead);
 }
 
-PNTR_APP_API inline void* pntr_app_userdata(pntr_app* app) {
+PNTR_APP_API void* pntr_app_userdata(pntr_app* app) {
     return app->userData;
 }
 
-PNTR_APP_API inline int pntr_app_width(pntr_app* app) {
+PNTR_APP_API int pntr_app_width(pntr_app* app) {
     if (app->screen == NULL) {
         return app->width;
     }
@@ -970,7 +1101,7 @@ PNTR_APP_API inline int pntr_app_width(pntr_app* app) {
     return app->screen->width;
 }
 
-PNTR_APP_API inline int pntr_app_height(pntr_app* app) {
+PNTR_APP_API int pntr_app_height(pntr_app* app) {
     if (app->screen == NULL) {
         return app->height;
     }
@@ -978,11 +1109,15 @@ PNTR_APP_API inline int pntr_app_height(pntr_app* app) {
     return app->screen->height;
 }
 
-PNTR_APP_API inline float pntr_app_delta_time(pntr_app* app) {
+PNTR_APP_API float pntr_app_delta_time(pntr_app* app) {
     return app->deltaTime;
 }
 
-PNTR_APP_API inline void pntr_app_set_userdata(pntr_app* app, void* userData) {
+PNTR_APP_API int pntr_app_fps(pntr_app* app) {
+    return app->actualFPS;
+}
+
+PNTR_APP_API void pntr_app_set_userdata(pntr_app* app, void* userData) {
     if (app == NULL) {
         return;
     }
@@ -1272,22 +1407,35 @@ PNTR_APP_API bool pntr_app_show_mouse(pntr_app* app, bool show) {
  * @param app The application to act on.
  * @param width The desired width of the screen.
  * @param height The desired height of the screen.
+ *
+ * @return True or false depending on if the screen size is now matching the desired width and height.
  */
 PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
     if (app == NULL || width <= 0 || height <= 0) {
         return false;
     }
 
+    // Make sure we're not resizing twice.
+    if (pntr_app_width(app) == width && pntr_app_height(app) == height) {
+        return true;
+    }
+
+    // Create a new backbuffer.
+    pntr_image* new_screen = pntr_image_resize(app->screen, width, height, PNTR_FILTER_NEARESTNEIGHBOR);
+    if (new_screen == NULL) {
+        return false;
+    }
+
     // Request that the platform resizes the window.
     if (!pntr_app_platform_set_size(app, width, height)) {
+        pntr_unload_image(new_screen);
         return false;
     }
 
-    // Resize the internal screen canvas.
-    if (!pntr_image_resize_canvas(app->screen, width, height, 0, 0, PNTR_BLACK)) {
-        return false;
-    }
-
+    // Swap the buffers
+    pntr_image* oldScreen = app->screen;
+    app->screen = new_screen;
+    pntr_unload_image(oldScreen);
     app->width = app->screen->width;
     app->height = app->screen->height;
 
@@ -1368,14 +1516,26 @@ PNTR_APP_API const char* pntr_app_title(pntr_app* app) {
     return app->title;
 }
 
-PNTR_APP_API inline float pntr_app_random_float(pntr_app* app, float min, float max) {
+PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+    if (app == NULL || title == NULL) {
+        return;
+    }
+
+    app->title = title;
+
+    #ifdef PNTR_APP_SET_TITLE
+        PNTR_APP_SET_TITLE(app, title);
+    #endif
+}
+
+PNTR_APP_API float pntr_app_random_float(pntr_app* app, float min, float max) {
     if (app == NULL) {
         return 0.0f;
     }
     return prand_float(&app->prand, min, max);
 }
 
-PNTR_APP_API inline int pntr_app_random(pntr_app* app, int min, int max) {
+PNTR_APP_API int pntr_app_random(pntr_app* app, int min, int max) {
     if (app == NULL) {
         return 0;
     }
@@ -1455,6 +1615,15 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
     return app->clipboard;
 }
 
+PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
+    #ifdef PNTR_APP_SET_ICON
+        PNTR_APP_SET_ICON(app, icon);
+    #else
+    (void)app;
+    (void)icon;
+    #endif
+}
+
 PNTR_APP_API pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char* data, unsigned int dataSize) {
     if (data == NULL || dataSize <= 0) {
         return NULL;
@@ -1498,6 +1667,85 @@ PNTR_APP_API void pntr_stop_sound(pntr_sound* sound) {
     #ifdef PNTR_APP_STOP_SOUND
         PNTR_APP_STOP_SOUND(sound);
     #endif
+}
+
+PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume) {
+    if (sound == NULL) {
+        return;
+    }
+
+    if (volume < 0.0f) {
+        volume = 0.0f;
+    }
+    else if (volume > 1.0f) {
+        volume = 1.0f;
+    }
+
+    #ifdef PNTR_APP_SET_VOLUME
+        PNTR_APP_SET_VOLUME(sound, volume);
+    #endif
+}
+
+PNTR_APP_API bool pntr_sound_playing(pntr_sound*sound) {
+    if (sound == NULL) {
+        return false;
+    }
+
+    #ifdef PNTR_APP_SOUND_PLAYING
+        return PNTR_APP_SOUND_PLAYING(sound);
+    #else
+        return false;
+    #endif
+}
+
+void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName) {
+    if (event->type == PNTR_APP_EVENTTYPE_LOAD) {
+        unsigned int size;
+
+        void* data = pntr_load_file(fileName, &size);
+        if (data == NULL) {
+            return;
+        }
+        size_t decoded_size = b64_decoded_size((const char*)data, (size_t)size);
+        unsigned char* saveData = (unsigned char*)pntr_load_memory(decoded_size + (size_t)1);
+
+        // Clear out the data.
+        for (size_t i = 0; i < decoded_size; i++) {
+            saveData[i] = '\0';
+        }
+
+
+        // Decode the loaded data
+        event->save = (void*)saveData;
+        event->save_size = b64_decode((unsigned char*)event->save, (const char*)data, (size_t)size);
+
+        // Callback
+        pntr_app_process_event(app, event);
+
+        // Clean up
+        pntr_unload_memory(event->save);
+        event->save = NULL;
+        event->save_size = 0;
+        pntr_unload_file((unsigned char*)data);
+    }
+    else if (event->type == PNTR_APP_EVENTTYPE_SAVE) {
+        // Load the memory
+        event->save_size = PNTR_APP_SAVE_SIZE;
+        event->save = pntr_load_memory(event->save_size);
+        pntr_app_process_event(app, event);
+
+        // Encode it
+        size_t encoded_size = b64_encoded_size(event->save_size);
+        char* encoded = (char*)pntr_load_memory(encoded_size);
+        size_t result_size = b64_encode(encoded, (const unsigned char*)event->save, encoded_size);
+
+        // Save
+        pntr_save_file(fileName, encoded, (unsigned int)result_size);
+
+        // Clean up
+        pntr_unload_memory(event->save);
+        pntr_unload_memory((void*)encoded);
+    }
 }
 
 #ifdef __cplusplus

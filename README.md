@@ -6,7 +6,7 @@ Build [pntr](https://github.com/robloach/pntr) applications with the same code f
 
 - Compile for a number of platforms...
     - [raylib](https://www.raylib.com/)
-    - [SDL](https://www.libsdl.org/)
+    - [SDL 3](https://www.libsdl.org/)
     - Web with [Emscripten](https://emscripten.org/)
     - [libretro](https://www.libretro.com/) and RetroArch
     - Command Line Interfaces with [termbox2](https://github.com/termbox/termbox2)
@@ -66,6 +66,8 @@ PNTR_APP_WEB
 
 ## API
 
+For rendering, see the [pntr API](https://github.com/RobLoach/pntr).
+
 ``` c
 // Application
 pntr_app Main(int argc, char* argv[]);
@@ -110,9 +112,9 @@ pntr_sound* pntr_load_sound_from_memory(pntr_app_sound_type type, unsigned char*
 void pntr_unload_sound(pntr_sound* sound);
 void pntr_play_sound(pntr_sound* sound, bool loop);
 void pntr_stop_sound(pntr_sound* sound);
+void pntr_set_volume(pntr_sound* sound, float volume);
+bool pntr_sound_playing(pntr_sound* sound);
 ```
-
-For drawing, see the [pntr API](https://github.com/RobLoach/pntr).
 
 ## Build
 

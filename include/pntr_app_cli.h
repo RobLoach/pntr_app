@@ -326,14 +326,6 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
     return true;
 }
 
-PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
-    if (app == NULL) {
-        return;
-    }
-
-    app->title = title;
-}
-
 bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     (void)width;
     (void)height;
@@ -349,13 +341,8 @@ bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     return true;
 }
 
-PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
-    // Nothing.
-    (void)app;
-    (void)icon;
-}
-
 #ifndef PNTR_APP_LOG
+    #define PNTR_APP_LOG pntr_app_cli_log
     void pntr_app_cli_log(pntr_app_log_type type, const char* message) {
         #ifdef NDEBUG
             if (type == PNTR_APP_LOG_DEBUG) {
@@ -397,7 +384,6 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
             break;
         }
     }
-    #define PNTR_APP_LOG pntr_app_cli_log
 #endif
 
 #endif  // PNTR_APP_CLI_IMPLEMENTATION_ONCE

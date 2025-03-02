@@ -20,56 +20,42 @@ if (PNTR_APP_BUILD_EXAMPLE_SDL AND NOT EMSCRIPTEN)
     target_compile_definitions(pntr_app_example_sdl PUBLIC PNTR_APP_SDL)
 
     # SDL
-    set(SDL_SHARED FALSE)
-    set(SDL2_SHARED FALSE)
-    set(SDL_STATIC TRUE)
-    set(SDL_TEST FALSE)
-    set(SDL_TESTS FALSE)
-    set(INTERFACE_SDL2_SHARED false)
-    set(SDL2_DISABLE_UNINSTALL TRUE)
-    set(SDL2_DISABLE_INSTALL TRUE)
-    set(SDL_INSTALL_TESTS FALSE)
-    find_package(SDL2 REQUIRED)
-    set(SDL2_LIBRARIES SDL2-static)
-    #set(SDL2_LIBRARIES SDL2::SDL2 SDL2::SDL2main)
+    find_package(SDL3 REQUIRED)
 
     # SDL_mixer
-    set(SDL2MIXER_VORBIS STB)
-    set(SDL2MIXER_INSTALL OFF)
-    set(SDL2MIXER_DEPS_SHARED OFF)
-    set(SDL2MIXER_VENDORED OFF)
-    set(SDL2MIXER_SAMPLES OFF)
-    set(SDL2MIXER_CMD OFF)
-    set(SDL2MIXER_FLAC OFF)
-    set(SDL2MIXER_MOD OFF)
-    set(SDL2MIXER_MP3 OFF)
-    set(SDL2MIXER_MIDI_NATIVE OFF)
-    set(SDL2MIXER_OPUS OFF)
-    set(SDL2MIXER_OPUS_SHARED OFF)
-    set(SDL2MIXER_MIDI_FLUIDSYNTH OFF)
-    set(SDL2MIXER_MP3_MPG123 OFF)
-    set(SDL2MIXER_MP3_DRMP3 OFF)
-    set(SDL2MIXER_MOD_XMP OFF)
-    set(SDL2MIXER_MOD_MODPLUG OFF)
-    set(SDL2MIXER_FLAC_DRFLAC OFF)
-    set(SDL2MIXER_FLAC_LIBFLAC OFF)
-    set(SDL2MIXER_VORBIS_VORBISFILE OFF)
-    set(SDL2MIXER_WAVPACK OFF)
-    set(SDL2MIXER_SAMPLES_INSTALL OFF)
-    set(SDL2MIXER_BUILD_SHARED_LIBS OFF)
-    find_package(SDL2_mixer REQUIRED)
-    set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer::SDL2_mixer-static)
-    #set(SDL2_LIBRARIES ${SDL2_LIBRARIES} SDL2_mixer)
-
-    target_compile_definitions(pntr_app_example_sdl PUBLIC
-        PNTR_APP_SDL_MIXER
-    )
+    set(SDLMIXER_BUILD_SHARED_LIBS false)
+    set(SDLMIXER_VORBIS STB)
+    set(SDLMIXER_INSTALL OFF)
+    set(SDLMIXER_DEPS_SHARED OFF)
+    set(SDLMIXER_VENDORED OFF)
+    set(SDLMIXER_SAMPLES OFF)
+    set(SDLMIXER_CMD OFF)
+    set(SDLMIXER_FLAC OFF)
+    set(SDLMIXER_MOD OFF)
+    set(SDLMIXER_MP3 OFF)
+    set(SDLMIXER_MIDI_NATIVE OFF)
+    set(SDLMIXER_OPUS OFF)
+    set(SDLMIXER_OPUS_SHARED OFF)
+    set(SDLMIXER_MIDI_FLUIDSYNTH OFF)
+    set(SDLMIXER_MP3_MPG123 OFF)
+    set(SDLMIXER_MP3_DRMP3 OFF)
+    set(SDLMIXER_MOD_XMP OFF)
+    set(SDLMIXER_MOD_MODPLUG OFF)
+    set(SDLMIXER_FLAC_DRFLAC OFF)
+    set(SDLMIXER_FLAC_LIBFLAC OFF)
+    set(SDLMIXER_VORBIS_VORBISFILE OFF)
+    set(SDLMIXER_WAVPACK OFF)
+    set(SDLMIXER_SAMPLES_INSTALL OFF)
+    set(SDLMIXER_BUILD_SHARED_LIBS OFF)
+    find_package(SDL3_mixer REQUIRED)
 
     target_link_libraries(pntr_app_example_sdl PUBLIC
         pntr
         pntr_app
-        ${SDL2_LIBRARIES}
+        SDL3::SDL3
+        SDL3_mixer::SDL3_mixer-static
     )
+
     set_property(TARGET pntr_app_example_sdl PROPERTY C_STANDARD 11)
     # Strict Warnings and Errors
     if(MSVC)
@@ -174,6 +160,63 @@ if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
 
 endif()
 
+
+# Libretro core
+if (PNTR_APP_BUILD_EXAMPLE_RETRO AND NOT EMSCRIPTEN)
+    find_package(libretro_common REQUIRED)
+    find_package(libretro_deps REQUIRED)
+
+    add_library(pntr_app_example_libretro SHARED
+        pntr_app_example.c
+	    "${libretro_common_SOURCE_DIR}/audio/audio_mix.c"
+	    "${libretro_common_SOURCE_DIR}/audio/audio_mixer.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/float_to_s16_neon.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/float_to_s16.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/mono_to_stereo_float.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/s16_to_float_neon.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/s16_to_float.c"
+	    "${libretro_common_SOURCE_DIR}/audio/conversion/stereo_to_mono_float.c"
+	    "${libretro_common_SOURCE_DIR}/audio/resampler/audio_resampler.c"
+	    "${libretro_common_SOURCE_DIR}/audio/resampler/drivers/nearest_resampler.c"
+	    "${libretro_common_SOURCE_DIR}/audio/resampler/drivers/sinc_resampler.c"
+	    "${libretro_common_SOURCE_DIR}/compat/compat_posix_string.c"
+	    "${libretro_common_SOURCE_DIR}/compat/compat_snprintf.c"
+	    "${libretro_common_SOURCE_DIR}/compat/compat_strcasestr.c"
+	    "${libretro_common_SOURCE_DIR}/compat/compat_strl.c"
+	    "${libretro_common_SOURCE_DIR}/compat/fopen_utf8.c"
+	    "${libretro_common_SOURCE_DIR}/formats/wav/rwav.c"
+	    "${libretro_common_SOURCE_DIR}/features/features_cpu.c"
+	    "${libretro_common_SOURCE_DIR}/encodings/encoding_utf.c"
+	    "${libretro_common_SOURCE_DIR}/file/config_file_userdata.c"
+	    "${libretro_common_SOURCE_DIR}/file/config_file.c"
+	    "${libretro_common_SOURCE_DIR}/file/file_path.c"
+	    "${libretro_common_SOURCE_DIR}/file/file_path_io.c"
+	    "${libretro_common_SOURCE_DIR}/memmap/memalign.c"
+	    "${libretro_common_SOURCE_DIR}/lists/string_list.c"
+	    "${libretro_common_SOURCE_DIR}/streams/file_stream.c"
+	    "${libretro_common_SOURCE_DIR}/streams/file_stream_transforms.c"
+	    "${libretro_common_SOURCE_DIR}/streams/memory_stream.c"
+	    "${libretro_common_SOURCE_DIR}/string/stdstring.c"
+	    #"${libretro_common_SOURCE_DIR}/time/rtime.c"
+	    "${libretro_common_SOURCE_DIR}/vfs/vfs_implementation.c"
+    )
+    target_link_libraries(pntr_app_example_libretro PUBLIC pntr pntr_app)
+
+    target_include_directories(pntr_app_example_libretro PUBLIC
+        "${libretro_common_SOURCE_DIR}/include"
+        "${libretro_deps_SOURCE_DIR}"
+    )
+
+    target_compile_definitions(pntr_app_example_libretro PUBLIC
+        PNTR_APP_LIBRETRO
+        HAVE_RWAV=1
+        PATH_MAX=1024
+        __LIBRETRO__
+        HAVE_STB_VORBIS
+    )
+
+    set_target_properties(pntr_app_example_libretro PROPERTIES PREFIX "" POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # Emscripten
 if (PNTR_APP_BUILD_EXAMPLE_WEB AND EMSCRIPTEN)

@@ -42,6 +42,8 @@ typedef struct pntr_app_raylib_platform {
     pntr_sound_raylib* sounds[PNTR_APP_RAYLIB_MAX_SOUNDS];
 } pntr_app_raylib_platform;
 
+void pntr_app_raylib_set_icon(pntr_app* app, pntr_image* icon);
+
 #endif  // PNTR_APP_RAYLIB_H__
 
 #if defined(PNTR_APP_IMPLEMENTATION) && !defined(PNTR_APP_HEADER_ONLY)
@@ -227,34 +229,34 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event,
 }
 
 #ifndef PNTR_APP_SHOW_MOUSE
-    bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
-        (void)app;
+#define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
+bool pntr_app_platform_show_mouse(pntr_app* app, bool show) {
+    (void)app;
 
-        if (show) {
-            EnableCursor();
-        }
-        else {
-            DisableCursor();
-            SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
-            Rectangle dstRect;
-            pntr_app_raylib_destination_rect(app, &dstRect);
-            app->mouseX = (GetMouseX() - dstRect.x) * app->screen->width / dstRect.width;
-            app->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
-            app->mouseDeltaX = 0;
-            app->mouseDeltaY = 0;
-        }
-
-        return true;
+    if (show) {
+        EnableCursor();
     }
-    #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
+    else {
+        DisableCursor();
+        SetMousePosition(GetScreenWidth() / 2, GetScreenHeight() / 2);
+        Rectangle dstRect;
+        pntr_app_raylib_destination_rect(app, &dstRect);
+        app->mouseX = (GetMouseX() - dstRect.x) * app->screen->width / dstRect.width;
+        app->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
+        app->mouseDeltaX = 0;
+        app->mouseDeltaY = 0;
+    }
+
+    return true;
+}
 #endif
 
 #ifndef PNTR_APP_SET_CLIPBOARD
-    void pntr_app_platform_set_clipboard(pntr_app* app, const char* text) {
-        (void)app;
-        SetClipboardText(text);
-    }
-    #define PNTR_APP_SET_CLIPBOARD pntr_app_platform_set_clipboard
+#define PNTR_APP_SET_CLIPBOARD pntr_app_platform_set_clipboard
+void pntr_app_platform_set_clipboard(pntr_app* app, const char* text) {
+    (void)app;
+    SetClipboardText(text);
+}
 #endif
 
 #ifndef PNTR_APP_CLIPBOARD
@@ -303,6 +305,26 @@ bool pntr_app_platform_events(pntr_app* app) {
             continue;
         }
 
+        // Save State
+        if (event.key == PNTR_APP_KEY_F5) {
+            if (IsKeyReleased(event.key)) {
+                event.type = PNTR_APP_EVENTTYPE_SAVE;
+                pntr_app_manual_save_load_data(app, &event, PNTR_APP_SAVE_FILENAME);
+                // Save the data to the .save file
+            }
+            continue;
+        }
+
+        if (event.key == PNTR_APP_KEY_F9) {
+            if (IsKeyReleased(event.key)) {
+                event.type = PNTR_APP_EVENTTYPE_LOAD;
+                // Load the file from the .save file
+                pntr_app_manual_save_load_data(app, &event, PNTR_APP_SAVE_FILENAME);
+            }
+            continue;
+        }
+
+        // Process the normal key events
         if (IsKeyPressed(event.key)) {
             event.type = PNTR_APP_EVENTTYPE_KEY_DOWN;
             pntr_app_process_event(app, &event);
@@ -610,20 +632,42 @@ void pntr_app_raylib_stop_sound(pntr_sound* sound) {
 }
 #endif
 
+#ifndef PNTR_APP_SOUND_PLAYING
+#define PNTR_APP_SOUND_PLAYING pntr_app_raylib_sound_playing
+bool pntr_app_raylib_sound_playing(pntr_sound* sound) {
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    return IsSoundPlaying(audio->sound);
+}
+#endif
+
+#ifndef PNTR_APP_SET_VOLUME
+#define PNTR_APP_SET_VOLUME pntr_app_raylib_set_volume
+void pntr_app_raylib_set_volume(pntr_sound* sound, float volume) {
+    if (sound == NULL) {
+        return;
+    }
+
+    pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
+    SetSoundVolume(audio->sound, volume);
+}
+#endif
+
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
     app->deltaTime = GetFrameTime();
     return true;
 }
 
-PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
-    if (app != NULL) {
-        app->title = title;
-    }
-
+#ifndef PNTR_APP_SET_TITLE
+#define PNTR_APP_SET_TITLE pntr_app_platform_set_title
+PNTR_APP_API void pntr_app_platform_set_title(pntr_app* app, const char* title) {
+    (void)app;
     SetWindowTitle(title);
 }
+#endif
 
-PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
+#ifndef PNTR_APP_SET_ICON
+#define PNTR_APP_SET_ICON pntr_app_raylib_set_icon
+void pntr_app_raylib_set_icon(pntr_app* app, pntr_image* icon) {
     if (app == NULL || icon == NULL) {
         return;
     }
@@ -637,6 +681,7 @@ PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
 
     SetWindowIcon(image);
 }
+#endif
 
 bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
     if (app == NULL || app->platform == NULL) {

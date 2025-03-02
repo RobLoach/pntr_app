@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.13)
 project(pntr_app
     DESCRIPTION "pntr_app: Manage a pntr application across a number of different platforms."
     HOMEPAGE_URL "https://github.com/robloach/pntr_app"
-    VERSION 0.0.1
+    VERSION 0.1.0
     LANGUAGES C
 )
 
@@ -28,6 +28,7 @@ option(PNTR_APP_BUILD_EXAMPLE_SDL "Example: SDL" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EXAMPLE_RAYLIB "Example: raylib" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EXAMPLE_RGFW "Example: RGFW" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EXAMPLE_CLI "Example: CLI" ${PNTR_APP_IS_MAIN})
+option(PNTR_APP_BUILD_EXAMPLE_RETRO "Example: Libretro" ${PNTR_APP_IS_MAIN})
 option(PNTR_APP_BUILD_EXAMPLE_WEB "Example: Emscripten" ${PNTR_APP_BUILD_EXAMPLE_WEB_DEFAULT})
 option(PNTR_APP_BUILD_TEST "Example: Test" ${PNTR_APP_IS_MAIN})
 
