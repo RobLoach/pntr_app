@@ -191,14 +191,14 @@ bool pntr_app_platform_events(pntr_app* app) {
 				pntr_app_process_event(app, &event);
 				break;
 			}
-			
+
 			case RGFW_keyReleased: {
 				event.type = PNTR_APP_EVENTTYPE_KEY_UP;
 				event.key = pntr_app_rgfw_key(platform->window->event.keyCode);
 				pntr_app_process_event(app, &event);
 				break;
 			}
-			
+
 			case RGFW_mouseButtonPressed: {
 				if (platform->window->event.button == RGFW_mouseScrollUp || platform->window->event.button == RGFW_mouseScrollDown) {
 					event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
@@ -219,7 +219,7 @@ bool pntr_app_platform_events(pntr_app* app) {
 				}
 				break;
 			}
-			
+
 			case RGFW_mousePosChanged: {
 				event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
 				event.mouseX = platform->window->event.point.x;
@@ -227,7 +227,7 @@ bool pntr_app_platform_events(pntr_app* app) {
 				pntr_app_process_event(app, &event);
 				break;
 			}
-			
+
 			case RGFW_jsButtonPressed: {
 				event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN;
 				event.gamepad = platform->window->event.joystick;
@@ -235,7 +235,7 @@ bool pntr_app_platform_events(pntr_app* app) {
 				pntr_app_process_event(app, &event);
 				break;
 			}
-			
+
 			case RGFW_jsButtonReleased: {
 				event.type = PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
 				event.gamepad = platform->window->event.joystick;
@@ -243,12 +243,12 @@ bool pntr_app_platform_events(pntr_app* app) {
 				pntr_app_process_event(app, &event);
 				break;
 			}
-			
+
 			case RGFW_dnd_init: {
 				// TODO: do we need position? platform->window->event.point
 				break;
 			}
-			
+
 			case RGFW_dnd: {
 				event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
 				for(int i=0; i<platform->window->event.droppedFilesCount; i++) {
@@ -340,7 +340,8 @@ bool pntr_app_platform_update_delta_time(pntr_app* app) {
 	return false;
 }
 
-PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
+#define PNTR_APP_SET_TITLE pntr_app_platform_set_title
+PNTR_APP_API void pntr_app_platform_set_title(pntr_app* app, const char* title) {
 	if (app == NULL || app->platform == NULL) {
 		return;
 	}
@@ -350,7 +351,7 @@ PNTR_APP_API void pntr_app_set_title(pntr_app* app, const char* title) {
 	app->title = title;
 }
 
-
+#define PNTR_APP_SET_SIZE pntr_app_platform_set_size
 bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
 	if (app == NULL || app->platform == NULL) {
 		return false;
@@ -362,8 +363,8 @@ bool pntr_app_platform_set_size(pntr_app* app, int width, int height) {
 	return true;
 }
 
-
-PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
+#define PNTR_APP_SET_ICON pntr_app_platform_set_icon
+PNTR_APP_API void pntr_app_platform_set_icon(pntr_app* app, pntr_image* icon) {
 	if (app == NULL || app->platform == NULL) {
 		return;
 	}
