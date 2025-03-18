@@ -5,7 +5,7 @@
 #include <stdarg.h> // va_start, va_end
 #include <string.h> // memset
 #include <stdio.h>  // vfprintf
-#include <time.h> // time()
+#include <time.h>   // time()
 
 #ifndef PNTR_APP_LIBRETRO_H
     #define PNTR_APP_LIBRETRO_H "libretro.h"
@@ -850,7 +850,17 @@ bool pntr_app_platform_init(pntr_app* app) {
     pntr_app_libretro = app;
 
     // Random Number Generator
-    pntr_app_random_set_seed(app, (uint64_t)time(NULL));
+    struct retro_perf_callback perf_callback;
+    if (!environ_cb(RETRO_ENVIRONMENT_GET_PERF_INTERFACE, &perf_callback)) {
+        pntr_app_random_set_seed(app, (uint64_t)time(NULL));
+    }
+    else {
+        // Returns a int64_t so we need to convert it to a uint64_t
+        uint64_t seedTime = (uint64_t)perf_callback.get_time_usec();
+        seedTime += INT64_MAX;
+        seedTime += 1;
+        pntr_app_random_set_seed(app, seedTime);
+    }
 
     return true;
 }
