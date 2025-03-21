@@ -58,7 +58,13 @@ retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app);
     #define PNTR_APP_LIBRETRO_SAMPLES 48000
 #endif
 
-pntr_app* pntr_app_libretro;
+static pntr_app* pntr_app_libretro;
+static retro_video_refresh_t video_cb;
+static retro_audio_sample_t audio_cb;
+static retro_audio_sample_batch_t audio_batch_cb;
+static retro_environment_t environ_cb;
+static retro_input_poll_t input_poll_cb;
+static retro_input_state_t input_state_cb;
 
 /**
  * Internal structure to handle libretro audio.
@@ -85,14 +91,22 @@ struct audio_mixer_sound
 
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
-struct retro_vfs_interface* vfs = NULL;
 
 #ifndef PNTR_LOAD_FILE
     /**
      * Load a file using libretro's virtual file system.
      */
     unsigned char* pntr_app_libretro_load_file(const char* fileName, unsigned int* bytesRead) {
+        struct retro_vfs_interface* vfs = NULL;
+        struct retro_vfs_interface_info vfs_interface_info;
+        vfs_interface_info.required_interface_version = 1;
+        vfs_interface_info.iface = NULL;
+        if (environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_interface_info)) {
+            vfs = vfs_interface_info.iface;
+        }
+
         if (vfs == NULL) {
+            pntr_app_log(PNTR_APP_LOG_ERROR, "[pntr] Failed to retrieve libretro Virtual File System");
             return NULL;
         }
 
@@ -142,8 +156,17 @@ struct retro_vfs_interface* vfs = NULL;
      * Save a file using libretro's file system.
      */
     bool pntr_app_libretro_save_file(const char *fileName, const void *data, unsigned int bytesToWrite) {
+        struct retro_vfs_interface* vfs = NULL;
+        struct retro_vfs_interface_info vfs_interface_info;
+        vfs_interface_info.required_interface_version = 1;
+        vfs_interface_info.iface = NULL;
+        if (environ_cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_interface_info)) {
+            vfs = vfs_interface_info.iface;
+        }
+
         if (vfs == NULL) {
-            return false;
+            pntr_app_log(PNTR_APP_LOG_ERROR, "[pntr] Failed to retrieve libretro Virtual File System");
+            return NULL;
         }
 
         // Open the file
@@ -414,13 +437,6 @@ void retro_get_system_info(struct retro_system_info *info) {
     info->need_fullpath    = false;
 }
 
-static retro_video_refresh_t video_cb;
-static retro_audio_sample_t audio_cb;
-static retro_audio_sample_batch_t audio_batch_cb;
-static retro_environment_t environ_cb;
-static retro_input_poll_t input_poll_cb;
-static retro_input_state_t input_state_cb;
-
 retro_environment_t pntr_app_libretro_environ_cb(pntr_app* app) {
     (void)app;
     return environ_cb;
@@ -483,19 +499,6 @@ void retro_set_environment(retro_environment_t cb) {
     else {
         log_cb = fallback_log;
     }
-
-    // File System
-    #if ((PNTR_LOAD_FILE == pntr_app_libretro_load_file) || (PNTR_SAVE_FILE == pntr_app_libretro_save_file))
-        struct retro_vfs_interface_info vfs_interface_info;
-        vfs_interface_info.required_interface_version = 1;
-        vfs_interface_info.iface = NULL;
-        if (cb(RETRO_ENVIRONMENT_GET_VFS_INTERFACE, &vfs_interface_info)) {
-            vfs = vfs_interface_info.iface;
-        }
-        else {
-            vfs = NULL;
-        }
-    #endif
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb) {
