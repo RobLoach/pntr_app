@@ -2,7 +2,7 @@
 #define PNTR_APP_PLATFORM_H__
 
 // Platform detection.
-#if !defined(PNTR_APP_CLI) && !defined(PNTR_APP_WEB) && !defined(PNTR_APP_LIBRETRO) && !defined(PNTR_APP_RAYLIB) && !defined(PNTR_APP_SDL)
+#if !defined(PNTR_APP_CLI) && !defined(PNTR_APP_WEB) && !defined(PNTR_APP_LIBRETRO) && !defined(PNTR_APP_RAYLIB) && !defined(PNTR_APP_SDL) && !defined(PNTR_APP_RGFW)
     // libretro
     #if defined(__LIBRETRO__)
         #define PNTR_APP_LIBRETRO
@@ -18,6 +18,10 @@
     // Raylib
     #elif defined(RAYLIB_VERSION)
         #define PNTR_APP_RAYLIB
+
+    // RGFW
+    #elif defined(RGFW_HEADER)
+        #define PNTR_APP_RGFW
 
     #else
         // Fall back to the CLI

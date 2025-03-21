@@ -748,6 +748,7 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
 #include "pntr_app_cli.h"
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
+#include "pntr_app_rgfw.h"
 #include "pntr_app_sdl.h"
 #include "pntr_app_web.h"
 #undef PNTR_APP_HEADER_ONLY
@@ -808,6 +809,7 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 #include "pntr_app_cli.h"
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
+#include "pntr_app_rgfw.h"
 #include "pntr_app_sdl.h"
 #include "pntr_app_web.h"
 
