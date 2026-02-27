@@ -5,6 +5,9 @@
 *   HOMEPAGE:
 *       https://github.com/RobLoach/prand
 *
+*   VERSION:
+*       1.0.0
+*
 *   FEATURES:
 *       - Avoids global state, so that there can be multiple random number generators
 *       - Pseudo-random values generation, 32 bits: [0..4294967295]
@@ -20,7 +23,7 @@
 *   prand is licensed under an unmodified zlib/libpng license, which is an OSI-certified,
 *   BSD-like license that allows static linking with closed source software:
 *
-*   Copyright (c) 2023 Ramon Santamaria (@raysan5), Rob Loach (@RobLoach)
+*   Copyright (c) 2026 Ramon Santamaria (@raysan5), Rob Loach (@RobLoach)
 *
 *   This software is provided "as-is", without any express or implied warranty. In no event
 *   will the authors be held liable for any damages arising from the use of this software.
@@ -156,6 +159,17 @@ PRANDAPI unsigned int prand_uint(prand_t* prand, unsigned int min, unsigned int 
 PRANDAPI float prand_float(prand_t* prand, float min, float max);
 
 /**
+ * Generate an double between the given min and max values.
+ *
+ * @param prand The pseudo-random number generator.
+ * @param min The minimum value to generate.
+ * @param max The maximum value to generate.
+ *
+ * @return A random double between the given min and max values.
+ */
+PRANDAPI double prand_double(prand_t* prand, double min, double max);
+
+/**
  * Rotate the pseudo random number generator bits to the left.
  *
  * @internal
@@ -238,6 +252,11 @@ PRANDAPI unsigned int prand_uint(prand_t* prand, unsigned int min, unsigned int 
 
 PRANDAPI float prand_float(prand_t* prand, float min, float max) {
     float scale = (float)prand_rand(prand) / (float)PRAND_RAND_MAX;
+    return ((max - min) * scale) + min;
+}
+
+PRANDAPI double prand_double(prand_t* prand, double min, double max) {
+    double scale = (double)prand_rand(prand) / (double)PRAND_RAND_MAX;
     return ((max - min) * scale) + min;
 }
 

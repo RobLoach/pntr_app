@@ -26,6 +26,7 @@ typedef struct pntr_app_cli_platform {
 #define tb_malloc  pntr_load_memory
 #define tb_realloc realloc
 #define tb_free    pntr_unload_memory
+#define TB_OPT_EGC
 #define TB_IMPL
 #include "external/termbox2.h"
 #pragma GCC diagnostic pop

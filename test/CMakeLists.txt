@@ -12,7 +12,7 @@ find_package(pntr)
 add_executable(pntr_app_test
     pntr_app_test.c
 )
-target_compile_options(pntr_app_test PRIVATE -Wall -Wextra -Wconversion -Wsign-conversion)
+target_compile_options(pntr_app_test PRIVATE -Wall -Wextra -Wconversion -Wsign-conversion -Wfloat-conversion)
 target_link_libraries(pntr_app_test PUBLIC
     pntr
     pntr_app
