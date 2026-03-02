@@ -136,16 +136,6 @@ cmake -B build -DPNTR_APP_BUILD_EXAMPLE_SDL=false -DPNTR_APP_BUILD_EXAMPLE_RAYLI
 cmake --build build
 ```
 
-### libretro
-
-To build the libretro core, use `make`. Depends on [libretro-common](https://github.com/libretro/libretro-common).
-
-``` bash
-git submodule update --init
-cd example
-make
-```
-
 #### libretro WASM
 
 ``` bash

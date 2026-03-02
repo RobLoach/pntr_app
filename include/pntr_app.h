@@ -286,7 +286,7 @@ typedef enum pntr_app_event_type {
     /**
      * The application requests to load the active state from the from the `pntr_app_event::save` variable.
      *
-     * The `pntr_app_event::save` `void*` variable aill point to the memory bucket where the save data is to be loaded from.
+     * The `pntr_app_event::save` `void*` variable will point to the memory bucket where the save data is to be loaded from.
      *
      * @see pntr_app_event::save
      * @see pntr_app_event::save_size
@@ -334,7 +334,7 @@ typedef struct pntr_app_event {
     /**
      * Invoked when a file is drag and dropped on the application, this contains the path to the file.
      *
-     * @see PNTR_APP_EVENTTYPE_DRAG_AND_DROP
+     * @see PNTR_APP_EVENTTYPE_FILE_DROPPED
      */
     const char* fileDropped;
 
@@ -458,7 +458,7 @@ PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName);
  *
  * Will take ownership of the data and clear it when the sound is unloaded.
  *
- * @param type The type of sound that we'll be loading (PNTR_APP_SOUND_TYPE_WAV, PNTR_APP_SOUND_TYPE_WAV, etc).
+ * @param type The type of sound that we'll be loading (PNTR_APP_SOUND_TYPE_WAV, PNTR_APP_SOUND_TYPE_OGG, etc).
  * @param data The file data.
  * @param dataSize The size of the data in memory.
  *
@@ -506,7 +506,7 @@ PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume);
  * @param sound The sound to check if playing.
  * @return True if the sound is actively playing, false otherwise.
  */
-PNTR_APP_API bool pntr_sound_playing(pntr_sound*sound);
+PNTR_APP_API bool pntr_sound_playing(pntr_sound* sound);
 
 /**
  * Get the sound type of the given file from its file path.
@@ -1173,28 +1173,24 @@ PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
             else if (app->mouseY > app->height) {
                 app->mouseY = (float)app->height;
             }
-
-            // Make sure the event gets the updated positions.
-            // event->mouseX = app->mouseX;
-            // event->mouseY = app->mouseY;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
             app->mouseWheel = event->mouseWheel;
             app->mouseWheelChanged = true;
             event->mouseX = app->mouseX;
-            event->mouseX = app->mouseX;
+            event->mouseY = app->mouseY;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN:
             app->mouseButtonsDown[event->mouseButton] = true;
             app->mouseButtonsChanged = true;
             event->mouseX = app->mouseX;
-            event->mouseX = app->mouseX;
+            event->mouseY = app->mouseY;
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP:
             app->mouseButtonsDown[event->mouseButton] = false;
             app->mouseButtonsChanged = true;
             event->mouseX = app->mouseX;
-            event->mouseX = app->mouseX;
+            event->mouseY = app->mouseY;
             break;
         default:
             // Not covered here.
@@ -1684,7 +1680,7 @@ PNTR_APP_API void pntr_set_volume(pntr_sound* sound, float volume) {
     #endif
 }
 
-PNTR_APP_API bool pntr_sound_playing(pntr_sound*sound) {
+PNTR_APP_API bool pntr_sound_playing(pntr_sound* sound) {
     if (sound == NULL) {
         return false;
     }

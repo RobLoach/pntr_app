@@ -2,7 +2,11 @@
 #define PNTR_APP_PLATFORM_H__
 
 // Platform detection.
-#if !defined(PNTR_APP_CLI) && !defined(PNTR_APP_WEB) && !defined(PNTR_APP_LIBRETRO) && !defined(PNTR_APP_RAYLIB) && !defined(PNTR_APP_SDL)
+#if !defined(PNTR_APP_CLI) && \
+    !defined(PNTR_APP_WEB) && \
+    !defined(PNTR_APP_LIBRETRO) && \
+    !defined(PNTR_APP_RAYLIB) && \
+    !defined(PNTR_APP_SDL)
     // libretro
     #if defined(__LIBRETRO__)
         #define PNTR_APP_LIBRETRO

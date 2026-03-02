@@ -166,7 +166,7 @@ static retro_log_printf_t log_cb;
 
         if (vfs == NULL) {
             pntr_app_log(PNTR_APP_LOG_ERROR, "[pntr] Failed to retrieve libretro Virtual File System");
-            return NULL;
+            return false;
         }
 
         // Open the file
@@ -373,7 +373,8 @@ static void fallback_log(enum retro_log_level level, const char *fmt, ...) {
             case PNTR_APP_LOG_INFO: logLevel = RETRO_LOG_INFO; break;
             case PNTR_APP_LOG_WARNING: logLevel = RETRO_LOG_WARN; break;
             case PNTR_APP_LOG_ERROR: logLevel = RETRO_LOG_ERROR; break;
-            case PNTR_APP_LOG_DEBUG: logLevel = RETRO_LOG_INFO; break;
+            case PNTR_APP_LOG_DEBUG: logLevel = RETRO_LOG_DEBUG; break;
+            default: logLevel = RETRO_LOG_INFO; break;
         }
 
         if (log_cb != NULL) {
@@ -532,7 +533,7 @@ static void check_variables(void) {
 /**
  * libretro callback; Step the audio forwards a step.
  */
-void pntr_app_libretro_audio_cb() {
+void pntr_app_libretro_audio_cb(void) {
     pntr_app* app = (pntr_app*)pntr_app_libretro;
     if (app == NULL) {
         return;
@@ -751,7 +752,7 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
         return;
     }
 
-    // Find hte key that was pressed.
+    // Find the key that was pressed.
     pntr_app_key key = pntr_app_libretro_key(keycode);
     if (key == PNTR_APP_KEY_INVALID) {
         return;
@@ -761,13 +762,13 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
     event.app = pntr_app_libretro;
     event.key = key;
     event.type = down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
-    pntr_app_libretro->event(pntr_app_libretro, &event);
+    pntr_app_process_event(pntr_app_libretro, &event);
 }
 
 /**
  * libretro callback; Load the labels for the input buttons.
  */
-void pntr_app_libretro_init_descriptors() {
+void pntr_app_libretro_init_descriptors(void) {
     #define PNTR_APP_LIBRETRO_GAMEPAD_DEF(num) \
 		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" }, \
 		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" }, \
@@ -954,7 +955,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     // Initialize the libretro platform.
     if (!pntr_app_init(app, argc, argv)) {
         pntr_app_platform_close(app);
-        return NULL;
+        return false;
     }
 
     // Update the input button descriptions.
@@ -1096,7 +1097,7 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
     }
 
     if (sound == NULL) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load audio data%s\n");
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to load audio data\n");
         pntr_unload_file(data);
         return NULL;
     }
