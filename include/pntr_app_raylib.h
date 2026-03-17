@@ -173,6 +173,8 @@ pntr_app_mouse_button pntr_app_raylib_mouse_button(int button) {
         case MOUSE_BUTTON_LEFT: return PNTR_APP_MOUSE_BUTTON_LEFT;
         case MOUSE_BUTTON_RIGHT: return PNTR_APP_MOUSE_BUTTON_RIGHT;
         case MOUSE_BUTTON_MIDDLE: return PNTR_APP_MOUSE_BUTTON_MIDDLE;
+        case MOUSE_BUTTON_SIDE: return PNTR_APP_MOUSE_BUTTON_X1;
+        case MOUSE_BUTTON_EXTRA: return PNTR_APP_MOUSE_BUTTON_X2;
         default: return PNTR_APP_MOUSE_BUTTON_UNKNOWN;
     }
 }
@@ -352,7 +354,7 @@ bool pntr_app_platform_events(pntr_app* app) {
     }
 
     // Mouse Buttons
-    for (int i = MOUSE_BUTTON_LEFT; i <= MOUSE_BUTTON_MIDDLE; i++) {
+    for (int i = MOUSE_BUTTON_LEFT; i <= MOUSE_BUTTON_EXTRA; i++) {
         event.type = PNTR_APP_EVENTTYPE_UNKNOWN;
         if (IsMouseButtonPressed(i)) {
             event.type = PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN;

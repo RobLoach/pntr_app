@@ -558,6 +558,8 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
         case PNTR_APP_MOUSE_BUTTON_LEFT: return RETRO_DEVICE_ID_MOUSE_LEFT;
         case PNTR_APP_MOUSE_BUTTON_RIGHT: return RETRO_DEVICE_ID_MOUSE_RIGHT;
         case PNTR_APP_MOUSE_BUTTON_MIDDLE: return RETRO_DEVICE_ID_MOUSE_MIDDLE;
+        case PNTR_APP_MOUSE_BUTTON_X1: return RETRO_DEVICE_ID_MOUSE_BUTTON_4;
+        case PNTR_APP_MOUSE_BUTTON_X2: return RETRO_DEVICE_ID_MOUSE_BUTTON_5;
         default:
             return -1;
     }

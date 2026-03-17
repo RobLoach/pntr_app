@@ -88,7 +88,7 @@ bool Update(pntr_app* app, pntr_image* screen) {
     pntr_draw_circle(screen, pntr_app_mouse_x(app), pntr_app_mouse_y(app), 10, PNTR_BLACK);
 
     if (pntr_app_mouse_delta_x(app) != 0 || pntr_app_mouse_delta_y(app) != 0)
-        pntr_app_log_ex(PNTR_APP_LOG_INFO, "Mouse Delta: (%.2f, %.2f)", pntr_app_mouse_delta_x(app), pntr_app_mouse_delta_y(app));
+        //pntr_app_log_ex(PNTR_APP_LOG_INFO, "Mouse Delta: (%.2f, %.2f)", pntr_app_mouse_delta_x(app), pntr_app_mouse_delta_y(app));
 
     if (appData->droppedImage != NULL) {
         pntr_draw_image(screen, appData->droppedImage, 10, 10);
@@ -186,6 +186,8 @@ void Event(pntr_app* app, pntr_app_event* event) {
                 case PNTR_APP_MOUSE_BUTTON_LEFT: button = "left"; break;
                 case PNTR_APP_MOUSE_BUTTON_RIGHT: button = "right"; break;
                 case PNTR_APP_MOUSE_BUTTON_MIDDLE: button = "middle"; break;
+                case PNTR_APP_MOUSE_BUTTON_X1: button = "x1"; break;
+                case PNTR_APP_MOUSE_BUTTON_X2: button = "x2"; break;
                 case PNTR_APP_MOUSE_BUTTON_LAST:
                 case PNTR_APP_MOUSE_BUTTON_UNKNOWN: button = "unknown"; break;
             }

@@ -238,6 +238,8 @@ typedef enum pntr_app_mouse_button {
     PNTR_APP_MOUSE_BUTTON_LEFT = 1,
     PNTR_APP_MOUSE_BUTTON_RIGHT = 2,
     PNTR_APP_MOUSE_BUTTON_MIDDLE = 3,
+    PNTR_APP_MOUSE_BUTTON_X1 = 4,
+    PNTR_APP_MOUSE_BUTTON_X2 = 5,
     PNTR_APP_MOUSE_BUTTON_LAST
 } pntr_app_mouse_button;
 
@@ -292,6 +294,11 @@ typedef enum pntr_app_event_type {
      * @see pntr_app_event::save_size
      */
     PNTR_APP_EVENTTYPE_LOAD,
+
+    /**
+     * The last event type in the list.
+     */
+    PNTR_APP_EVENTTYPE_LAST
 } pntr_app_event_type;
 
 typedef enum pntr_app_sound_type {

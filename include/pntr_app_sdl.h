@@ -305,6 +305,8 @@ pntr_app_mouse_button pntr_app_sdl_mouse_button(int button) {
         case SDL_BUTTON_LEFT: return PNTR_APP_MOUSE_BUTTON_LEFT;
         case SDL_BUTTON_MIDDLE: return PNTR_APP_MOUSE_BUTTON_MIDDLE;
         case SDL_BUTTON_RIGHT: return PNTR_APP_MOUSE_BUTTON_RIGHT;
+        case SDL_BUTTON_X1: return PNTR_APP_MOUSE_BUTTON_X1;
+        case SDL_BUTTON_X2: return PNTR_APP_MOUSE_BUTTON_X2;
         default:
             return PNTR_APP_MOUSE_BUTTON_UNKNOWN;
     }

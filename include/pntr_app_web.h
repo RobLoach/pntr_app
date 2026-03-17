@@ -381,6 +381,8 @@ int pntr_app_emscripten_mouse_button_from_emscripten(unsigned short button) {
         case 0: return PNTR_APP_MOUSE_BUTTON_LEFT;
         case 1: return PNTR_APP_MOUSE_BUTTON_MIDDLE;
         case 2: return PNTR_APP_MOUSE_BUTTON_RIGHT;
+        case 3: return PNTR_APP_MOUSE_BUTTON_X1;
+        case 4: return PNTR_APP_MOUSE_BUTTON_X2;
     }
     return PNTR_APP_MOUSE_BUTTON_UNKNOWN;
 }
