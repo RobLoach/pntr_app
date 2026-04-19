@@ -425,29 +425,16 @@ bool pntr_app_platform_render(pntr_app* app) {
     }
 
     BeginDrawing();
-        ClearBackground(BLACK);
-
-        // Find the aspect ratio.
-        float aspect = (float)screen->width / (float)screen->height;
-        if (aspect <= 0) {
-            aspect = (float)screen->height / (float)screen->width;
-        }
-
-        // Calculate the optimal width/height to display in the screen size.
-        float height = GetScreenHeight();
-        float width = height * aspect;
-        if (width > GetScreenWidth()) {
-            height = (float)GetScreenWidth() / aspect;
-            width = GetScreenWidth();
-        }
-
-        // Draw the texture in the middle of the screen.
+    {
         Rectangle destRect;
-        pntr_app_raylib_destination_rect(app, &destRect);
-
         Rectangle source = {0, 0, screen->width, screen->height};
         Vector2 origin = {0, 0};
+
+        // Draw the texture in the middle of the screen.
+        ClearBackground(BLACK);
+        pntr_app_raylib_destination_rect(app, &destRect);
         DrawTexturePro(platform->screenTexture, source, destRect, origin, 0, WHITE);
+    }
     EndDrawing();
 
     // Make sure to sounds that are looping are playing still
@@ -630,7 +617,7 @@ void pntr_app_raylib_stop_sound(pntr_sound* sound) {
 
     pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
     audio->loop = false;
-    PlaySound(audio->sound);
+    StopSound(audio->sound);
 }
 #endif
 

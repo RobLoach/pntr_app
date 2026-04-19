@@ -30,7 +30,6 @@ typedef struct pntr_app_sdl_platform {
     SDL_Renderer* renderer;
     SDL_Texture* texture;
     uint64_t timerLastTime;
-    SDL_AudioSpec audioSpec;
 } pntr_app_sdl_platform;
 
 void pntr_app_sdl_free(void* ptr);
@@ -361,7 +360,7 @@ pntr_app_key pntr_app_sdl_key(SDL_Keycode key) {
         case SDLK_LEFTBRACKET: return PNTR_APP_KEY_LEFT_BRACKET;
         case SDLK_BACKSLASH: return PNTR_APP_KEY_BACKSLASH;
         case SDLK_RIGHTBRACKET: return PNTR_APP_KEY_RIGHT_BRACKET;
-        case SDLK_UNKNOWN: return PNTR_APP_KEY_GRAVE_ACCENT;
+        case SDLK_GRAVE: return PNTR_APP_KEY_GRAVE_ACCENT;
         case SDLK_ESCAPE: return PNTR_APP_KEY_ESCAPE;
         case SDLK_RETURN: return PNTR_APP_KEY_ENTER;
         case SDLK_TAB: return PNTR_APP_KEY_TAB;
@@ -678,9 +677,11 @@ void pntr_app_platform_close(pntr_app* app) {
  *
  * @internal
  */
+static MIX_Mixer* pntr_app_sdl_mixer = NULL;
+
 typedef struct pntr_sound_sdl {
-    Mix_Chunk* chunk;
-    int channel;
+    MIX_Audio* audio;
+    MIX_Track* track;
     float volume;
 } pntr_sound_sdl;
 
@@ -704,15 +705,15 @@ pntr_sound* pntr_app_sdl_load_sound_from_memory(pntr_app_sound_type type, unsign
         return NULL;
     }
 
-    Mix_Chunk* chunk = Mix_LoadWAV_IO(io, true);
+    MIX_Audio* mixAudio = MIX_LoadAudio_IO(pntr_app_sdl_mixer, io, true, true);
     pntr_unload_file(data);
-    if (chunk == NULL) {
+    if (mixAudio == NULL) {
         pntr_unload_memory(output);
         return NULL;
     }
 
-    output->chunk = chunk;
-    output->channel = -1;
+    output->audio = mixAudio;
+    output->track = MIX_CreateTrack(pntr_app_sdl_mixer);
     output->volume = 1.0f;
 
     return (pntr_sound*)output;
@@ -727,7 +728,8 @@ void pntr_app_sdl_unload_sound(pntr_sound* sound) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    Mix_FreeChunk(audio->chunk);
+    MIX_DestroyTrack(audio->track);
+    MIX_DestroyAudio(audio->audio);
     pntr_unload_memory((void*)sound);
 }
 #endif
@@ -735,8 +737,9 @@ void pntr_app_sdl_unload_sound(pntr_sound* sound) {
 #ifndef PNTR_APP_INIT_AUDIO
 #define PNTR_APP_INIT_AUDIO pntr_app_sdl_init_audio
 void pntr_app_sdl_init_audio(pntr_app* app) {
-    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
-    Mix_OpenAudio(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &platform->audioSpec);
+    (void)app;
+    MIX_Init();
+    pntr_app_sdl_mixer = MIX_CreateMixerDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, NULL);
 }
 #endif
 
@@ -744,8 +747,9 @@ void pntr_app_sdl_init_audio(pntr_app* app) {
 #define PNTR_APP_CLOSE_AUDIO pntr_app_sdl_close_audio
 void pntr_app_sdl_close_audio(pntr_app* app) {
     (void)app;
-    Mix_HaltChannel(-1);
-    Mix_CloseAudio();
+    MIX_DestroyMixer(pntr_app_sdl_mixer);
+    pntr_app_sdl_mixer = NULL;
+    MIX_Quit();
 }
 #endif
 
@@ -757,8 +761,16 @@ void pntr_app_sdl_play_sound(pntr_sound* sound, bool loop) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    audio->channel = Mix_PlayChannel(-1, audio->chunk, loop ? -1 : 0);
-    Mix_Volume(audio->channel, (int)(((float)MIX_MAX_VOLUME) * audio->volume));
+    MIX_SetTrackAudio(audio->track, audio->audio);
+    if (loop) {
+        SDL_PropertiesID props = SDL_CreateProperties();
+        SDL_SetNumberProperty(props, MIX_PROP_PLAY_LOOPS_NUMBER, -1);
+        MIX_PlayTrack(audio->track, props);
+        SDL_DestroyProperties(props);
+    } else {
+        MIX_PlayTrack(audio->track, 0);
+    }
+    MIX_SetTrackGain(audio->track, audio->volume);
 }
 #endif
 
@@ -770,9 +782,8 @@ void pntr_app_sdl_stop_sound(pntr_sound* sound) {
     }
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    if (audio->channel >= 0) {
-        Mix_Pause(audio->channel);
-        audio->channel = -1;
+    if (audio->track != NULL) {
+        MIX_StopTrack(audio->track, 0);
     }
 }
 #endif
@@ -781,8 +792,8 @@ void pntr_app_sdl_stop_sound(pntr_sound* sound) {
 #define PNTR_APP_SOUND_PLAYING pntr_app_sdl_sound_playing
 bool pntr_app_sdl_sound_playing(pntr_sound* sound) {
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
-    if (audio != NULL && audio->channel >= 0) {
-        return Mix_Playing(audio->channel) != 0;
+    if (audio != NULL && audio->track != NULL) {
+        return MIX_TrackPlaying(audio->track);
     }
 
     return false;
@@ -798,8 +809,8 @@ void pntr_app_sdl_set_volume(pntr_sound* sound, float volume) {
 
     pntr_sound_sdl* audio = (pntr_sound_sdl*)sound;
     audio->volume = volume;
-    if (audio->channel >= 0) {
-        Mix_Volume(audio->channel, (int)(((float)MIX_MAX_VOLUME) * volume));
+    if (audio->track != NULL) {
+        MIX_SetTrackGain(audio->track, volume);
     }
 }
 #endif

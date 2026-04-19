@@ -185,8 +185,7 @@ EM_JS(void, pntr_app_platform_render_js, (void* data, int dataSize, int width, i
  * @see https://w3c.github.io/gamepad/#remapping
  */
 pntr_app_gamepad_button pntr_app_emscripten_gamepad_button(int button) {
-    // TODO: emscripten: Determine the correct gamepad mappings? This is an Xbox controller.
-    // TODO: Emscripten: Adopt a "standard" mapping? https://w3c.github.io/gamepad/#remapping
+    // https://w3c.github.io/gamepad/#remapping
     switch (button) {
         case 0: return PNTR_APP_GAMEPAD_BUTTON_A;
         case 1: return PNTR_APP_GAMEPAD_BUTTON_B;
@@ -194,16 +193,17 @@ pntr_app_gamepad_button pntr_app_emscripten_gamepad_button(int button) {
         case 3: return PNTR_APP_GAMEPAD_BUTTON_Y;
         case 4: return PNTR_APP_GAMEPAD_BUTTON_LEFT_SHOULDER;
         case 5: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_SHOULDER;
-        case 6: return PNTR_APP_GAMEPAD_BUTTON_SELECT;
-        case 7: return PNTR_APP_GAMEPAD_BUTTON_START;
-        case 8: return PNTR_APP_GAMEPAD_BUTTON_MENU;
-        case 9: return PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB;
-        case 10: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
+        case 6: return PNTR_APP_GAMEPAD_BUTTON_LEFT_TRIGGER;
+        case 7: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_TRIGGER;
+        case 8: return PNTR_APP_GAMEPAD_BUTTON_SELECT;
+        case 9: return PNTR_APP_GAMEPAD_BUTTON_START;
+        case 10: return PNTR_APP_GAMEPAD_BUTTON_LEFT_THUMB;
         case 11: return PNTR_APP_GAMEPAD_BUTTON_RIGHT_THUMB;
         case 12: return PNTR_APP_GAMEPAD_BUTTON_UP;
         case 13: return PNTR_APP_GAMEPAD_BUTTON_DOWN;
-        case 14: return PNTR_APP_GAMEPAD_BUTTON_RIGHT;
-        case 15: return PNTR_APP_GAMEPAD_BUTTON_LEFT;
+        case 14: return PNTR_APP_GAMEPAD_BUTTON_LEFT;
+        case 15: return PNTR_APP_GAMEPAD_BUTTON_RIGHT;
+        case 16: return PNTR_APP_GAMEPAD_BUTTON_MENU;
     }
 
     return PNTR_APP_GAMEPAD_BUTTON_UNKNOWN;
@@ -246,7 +246,7 @@ void pntr_app_emscripten_gamepad_event(pntr_app* app, EmscriptenGamepadEvent* ge
         pntr_app_process_event(app, event);
     }
 
-    // TODO: Emscripten: Support Triggers on Axis 2/3, D-Pad on Axis 6/7
+    // TODO: Emscripten: Support right stick on Axis 2/3
 }
 
 /**
@@ -263,7 +263,7 @@ void pntr_app_emscripten_gamepad(pntr_app* app) {
     }
 
     // Loop through every available gamepad.
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.app = app;
     int numGamepads =  emscripten_get_num_gamepads();
     for (event.gamepad = 0; event.gamepad < numGamepads && event.gamepad < PNTR_APP_MAX_GAMEPADS; event.gamepad++) {
@@ -358,7 +358,7 @@ EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEv
     }
 
     // Build the key event.
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.app = app;
     event.type = (eventType == EMSCRIPTEN_EVENT_KEYDOWN) ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
     event.key = pntr_app_emscripten_key_from_event(keyEvent);
@@ -394,7 +394,7 @@ EM_BOOL pntr_app_emscripten_mouse_wheel(int eventType, const struct EmscriptenWh
         return EM_FALSE;
     }
 
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.app = app;
     event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
     event.mouseWheel = mouseEvent->deltaY > 0 ? 1 : -1;
@@ -457,7 +457,7 @@ EMSCRIPTEN_KEEPALIVE int pntr_app_emscripten_file_dropped(void* app, const char*
     return 0;
   }
 
-  pntr_app_event event;
+  pntr_app_event event = {0};
   event.app = app;
   event.type = PNTR_APP_EVENTTYPE_FILE_DROPPED;
   event.fileDropped = fileName;
@@ -475,13 +475,13 @@ EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_unload_memory(void* ptr) {
 }
 
 EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_load_state(void* app) {
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.type = PNTR_APP_EVENTTYPE_LOAD;
     pntr_app_manual_save_load_data((pntr_app*)app, &event, PNTR_APP_SAVE_FILENAME);
 }
 
 EMSCRIPTEN_KEEPALIVE void pntr_app_emscripten_save_state(void* app) {
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.type = PNTR_APP_EVENTTYPE_SAVE;
     pntr_app_manual_save_load_data((pntr_app*)app, &event, PNTR_APP_SAVE_FILENAME);
 }

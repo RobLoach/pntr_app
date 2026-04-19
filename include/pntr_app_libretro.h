@@ -251,7 +251,7 @@ pntr_app_key pntr_app_libretro_key(int key) {
         case RETROK_9: return PNTR_APP_KEY_9;
         //case RETROK_COLON: return PNTR_APP_KEY_COLON;
         case RETROK_SEMICOLON: return PNTR_APP_KEY_SEMICOLON;
-        case RETROK_LESS: return PNTR_APP_KEY_MINUS;
+        //case RETROK_LESS: return PNTR_APP_KEY_MINUS;
         case RETROK_EQUALS: return PNTR_APP_KEY_EQUAL;
         //case RETROK_GREATER: return PNTR_APP_KEY_GREATER;
         //case RETROK_QUESTION: return PNTR_APP_KEY_QUESTION;
@@ -400,7 +400,9 @@ unsigned retro_api_version(void) {
 }
 
 void retro_set_controller_port_device(unsigned port, unsigned device) {
-    log_cb(RETRO_LOG_INFO, "Plugging device %u into port %u.\n", device, port);
+    if (log_cb != NULL) {
+        log_cb(RETRO_LOG_INFO, "Plugging device %u into port %u.\n", device, port);
+    }
 }
 
 void retro_get_system_info(struct retro_system_info *info) {
@@ -464,11 +466,11 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
         height = (unsigned int)pntr_app_libretro->height;
     }
 
-    if (height <= 0) {
+    if (height == 0) {
         height = 480;
     }
 
-    if (width <= 0) {
+    if (width == 0) {
         width = 640;
     }
 
@@ -571,8 +573,8 @@ int pntr_app_libretro_mouse_button_to_retro(pntr_app_mouse_button button) {
  * @see RETRO_DEVICE_POINTER
  */
 float pntr_app_libretro_mouse_pointer_convert(float coord, float full) {
-	float max = (float)0x7fff;
-	return (((coord + max) / (max * 2.0f) ) * full) + 0.5f;
+    float max = (float)0x7fff;
+    return (((coord + max) / (max * 2.0f) ) * full) + 0.5f;
 }
 
 bool pntr_app_platform_events(pntr_app* app) {
@@ -760,7 +762,7 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
         return;
     }
 
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.app = pntr_app_libretro;
     event.key = key;
     event.type = down ? PNTR_APP_EVENTTYPE_KEY_DOWN : PNTR_APP_EVENTTYPE_KEY_UP;
@@ -772,21 +774,21 @@ void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t c
  */
 void pntr_app_libretro_init_descriptors(void) {
     #define PNTR_APP_LIBRETRO_GAMEPAD_DEF(num) \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "D-Pad Down" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "B" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "A" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "X" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Y" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Left Shoulder" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Right Shoulder" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" }, \
-		{ num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_LEFT, "D-Pad Left" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_UP, "D-Pad Up" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_DOWN, "D-Pad Down" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_RIGHT, "D-Pad Right" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_B, "B" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_A, "A" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_X, "X" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_Y, "Y" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_L, "Left Shoulder" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_R, "Right Shoulder" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_SELECT, "Select" }, \
+        { num, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_START, "Start" },
 
     // TODO: Update the input descriptions to match the header
-	struct retro_input_descriptor desc[] = {
+    struct retro_input_descriptor desc[] = {
         #if PNTR_APP_MAX_GAMEPADS > 0
             PNTR_APP_LIBRETRO_GAMEPAD_DEF(0)
         #endif
@@ -815,8 +817,8 @@ void pntr_app_libretro_init_descriptors(void) {
             PNTR_APP_LIBRETRO_GAMEPAD_DEF(8)
         #endif
 
-		{ 0 },
-	};
+        { 0 },
+    };
     #undef PNTR_APP_LIBRETRO_GAMEPAD_DEF
 
     environ_cb(RETRO_ENVIRONMENT_SET_INPUT_DESCRIPTORS, desc);
@@ -913,8 +915,8 @@ bool retro_load_game(const struct retro_game_info *info) {
     }
 
     // Set the audio callback.
-	struct retro_audio_callback retro_audio = { pntr_app_libretro_audio_cb, pntr_app_libretro_audio_set_state };
-	if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &retro_audio)) {
+    struct retro_audio_callback retro_audio = { pntr_app_libretro_audio_cb, pntr_app_libretro_audio_set_state };
+    if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &retro_audio)) {
         log_cb(RETRO_LOG_WARN, "[pntr] Failed to set audio callback\n");
     }
 
@@ -996,7 +998,7 @@ bool retro_serialize(void *data, size_t size) {
         return false;
     }
 
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.type = PNTR_APP_EVENTTYPE_SAVE;
     event.save = data;
     event.save_size = size;
@@ -1010,7 +1012,7 @@ bool retro_unserialize(const void *data, size_t size) {
         return false;
     }
 
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.type = PNTR_APP_EVENTTYPE_LOAD;
     event.save = (void*)data;
     event.save_size = size;
@@ -1038,7 +1040,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
         return;
     }
 
-    pntr_app_event event;
+    pntr_app_event event = {0};
     event.type = PNTR_APP_EVENTTYPE_CHEAT;
     event.cheat = code;
     pntr_app_process_event(pntr_app_libretro, &event);
@@ -1172,7 +1174,7 @@ void pntr_app_libretro_set_volume(pntr_sound* sound, float volume) {
     audio->volume = volume;
     if (audio->voice != NULL) {
         audio_mixer_voice_set_volume(audio->voice, volume);
-	}
+    }
 }
 #endif
 
