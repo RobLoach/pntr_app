@@ -2,7 +2,7 @@
 include(FetchContent)
 FetchContent_Declare(
     raylib
-    URL https://github.com/raysan5/raylib/archive/refs/tags/5.5.zip
+    URL https://github.com/raysan5/raylib/archive/refs/tags/6.0.zip
 )
 FetchContent_GetProperties(raylib)
 if (NOT raylib_POPULATED)
