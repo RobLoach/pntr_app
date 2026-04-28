@@ -173,6 +173,7 @@ if (PNTR_APP_BUILD_EXAMPLE_RETRO AND NOT EMSCRIPTEN)
         HAVE_STB_VORBIS
     )
 
+    set_property(TARGET pntr_app_example_libretro PROPERTY C_STANDARD 11)
     set_target_properties(pntr_app_example_libretro PROPERTIES PREFIX "" POSITION_INDEPENDENT_CODE ON)
 endif()
 

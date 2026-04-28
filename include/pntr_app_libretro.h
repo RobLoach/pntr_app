@@ -752,6 +752,9 @@ void retro_run(void) {
 }
 
 void pntr_app_libretro_keyboard_callback(bool down, unsigned keycode, uint32_t character, uint16_t key_modifiers) {
+    (void)character;
+    (void)key_modifiers;
+
     if (pntr_app_libretro == NULL || pntr_app_libretro->event == NULL) {
         return;
     }
@@ -1036,6 +1039,8 @@ void retro_cheat_reset(void) {
 }
 
 void retro_cheat_set(unsigned index, bool enabled, const char *code) {
+    (void)index;
+
     if (!enabled || pntr_app_libretro == NULL) {
         return;
     }
@@ -1062,6 +1067,7 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
 #ifndef PNTR_APP_INIT_AUDIO
 #define PNTR_APP_INIT_AUDIO pntr_app_libretro_init_audio
 void pntr_app_libretro_init_audio(pntr_app* app) {
+    (void)app;
     audio_mixer_init(PNTR_APP_LIBRETRO_SAMPLES);
 }
 #endif
@@ -1069,6 +1075,7 @@ void pntr_app_libretro_init_audio(pntr_app* app) {
 #ifndef PNTR_APP_CLOSE_AUDIO
 #define PNTR_APP_CLOSE_AUDIO pntr_app_libretro_close_audio
 void pntr_app_libretro_close_audio(pntr_app* app) {
+    (void)app;
     audio_mixer_done();
 }
 #endif
@@ -1097,6 +1104,12 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
             break;
         case PNTR_APP_SOUND_TYPE_OGG:
             sound = audio_mixer_load_ogg(data, dataSize);
+            break;
+        case PNTR_APP_SOUND_TYPE_UNKNOWN:
+        default:
+            log_cb(RETRO_LOG_ERROR, "[pntr] Unknown sound type\n");
+            pntr_unload_file(data);
+            return NULL;
             break;
     }
 
@@ -1197,6 +1210,8 @@ void pntr_app_libretro_stop_sound(pntr_sound* sound) {
 #endif
 
 bool pntr_app_platform_update_delta_time(pntr_app* app) {
+    (void)app;
+
     // Nothing, using retro_frame_time_cb() instead.
     return true;
 }
