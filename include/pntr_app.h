@@ -382,6 +382,8 @@ struct pntr_app {
     void (*event)(pntr_app* app, pntr_app_event* event);
     int fps;                        // The desired framerate. Use 0 for a variable framerate.
     int actualFPS;                  // The actual calculated FPS. @see pntr_app_fps()
+    int fpsFrameCount;              // Frame counter for smooth FPS calculation.
+    float fpsTimer;                 // Elapsed time accumulator for FPS calculation.
     void* userData;                 // A pointer to a custom state in memory that is passed across all pntr_app callbacks.
     pntr_image* screen;             // The screen buffer to render to.
     void* platform;                 // Custom data that is specific to the platform.
@@ -849,9 +851,12 @@ extern "C" {
 #endif
 
 void pntr_app_update_fps(pntr_app* app) {
-    if (app->deltaTime > 0.0f) {
-        // TODO: Switch to a frame counter instead?
-        app->actualFPS = (int)(1.0f / app->deltaTime);
+    app->fpsFrameCount++;
+    app->fpsTimer += app->deltaTime;
+    if (app->fpsTimer >= 1.0f) {
+        app->actualFPS = app->fpsFrameCount;
+        app->fpsFrameCount = 0;
+        app->fpsTimer -= 1.0f;
     }
 }
 
