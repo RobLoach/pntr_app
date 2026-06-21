@@ -10,6 +10,9 @@
 
 typedef struct pntr_app_platform_emscripten {
     emscripten_clipboard clipboard;
+    EmscriptenGamepadEvent gamepads[PNTR_APP_MAX_GAMEPADS];
+    int gamepadCount;
+    bool gamepadAvailable;
 } pntr_app_platform_emscripten;
 
 #endif  // PNTR_APP_WEB_H__
@@ -255,27 +258,29 @@ void pntr_app_emscripten_gamepad_event(pntr_app* app, EmscriptenGamepadEvent* ge
  * @see https://emscripten.org/docs/api_reference/html5.h.html#gamepad
  */
 void pntr_app_emscripten_gamepad(pntr_app* app) {
-    // Ask the browser if Gamepad API is supported.
-    // TODO: Cache the GamePad data so that it doesn't need to request this every frame.
+    pntr_app_platform_emscripten* platform = (pntr_app_platform_emscripten*)app->platform;
+
     EMSCRIPTEN_RESULT res = emscripten_sample_gamepad_data();
     if (res != EMSCRIPTEN_RESULT_SUCCESS) {
+        platform->gamepadAvailable = false;
+        platform->gamepadCount = 0;
         return;
     }
+    platform->gamepadAvailable = true;
 
-    // Loop through every available gamepad.
+    int numGamepads = emscripten_get_num_gamepads();
+    if (numGamepads > PNTR_APP_MAX_GAMEPADS) {
+        numGamepads = PNTR_APP_MAX_GAMEPADS;
+    }
+    platform->gamepadCount = numGamepads;
+
     pntr_app_event event = {0};
     event.app = app;
-    int numGamepads =  emscripten_get_num_gamepads();
-    for (event.gamepad = 0; event.gamepad < numGamepads && event.gamepad < PNTR_APP_MAX_GAMEPADS; event.gamepad++) {
-        EmscriptenGamepadEvent ge;
-
-        // Get the active state from the gamepad.
-        if (emscripten_get_gamepad_status(event.gamepad, &ge) != EMSCRIPTEN_RESULT_SUCCESS) {
+    for (event.gamepad = 0; event.gamepad < numGamepads; event.gamepad++) {
+        if (emscripten_get_gamepad_status(event.gamepad, &platform->gamepads[event.gamepad]) != EMSCRIPTEN_RESULT_SUCCESS) {
             continue;
         }
-
-        // Process the gamepad events for the given gamepad.
-        pntr_app_emscripten_gamepad_event(app, &ge, &event);
+        pntr_app_emscripten_gamepad_event(app, &platform->gamepads[event.gamepad], &event);
     }
 }
 
