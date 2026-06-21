@@ -426,6 +426,8 @@ pntr_app_key pntr_app_sdl_key(SDL_Keycode key) {
         case SDLK_RSHIFT: return PNTR_APP_KEY_RIGHT_SHIFT;
         case SDLK_RCTRL: return PNTR_APP_KEY_RIGHT_CONTROL;
         case SDLK_RALT: return PNTR_APP_KEY_RIGHT_ALT;
+        case SDLK_LGUI: return PNTR_APP_KEY_LEFT_SUPER;
+        case SDLK_RGUI: return PNTR_APP_KEY_RIGHT_SUPER;
         case SDLK_MENU: return PNTR_APP_KEY_MENU;
         default:
             return PNTR_APP_KEY_INVALID;
