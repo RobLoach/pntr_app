@@ -133,7 +133,7 @@ bool pntr_app_platform_events(pntr_app* app) {
             else if (ev.key == TB_KEY_INSERT) event.key = PNTR_APP_KEY_INSERT;
             else if (ev.key == TB_KEY_DELETE) event.key = PNTR_APP_KEY_DELETE;
             else if (ev.key == TB_KEY_HOME) event.key = PNTR_APP_KEY_HOME;
-            else if (ev.key == TB_KEY_END) event.key = PNTR_APP_KEY_HOME;
+            else if (ev.key == TB_KEY_END) event.key = PNTR_APP_KEY_END;
             else if (ev.key == TB_KEY_PGUP) event.key = PNTR_APP_KEY_PAGE_UP;
             else if (ev.key == TB_KEY_PGDN) event.key = PNTR_APP_KEY_PAGE_DOWN;
             else if (ev.key == TB_KEY_ARROW_UP) event.key = PNTR_APP_KEY_UP;
