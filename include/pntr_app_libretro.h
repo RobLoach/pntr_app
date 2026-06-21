@@ -24,6 +24,7 @@ typedef struct pntr_app_libretro_platform {
     int16_t mouseY;
     int16_t gamepadState[PNTR_APP_MAX_GAMEPADS][PNTR_APP_GAMEPAD_BUTTON_LAST];
     bool mouseHidden;
+    bool inputBitmasks;
 
     // Audio
     float* audioSamples;
@@ -661,9 +662,14 @@ bool pntr_app_platform_events(pntr_app* app) {
 
     // Gamepad Buttons
     for (event.gamepad = 0; event.gamepad < PNTR_APP_MAX_GAMEPADS; event.gamepad++) {
-        // TODO: Switch to libretro gamepad bitmasks?
+        int16_t bitmask = 0;
+        if (platform->inputBitmasks) {
+            bitmask = input_state_cb(event.gamepad, RETRO_DEVICE_JOYPAD, 0, RETRO_DEVICE_ID_JOYPAD_MASK);
+        }
         for (int button = RETRO_DEVICE_ID_JOYPAD_B; button <= RETRO_DEVICE_ID_JOYPAD_R3; button++) {
-            int16_t currentState = input_state_cb(event.gamepad, RETRO_DEVICE_JOYPAD, 0, button);
+            int16_t currentState = platform->inputBitmasks
+                ? (int16_t)((bitmask >> button) & 1)
+                : input_state_cb(event.gamepad, RETRO_DEVICE_JOYPAD, 0, button);
             if (currentState != platform->gamepadState[event.gamepad][button]) {
                 event.gamepadButton = pntr_app_libretro_gamepad_button(button);
                 if (event.gamepadButton == PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
@@ -859,6 +865,12 @@ bool pntr_app_platform_init(pntr_app* app) {
     platform->audioSamples = (float*)pntr_load_memory(sizeof(float) * platform->audioBufferSize * 2);
     platform->audioSamples2 = (int16_t*)pntr_load_memory(sizeof(int16_t) * platform->audioBufferSize * 2);
     pntr_app_libretro = app;
+
+    // Input bitmask support
+    bool bitmasks = false;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, &bitmasks)) {
+        platform->inputBitmasks = bitmasks;
+    }
 
     // Random Number Generator
     struct retro_perf_callback perf_callback;
