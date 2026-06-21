@@ -32,14 +32,11 @@ typedef struct pntr_sound_raylib {
     bool loop;
 } pntr_sound_raylib;
 
-// TODO: Switch PNTR_APP_RAYLIB_MAX_SOUNDS to a dynamic array.
-#ifndef PNTR_APP_RAYLIB_MAX_SOUNDS
-#define PNTR_APP_RAYLIB_MAX_SOUNDS 100
-#endif  // PNTR_APP_RAYLIB_MAX_SOUNDS
-
 typedef struct pntr_app_raylib_platform {
     Texture screenTexture;
-    pntr_sound_raylib* sounds[PNTR_APP_RAYLIB_MAX_SOUNDS];
+    pntr_sound_raylib** sounds;
+    int soundCount;
+    int soundCapacity;
 } pntr_app_raylib_platform;
 
 void pntr_app_raylib_set_icon(pntr_app* app, pntr_image* icon);
@@ -437,16 +434,12 @@ bool pntr_app_platform_render(pntr_app* app) {
     }
     EndDrawing();
 
-    // Make sure to sounds that are looping are playing still
+    // Make sure sounds that are looping are still playing
     if (pntr_app_raylib_platform_instance != NULL) {
-        for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
+        for (int i = 0; i < pntr_app_raylib_platform_instance->soundCount; i++) {
             pntr_sound_raylib* sound = pntr_app_raylib_platform_instance->sounds[i];
-            if (sound !=  NULL) {
-                if (sound->loop) {
-                    if (!IsSoundPlaying(sound->sound)) {
-                        PlaySound(sound->sound);
-                    }
-                }
+            if (sound->loop && !IsSoundPlaying(sound->sound)) {
+                PlaySound(sound->sound);
             }
         }
     }
@@ -479,9 +472,9 @@ bool pntr_app_platform_init(pntr_app* app) {
 
     // Audio
     InitAudioDevice();
-    for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
-        platform->sounds[i] = NULL;
-    }
+    platform->sounds = NULL;
+    platform->soundCount = 0;
+    platform->soundCapacity = 0;
 
     // Random Number Generator
     pntr_app_random_set_seed(app, (uint64_t)GetRandomValue(0, PRAND_RAND_MAX));
@@ -499,11 +492,10 @@ void pntr_app_platform_close(pntr_app* app) {
         UnloadTexture(platform->screenTexture);
 
         // Clean up any remaining sounds.
-        for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
-            if (platform->sounds[i] != NULL) {
-                pntr_unload_sound((pntr_sound*)platform->sounds[i]);
-            }
+        for (int i = 0; i < platform->soundCount; i++) {
+            pntr_unload_sound((pntr_sound*)platform->sounds[i]);
         }
+        MemFree(platform->sounds);
 
         pntr_unload_memory(app->platform);
     }
@@ -557,13 +549,19 @@ pntr_sound* pntr_app_raylib_load_sound_from_memory(pntr_app_sound_type type, uns
     output->sound = sound;
     output->loop = false;
 
-    // Find the first available Sound object
+    // Add to the dynamic sound array
     if (pntr_app_raylib_platform_instance != NULL) {
-        for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
-            if (pntr_app_raylib_platform_instance->sounds[i] ==  NULL) {
-                pntr_app_raylib_platform_instance->sounds[i] = output;
-                break;
+        pntr_app_raylib_platform* plat = pntr_app_raylib_platform_instance;
+        if (plat->soundCount >= plat->soundCapacity) {
+            int newCap = plat->soundCapacity == 0 ? 16 : plat->soundCapacity * 2;
+            pntr_sound_raylib** newArr = (pntr_sound_raylib**)MemRealloc(plat->sounds, (unsigned int)((size_t)newCap * sizeof(pntr_sound_raylib*)));
+            if (newArr != NULL) {
+                plat->sounds = newArr;
+                plat->soundCapacity = newCap;
             }
+        }
+        if (plat->soundCount < plat->soundCapacity) {
+            plat->sounds[plat->soundCount++] = output;
         }
     }
 
@@ -578,12 +576,13 @@ void pntr_app_raylib_unload_sound(pntr_sound* sound) {
         return;
     }
 
-    // Make sure to clean up the sound from the sound library
+    // Remove the sound from the dynamic array
     pntr_sound_raylib* audio = (pntr_sound_raylib*)sound;
     if (pntr_app_raylib_platform_instance != NULL) {
-        for (int i = 0; i < PNTR_APP_RAYLIB_MAX_SOUNDS; i++) {
-            if (pntr_app_raylib_platform_instance->sounds[i] ==  audio) {
-                pntr_app_raylib_platform_instance->sounds[i] = NULL;
+        pntr_app_raylib_platform* plat = pntr_app_raylib_platform_instance;
+        for (int i = 0; i < plat->soundCount; i++) {
+            if (plat->sounds[i] == audio) {
+                plat->sounds[i] = plat->sounds[--plat->soundCount];
                 break;
             }
         }
