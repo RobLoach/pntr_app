@@ -96,7 +96,7 @@ bool Update(pntr_app* app, pntr_image* screen) {
 
     // Hide the mouse when A is pressed
     if (pntr_app_gamepad_button_pressed(app, -1, PNTR_APP_GAMEPAD_BUTTON_A)) {
-        pntr_app_log(PNTR_APP_LOG_INFO, "Key A is pressed");
+        pntr_app_log(PNTR_APP_LOG_INFO, "Gamepad A is pressed");
         pntr_app_show_mouse(app, false);
     }
 
