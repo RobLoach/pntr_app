@@ -867,9 +867,8 @@ bool pntr_app_platform_init(pntr_app* app) {
     pntr_app_libretro = app;
 
     // Input bitmask support
-    bool bitmasks = false;
-    if (environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, &bitmasks)) {
-        platform->inputBitmasks = bitmasks;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_INPUT_BITMASKS, NULL)) {
+        platform->inputBitmasks = true;
     }
 
     // Random Number Generator
