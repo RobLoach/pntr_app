@@ -6,7 +6,8 @@
     !defined(PNTR_APP_WEB) && \
     !defined(PNTR_APP_LIBRETRO) && \
     !defined(PNTR_APP_RAYLIB) && \
-    !defined(PNTR_APP_SDL)
+    !defined(PNTR_APP_SDL) && \
+    !defined(PNTR_APP_ESP32)
     // libretro
     #if defined(__LIBRETRO__)
         #define PNTR_APP_LIBRETRO
@@ -14,6 +15,10 @@
     // Emscripten
     #elif defined(__EMSCRIPTEN__)
         #define PNTR_APP_EMSCRIPTEN
+
+    // ESP32
+    #elif defined(ESP_PLATFORM)
+        #define PNTR_APP_ESP32
 
     // SDL
     #elif defined(SDL_VERSION)

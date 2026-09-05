@@ -755,6 +755,7 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
 
 #define PNTR_APP_HEADER_ONLY
 #include "pntr_app_cli.h"
+#include "pntr_app_esp32.h"
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
 #include "pntr_app_sdl.h"
@@ -777,6 +778,22 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
 
 #ifndef PNTR_APP_SAVE_FILENAME
     #define PNTR_APP_SAVE_FILENAME "pntr_app.save"
+#endif
+
+#ifndef PNTR_APP_SARGS_MAX_ARGS
+/**
+ * How many command line arguments to make room for. Use 0 for the sokol_args default.
+ */
+#define PNTR_APP_SARGS_MAX_ARGS 0
+#endif
+
+#ifndef PNTR_APP_SARGS_BUF_SIZE
+/**
+ * The size of the command line argument buffer. Use 0 for the sokol_args default of 16KB.
+ *
+ * Worth lowering on memory constrained platforms.
+ */
+#define PNTR_APP_SARGS_BUF_SIZE 0
 #endif
 
 // Sokol Args
@@ -815,6 +832,7 @@ extern "C" {
 pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 
 #include "pntr_app_cli.h"
+#include "pntr_app_esp32.h"
 #include "pntr_app_libretro.h"
 #include "pntr_app_raylib.h"
 #include "pntr_app_sdl.h"
@@ -969,8 +987,8 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     sargs_desc desc;
     desc.argc = argc,
     desc.argv = argv,
-    desc.max_args = 0;
-    desc.buf_size = 0;
+    desc.max_args = PNTR_APP_SARGS_MAX_ARGS;
+    desc.buf_size = PNTR_APP_SARGS_BUF_SIZE;
     desc.allocator.alloc_fn = pntr_app_sokol_args_alloc;
     desc.allocator.free_fn = pntr_app_sokol_args_free;
     sargs_setup(&desc);
