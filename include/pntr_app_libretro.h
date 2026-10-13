@@ -2,6 +2,14 @@
 #ifndef PNTR_APP_LIBRETRO_H__
 #define PNTR_APP_LIBRETRO_H__
 
+// Platform capabilities, reported by pntr_app_has_feature().
+// No file drop; the frontend loads content instead.
+#define PNTR_APP_HAS_KEYBOARD
+#define PNTR_APP_HAS_MOUSE
+#define PNTR_APP_HAS_GAMEPAD
+#define PNTR_APP_HAS_SAVE_LOAD
+#define PNTR_APP_HAS_CHEAT
+
 #include <stdarg.h> // va_start, va_end
 #include <string.h> // memset
 #include <stdio.h>  // vfprintf
@@ -66,6 +74,11 @@ static retro_audio_sample_batch_t audio_batch_cb;
 static retro_environment_t environ_cb;
 static retro_input_poll_t input_poll_cb;
 static retro_input_state_t input_state_cb;
+
+// Whether the frontend accepted the frame time and audio callbacks. Not every frontend
+// supports them, so retro_run() has to cover the work itself when they're missing.
+static bool pntr_app_libretro_frame_time_available = false;
+static bool pntr_app_libretro_audio_callback_available = false;
 
 /**
  * Internal structure to handle libretro audio.
@@ -741,6 +754,13 @@ void retro_run(void) {
         return;
     }
 
+    // Without the frame time callback, deltaTime is never written and would sit at zero, so
+    // fall back to a fixed time step based on the requested frame rate.
+    if (!pntr_app_libretro_frame_time_available) {
+        pntr_app_libretro->deltaTime = (pntr_app_libretro->fps > 0) ? (1.0f / (float)pntr_app_libretro->fps) : (1.0f / 60.0f);
+        pntr_app_update_fps(pntr_app_libretro);
+    }
+
     // Update the game state.
     if (pntr_app_libretro->update != NULL) {
         if (pntr_app_libretro->update(pntr_app_libretro, pntr_app_libretro->screen) == false) {
@@ -751,6 +771,11 @@ void retro_run(void) {
 
     // Render the application.
     pntr_app_platform_render(pntr_app_libretro);
+
+    // Likewise, without the audio callback nothing else drives the mixer, so pump it here.
+    if (!pntr_app_libretro_audio_callback_available) {
+        pntr_app_libretro_audio_cb();
+    }
 
     // Update any core options.
     bool updated = false;
@@ -866,6 +891,14 @@ bool pntr_app_platform_init(pntr_app* app) {
     platform->audioBufferSize = PNTR_APP_LIBRETRO_SAMPLES / ((app->fps <= 0) ? 60 : app->fps);
     platform->audioSamples = (float*)pntr_load_memory(sizeof(float) * platform->audioBufferSize * 2);
     platform->audioSamples2 = (int16_t*)pntr_load_memory(sizeof(int16_t) * platform->audioBufferSize * 2);
+    if (platform->audioSamples == NULL || platform->audioSamples2 == NULL) {
+        // The audio callback runs on its own thread and memsets these, so don't start without them.
+        pntr_unload_memory(platform->audioSamples);
+        pntr_unload_memory(platform->audioSamples2);
+        pntr_unload_memory(platform);
+        app->platform = NULL;
+        return false;
+    }
     pntr_app_libretro = app;
 
     // Input bitmask support
@@ -933,7 +966,11 @@ bool retro_load_game(const struct retro_game_info *info) {
     // Set the audio callback.
     struct retro_audio_callback retro_audio = { pntr_app_libretro_audio_cb, pntr_app_libretro_audio_set_state };
     if (!environ_cb(RETRO_ENVIRONMENT_SET_AUDIO_CALLBACK, &retro_audio)) {
-        log_cb(RETRO_LOG_WARN, "[pntr] Failed to set audio callback\n");
+        log_cb(RETRO_LOG_WARN, "[pntr] Failed to set audio callback, mixing in retro_run() instead\n");
+        pntr_app_libretro_audio_callback_available = false;
+    }
+    else {
+        pntr_app_libretro_audio_callback_available = true;
     }
 
     // Build the command line arguments.
@@ -969,7 +1006,11 @@ bool retro_load_game(const struct retro_game_info *info) {
     }
     retro_frame_time.reference = 1000000 / app->fps;
     if (!environ_cb(RETRO_ENVIRONMENT_SET_FRAME_TIME_CALLBACK, &retro_frame_time)) {
-        log_cb(RETRO_LOG_INFO, "[pntr] Failed to set frame time callback.\n");
+        log_cb(RETRO_LOG_INFO, "[pntr] Failed to set frame time callback, using a fixed time step instead.\n");
+        pntr_app_libretro_frame_time_available = false;
+    }
+    else {
+        pntr_app_libretro_frame_time_available = true;
     }
 
     // Initialize the libretro platform.
