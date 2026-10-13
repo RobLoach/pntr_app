@@ -10,9 +10,22 @@ typedef struct AppData {
     float timePassed;
 } AppData;
 
-#include <stdio.h> // sprintf
+#include <stdio.h> // sprintf, fprintf
+#include <stdlib.h> // exit
 
-#define ASSERT(condition) PNTR_ASSERT(condition)
+/**
+ * Check a condition, reporting which one failed and where.
+ *
+ * Deliberately not PNTR_ASSERT()/assert(), which compile to nothing under NDEBUG and would
+ * make a Release test run pass without checking anything.
+ */
+#define ASSERT(condition)                                                                   \
+    do {                                                                                    \
+        if (!(condition)) {                                                                 \
+            fprintf(stderr, "%s:%d: assertion failed: %s\n", __FILE__, __LINE__, #condition); \
+            exit(1);                                                                        \
+        }                                                                                   \
+    } while (0)
 
 // State recorded by Event() for the pntr_app_manual_save_load_data() round trip.
 static int saveCount = 0;
@@ -246,13 +259,14 @@ bool Init(pntr_app* app) {
         ASSERT(pntr_app_mouse_x(app) == 0.0f);
         ASSERT(pntr_app_mouse_y(app) == 0.0f);
 
-        // Relative movement is clamped to the bottom right of the screen.
+        // Relative movement is clamped to the bottom right of the screen. The last valid pixel
+        // is width - 1, so that pntr_image_get_color() stays inside the screen.
         pntr_app_pre_events(app);
         e.mouseDeltaX = 1000.0f;
         e.mouseDeltaY = 1000.0f;
         pntr_app_process_event(app, &e);
-        ASSERT(pntr_app_mouse_x(app) == (float)pntr_app_width(app));
-        ASSERT(pntr_app_mouse_y(app) == (float)pntr_app_height(app));
+        ASSERT(pntr_app_mouse_x(app) == (float)(pntr_app_width(app) - 1));
+        ASSERT(pntr_app_mouse_y(app) == (float)(pntr_app_height(app) - 1));
 
         // Absolute positions are clamped the same way.
         pntr_app_pre_events(app);
