@@ -141,6 +141,8 @@ bool pntr_app_platform_events(pntr_app* app) {
             else if (ev.key == TB_KEY_ARROW_LEFT) event.key = PNTR_APP_KEY_LEFT;
             else if (ev.key == TB_KEY_ARROW_RIGHT) event.key = PNTR_APP_KEY_RIGHT;
             else if (ev.key == TB_KEY_BACK_TAB) event.key = PNTR_APP_KEY_TAB;
+            else if (ev.key == TB_KEY_TAB) event.key = PNTR_APP_KEY_TAB;
+            else if (ev.key == TB_KEY_BACKSPACE || ev.key == TB_KEY_BACKSPACE2) event.key = PNTR_APP_KEY_BACKSPACE;
             // else if (ev.key == TB_KEY_MOUSE_LEFT) event.key = PNTR_APP_KEY_LEFT;
             // else if (ev.key == TB_KEY_MOUSE_RIGHT)
             // else if (ev.key == TB_KEY_MOUSE_MIDDLE)
@@ -157,9 +159,14 @@ bool pntr_app_platform_events(pntr_app* app) {
                 if (ev.ch >= 97 && ev.ch <= 122) {
                     ev.ch -= 32;
                 }
-                event.key = ev.ch;
-                platform->keysEnabled[event.key] = true;
-                pntr_app_process_event(app, &event);
+
+                // ev.ch is a Unicode codepoint, so it has to be checked against the key range
+                // before it's used to index the key state.
+                if (ev.ch >= (uint32_t)PNTR_APP_KEY_FIRST && ev.ch < (uint32_t)PNTR_APP_KEY_LAST) {
+                    event.key = (pntr_app_key)ev.ch;
+                    platform->keysEnabled[event.key] = true;
+                    pntr_app_process_event(app, &event);
+                }
             }
         }
         break;
@@ -174,7 +181,7 @@ bool pntr_app_platform_events(pntr_app* app) {
             // Mouse Wheel
             if (ev.key == TB_KEY_MOUSE_WHEEL_UP || ev.key == TB_KEY_MOUSE_WHEEL_DOWN) {
                 event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-                event.mouseWheel = (ev.key == TB_KEY_MOUSE_WHEEL_UP) ? -1 : 1;
+                event.mouseWheel = (ev.key == TB_KEY_MOUSE_WHEEL_UP) ? 1 : -1;
                 pntr_app_process_event(app, &event);
                 break;
             }
