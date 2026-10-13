@@ -659,6 +659,83 @@ PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int le
 PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
 
 /**
+ * A feature that a platform may or may not support.
+ *
+ * @see pntr_app_has_feature()
+ */
+typedef enum pntr_app_feature {
+    PNTR_APP_FEATURE_KEYBOARD = 0, /** Keyboard input, reported through PNTR_APP_EVENTTYPE_KEY_DOWN and friends. */
+    PNTR_APP_FEATURE_MOUSE, /** Mouse or pointer input, including position, buttons and the wheel. */
+    PNTR_APP_FEATURE_GAMEPAD, /** Gamepad button input. */
+    PNTR_APP_FEATURE_SOUND, /** Loading and playing sounds. */
+    PNTR_APP_FEATURE_VOLUME, /** Changing the volume of a playing sound. */
+    PNTR_APP_FEATURE_CLIPBOARD, /** Getting and setting the clipboard text. */
+    PNTR_APP_FEATURE_TITLE, /** Setting the window title. */
+    PNTR_APP_FEATURE_ICON, /** Setting the window icon. */
+    PNTR_APP_FEATURE_CURSOR, /** Showing and hiding the mouse cursor. */
+    PNTR_APP_FEATURE_FILE_DROPPED, /** Drag and dropping a file onto the application. */
+    PNTR_APP_FEATURE_SAVE_LOAD, /** Saving and loading state, through PNTR_APP_EVENTTYPE_SAVE and PNTR_APP_EVENTTYPE_LOAD. */
+    PNTR_APP_FEATURE_CHEAT, /** Cheat codes, through PNTR_APP_EVENTTYPE_CHEAT. */
+    PNTR_APP_FEATURE_LAST
+} pntr_app_feature;
+
+/**
+ * Find out whether the platform being built for supports the given feature.
+ *
+ * Unsupported features aren't errors: pntr_play_sound() on a platform with no sound does
+ * nothing, and pntr_app_clipboard() returns NULL. This tells the two apart, so an application
+ * can hide a feature rather than appear broken. The answer is fixed at compile time for the
+ * platform, so it's safe to call before pntr_app_init().
+ *
+ * @param app The application to act on. May be NULL, as the answer doesn't depend on it.
+ * @param feature The feature to check for.
+ *
+ * @return True when the platform implements the feature, false otherwise.
+ */
+PNTR_APP_API bool pntr_app_has_feature(pntr_app* app, pntr_app_feature feature);
+
+/**
+ * Work out where a screen should be drawn inside a surface, keeping its aspect ratio.
+ *
+ * The screen is scaled up as far as it will go and centered, which leaves equal bars on either
+ * the top and bottom, or the left and right. Platforms use this to place the backbuffer in a
+ * resizable window, and then pntr_app_unproject_mouse() to turn a position in that window back
+ * into a position on the screen.
+ *
+ * @param screenWidth The width of the screen being displayed.
+ * @param screenHeight The height of the screen being displayed.
+ * @param surfaceWidth The width of the surface to display it in, like the window.
+ * @param surfaceHeight The height of the surface to display it in.
+ * @param outX Set to the left edge of the destination, in surface coordinates. Optional.
+ * @param outY Set to the top edge of the destination. Optional.
+ * @param outWidth Set to the width of the destination. Optional.
+ * @param outHeight Set to the height of the destination. Optional.
+ *
+ * @return True when a destination was calculated, false when any of the sizes were invalid.
+ */
+PNTR_APP_API bool pntr_app_letterbox(int screenWidth, int screenHeight, int surfaceWidth, int surfaceHeight, float* outX, float* outY, float* outWidth, float* outHeight);
+
+/**
+ * Convert a position on the surface into a position on the screen.
+ *
+ * Takes the destination rectangle that pntr_app_letterbox() calculated. A position outside of
+ * that rectangle is clamped to the edge of the screen, so that a click on a letterbox bar lands
+ * on the nearest pixel rather than off the screen.
+ *
+ * @param screenWidth The width of the screen being displayed.
+ * @param screenHeight The height of the screen being displayed.
+ * @param destX The left edge of the destination, from pntr_app_letterbox().
+ * @param destY The top edge of the destination.
+ * @param destWidth The width of the destination.
+ * @param destHeight The height of the destination.
+ * @param x In: the position on the surface. Out: the position on the screen.
+ * @param y In: the position on the surface. Out: the position on the screen.
+ *
+ * @return True when the position was converted, false when the destination or output was invalid.
+ */
+PNTR_APP_API bool pntr_app_unproject_mouse(int screenWidth, int screenHeight, float destX, float destY, float destWidth, float destHeight, float* x, float* y);
+
+/**
  * Platform callback to initialize the platform.
  *
  * @param app The application to initialize.
@@ -744,14 +821,14 @@ PNTR_APP_API void pntr_app_log_ex(pntr_app_log_type type, const char* message, .
  * @see pntr_app_fps()
  * @internal
  */
-void pntr_app_update_fps(pntr_app* app);
+PNTR_APP_API void pntr_app_update_fps(pntr_app* app);
 
 /**
  * Manually save/load the data.
  *
  * @internal
  */
-void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName);
+PNTR_APP_API void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName);
 
 #define PNTR_APP_HEADER_ONLY
 #include "pntr_app_cli.h"
@@ -868,7 +945,7 @@ pntr_app PNTR_APP_MAIN(int argc, char* argv[]);
 extern "C" {
 #endif
 
-void pntr_app_update_fps(pntr_app* app) {
+PNTR_APP_API void pntr_app_update_fps(pntr_app* app) {
     app->fpsFrameCount++;
     app->fpsTimer += app->deltaTime;
     if (app->fpsTimer >= 1.0f) {
@@ -881,7 +958,7 @@ void pntr_app_update_fps(pntr_app* app) {
 // Whether or not the application uses int main().
 #ifndef PNTR_APP_NO_ENTRY
 
-#ifdef EMSCRIPTEN
+#ifdef __EMSCRIPTEN__
 #ifndef PNTR_APP_EMSCRIPTEN_H
 #define PNTR_APP_EMSCRIPTEN_H <emscripten/emscripten.h>
 #endif  // PNTR_APP_EMSCRIPTEN_H
@@ -929,14 +1006,24 @@ void pntr_app_emscripten_update_loop(void* application) {
  * @see PNTR_APP_MAIN
  */
 int main(int argc, char* argv[]) {
-    pntr_app app = PNTR_APP_MAIN(argc, argv);
+    #ifdef __EMSCRIPTEN__
+        // emscripten_set_main_loop_arg() below unwinds this stack frame in order to return
+        // control to the browser, so the application can't live on the stack. The loop keeps
+        // using this pointer for the lifetime of the page.
+        static pntr_app app;
+    #else
+        pntr_app app;
+    #endif
+
+    app = PNTR_APP_MAIN(argc, argv);
 
     if (!pntr_app_init(&app, argc, argv)) {
         return 1;
     }
 
-    #if defined(EMSCRIPTEN)
-        // Set up the main loop.
+    #ifdef __EMSCRIPTEN__
+        // Set up the main loop. This does not return, so pntr_app_close() below is only
+        // reached on the other platforms.
         emscripten_set_main_loop_arg(pntr_app_emscripten_update_loop, &app, 0, 1);
     #else
         do {
@@ -1044,7 +1131,14 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
     if (app->init != NULL) {
         // Check if initialization worked.
         if (!app->init(app)) {
+            // Tear the platform and audio system back down, otherwise the window, renderer,
+            // textures and gamepad handles it opened are all leaked.
+            #ifdef PNTR_APP_CLOSE_AUDIO
+                PNTR_APP_CLOSE_AUDIO(app);
+            #endif
+            pntr_app_platform_close(app);
             pntr_unload_image(app->screen);
+            app->screen = NULL;
             sargs_shutdown();
             return false;
         }
@@ -1091,6 +1185,10 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
 }
 
 PNTR_APP_API pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName) {
+    if (fileName == NULL) {
+        return PNTR_APP_SOUND_TYPE_UNKNOWN;
+    }
+
     if (strstr(fileName, ".wav") || strstr(fileName, ".WAV")) {
         return PNTR_APP_SOUND_TYPE_WAV;
     }
@@ -1114,10 +1212,21 @@ PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName) {
         return NULL;
     }
 
-    return pntr_load_sound_from_memory(type, data, bytesRead);
+    pntr_sound* sound = pntr_load_sound_from_memory(type, data, bytesRead);
+    if (sound == NULL) {
+        // Ownership of the data only transfers when the sound is created, so a platform with
+        // no sound support, or a decoder that failed, leaves the file data to clean up here.
+        pntr_unload_file(data);
+    }
+
+    return sound;
 }
 
 PNTR_APP_API void* pntr_app_userdata(pntr_app* app) {
+    if (app == NULL) {
+        return NULL;
+    }
+
     return app->userData;
 }
 
@@ -1156,6 +1265,9 @@ PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
     if (app == NULL || event == NULL) {
         return;
     }
+
+    // Stamp the application on the event so that every platform doesn't have to remember to.
+    event->app = app;
 
     // The event indices address fixed size state arrays, so a platform that reports a raw
     // scancode, button number or device id would otherwise write outside of pntr_app.
@@ -1222,18 +1334,19 @@ PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
                 app->mouseChanged = true;
             }
 
-            // Clamp the mouse position.
+            // Clamp the mouse position. The last valid pixel is width - 1, so clamping to the
+            // width itself would let pntr_image_get_color() read off the edge of the screen.
             if (app->mouseX < 0) {
                 app->mouseX = 0;
             }
-            else if (app->mouseX > app->width) {
-                app->mouseX = (float)app->width;
+            else if (app->mouseX > (float)(app->width - 1)) {
+                app->mouseX = (float)(app->width - 1);
             }
             if (app->mouseY < 0) {
                 app->mouseY = 0;
             }
-            else if (app->mouseY > app->height) {
-                app->mouseY = (float)app->height;
+            else if (app->mouseY > (float)(app->height - 1)) {
+                app->mouseY = (float)(app->height - 1);
             }
             break;
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL:
@@ -1498,7 +1611,7 @@ PNTR_APP_API bool pntr_app_set_size(pntr_app* app, int width, int height) {
     return true;
 }
 
-void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
+PNTR_APP_API void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     if (app == NULL) {
         return NULL;
     }
@@ -1507,6 +1620,9 @@ void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size) {
     if (app->argFileData != NULL && app->argFileDataSize > 0) {
         // Copy the memory as an output, as the application is now responsible to unload it.
         void* output = pntr_load_memory(app->argFileDataSize);
+        if (output == NULL) {
+            return NULL;
+        }
         pntr_memory_copy(output, app->argFileData, app->argFileDataSize);
         if (size != NULL) {
             *size = app->argFileDataSize;
@@ -1595,6 +1711,15 @@ PNTR_APP_API int pntr_app_random(pntr_app* app, int min, int max) {
     if (app == NULL) {
         return 0;
     }
+
+    // prand_int() calculates (max - min + 1), which divides by zero when the range is
+    // inverted, so swap them rather than crashing.
+    if (min > max) {
+        int swap = min;
+        min = max;
+        max = swap;
+    }
+
     return prand_int(&app->prand, min, max);
 }
 
@@ -1659,6 +1784,10 @@ PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int te
  * @return The clipboard text, or NULL if there hasn't been any clipboard text set.
  */
 PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
+    if (app == NULL) {
+        return NULL;
+    }
+
     #ifdef PNTR_APP_CLIPBOARD
         const char* clipboard = PNTR_APP_CLIPBOARD(app);
         if (clipboard != NULL) {
@@ -1669,6 +1798,150 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
         }
     #endif
     return app->clipboard;
+}
+
+PNTR_APP_API bool pntr_app_has_feature(pntr_app* app, pntr_app_feature feature) {
+    (void)app;
+
+    switch (feature) {
+        // Derived from the hook macros the platform defined.
+        case PNTR_APP_FEATURE_SOUND:
+            #ifdef PNTR_APP_PLAY_SOUND
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_VOLUME:
+            #ifdef PNTR_APP_SET_VOLUME
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_CLIPBOARD:
+            #if defined(PNTR_APP_CLIPBOARD) && defined(PNTR_APP_SET_CLIPBOARD)
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_TITLE:
+            #ifdef PNTR_APP_SET_TITLE
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_ICON:
+            #ifdef PNTR_APP_SET_ICON
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_CURSOR:
+            #ifdef PNTR_APP_SHOW_MOUSE
+                return true;
+            #else
+                return false;
+            #endif
+
+        // Declared by the platform, as there's no hook macro to infer these from.
+        case PNTR_APP_FEATURE_KEYBOARD:
+            #ifdef PNTR_APP_HAS_KEYBOARD
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_MOUSE:
+            #ifdef PNTR_APP_HAS_MOUSE
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_GAMEPAD:
+            #ifdef PNTR_APP_HAS_GAMEPAD
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_FILE_DROPPED:
+            #ifdef PNTR_APP_HAS_FILE_DROPPED
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_SAVE_LOAD:
+            #ifdef PNTR_APP_HAS_SAVE_LOAD
+                return true;
+            #else
+                return false;
+            #endif
+        case PNTR_APP_FEATURE_CHEAT:
+            #ifdef PNTR_APP_HAS_CHEAT
+                return true;
+            #else
+                return false;
+            #endif
+
+        case PNTR_APP_FEATURE_LAST:
+        default:
+            return false;
+    }
+}
+
+PNTR_APP_API bool pntr_app_letterbox(int screenWidth, int screenHeight, int surfaceWidth, int surfaceHeight, float* outX, float* outY, float* outWidth, float* outHeight) {
+    if (screenWidth <= 0 || screenHeight <= 0 || surfaceWidth <= 0 || surfaceHeight <= 0) {
+        return false;
+    }
+
+    // Scale to the full height, and fall back to the full width when that doesn't fit.
+    float aspect = (float)screenWidth / (float)screenHeight;
+    float height = (float)surfaceHeight;
+    float width = height * aspect;
+    if (width > (float)surfaceWidth) {
+        width = (float)surfaceWidth;
+        height = width / aspect;
+    }
+
+    // Center it in the surface.
+    if (outX != NULL) {
+        *outX = ((float)surfaceWidth - width) / 2.0f;
+    }
+    if (outY != NULL) {
+        *outY = ((float)surfaceHeight - height) / 2.0f;
+    }
+    if (outWidth != NULL) {
+        *outWidth = width;
+    }
+    if (outHeight != NULL) {
+        *outHeight = height;
+    }
+
+    return true;
+}
+
+PNTR_APP_API bool pntr_app_unproject_mouse(int screenWidth, int screenHeight, float destX, float destY, float destWidth, float destHeight, float* x, float* y) {
+    if (x == NULL || y == NULL || destWidth <= 0.0f || destHeight <= 0.0f || screenWidth <= 0 || screenHeight <= 0) {
+        return false;
+    }
+
+    // Clamp into the destination, so a position on a letterbox bar maps to the nearest edge.
+    float surfaceX = *x;
+    float surfaceY = *y;
+    if (surfaceX < destX) {
+        surfaceX = destX;
+    }
+    else if (surfaceX > destX + destWidth) {
+        surfaceX = destX + destWidth;
+    }
+    if (surfaceY < destY) {
+        surfaceY = destY;
+    }
+    else if (surfaceY > destY + destHeight) {
+        surfaceY = destY + destHeight;
+    }
+
+    *x = (surfaceX - destX) * (float)screenWidth / destWidth;
+    *y = (surfaceY - destY) * (float)screenHeight / destHeight;
+
+    return true;
 }
 
 PNTR_APP_API void pntr_app_set_icon(pntr_app* app, pntr_image* icon) {
@@ -1754,7 +2027,11 @@ PNTR_APP_API bool pntr_sound_playing(pntr_sound* sound) {
     #endif
 }
 
-void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName) {
+PNTR_APP_API void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName) {
+    if (app == NULL || event == NULL || fileName == NULL) {
+        return;
+    }
+
     if (event->type == PNTR_APP_EVENTTYPE_LOAD) {
         unsigned int size;
 
@@ -1764,9 +2041,13 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
         }
         size_t decoded_size = b64_decoded_size((const char*)data, (size_t)size);
         unsigned char* saveData = (unsigned char*)pntr_load_memory(decoded_size + (size_t)1);
+        if (saveData == NULL) {
+            pntr_unload_file((unsigned char*)data);
+            return;
+        }
 
-        // Clear out the data.
-        for (size_t i = 0; i < decoded_size; i++) {
+        // Clear out the data, including the trailing byte.
+        for (size_t i = 0; i <= decoded_size; i++) {
             saveData[i] = '\0';
         }
 
@@ -1788,19 +2069,41 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
         // Load the memory
         event->save_size = PNTR_APP_SAVE_SIZE;
         event->save = pntr_load_memory(event->save_size);
+        if (event->save == NULL) {
+            event->save_size = 0;
+            return;
+        }
+
+        // Clear it, so that any bytes the application doesn't write aren't uninitialized heap
+        // contents being encoded out to the save file.
+        for (unsigned int i = 0; i < event->save_size; i++) {
+            ((unsigned char*)event->save)[i] = '\0';
+        }
+
         pntr_app_process_event(app, event);
 
         // Encode it. b64_encode() takes the length of the source data, not the destination.
         size_t encoded_size = b64_encoded_size(event->save_size);
         char* encoded = (char*)pntr_load_memory(encoded_size);
+        if (encoded == NULL) {
+            pntr_unload_memory(event->save);
+            event->save = NULL;
+            event->save_size = 0;
+            return;
+        }
+
         size_t result_size = b64_encode(encoded, (const unsigned char*)event->save, (size_t)event->save_size);
 
         // Save
-        pntr_save_file(fileName, encoded, (unsigned int)result_size);
+        if (!pntr_save_file(fileName, encoded, (unsigned int)result_size)) {
+            pntr_app_log(PNTR_APP_LOG_ERROR, "pntr_app: Failed to write the save file");
+        }
 
         // Clean up
         pntr_unload_memory(event->save);
         pntr_unload_memory((void*)encoded);
+        event->save = NULL;
+        event->save_size = 0;
     }
 }
 

@@ -14,7 +14,7 @@
 
     // Emscripten
     #elif defined(__EMSCRIPTEN__)
-        #define PNTR_APP_EMSCRIPTEN
+        #define PNTR_APP_WEB
 
     // ESP32
     #elif defined(ESP_PLATFORM)
