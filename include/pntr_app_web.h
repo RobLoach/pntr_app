@@ -2,6 +2,13 @@
 #ifndef PNTR_APP_WEB_H__
 #define PNTR_APP_WEB_H__
 
+// Platform capabilities, reported by pntr_app_has_feature().
+#define PNTR_APP_HAS_KEYBOARD
+#define PNTR_APP_HAS_MOUSE
+#define PNTR_APP_HAS_GAMEPAD
+#define PNTR_APP_HAS_FILE_DROPPED
+#define PNTR_APP_HAS_SAVE_LOAD
+
 #include <emscripten.h>
 #include <emscripten/html5.h>
 

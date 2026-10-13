@@ -181,3 +181,5 @@ Unless stated otherwise, all works are:
 ... and licensed under:
 
 - [zlib License](LICENSE)
+
+The vendored third-party headers in `include/external/` keep their own licences, which are listed in [include/external/README.md](include/external/README.md).
