@@ -53,6 +53,61 @@ pntr_app_gamepad_button pntr_app_sdl_gamepad_button(int button);
 pntr_app_mouse_button pntr_app_sdl_mouse_button(int button);
 pntr_app_key pntr_app_sdl_key(SDL_Keycode key);
 
+/**
+ * Find which gamepad slot the given SDL instance id is using.
+ *
+ * SDL joystick instance ids are unique per connection and keep counting up, so they can't be
+ * used to index pntr_app's gamepad state directly.
+ *
+ * @return The slot in 0..PNTR_APP_MAX_GAMEPADS, or -1 when the gamepad isn't open.
+ */
+int pntr_app_sdl_gamepad_index(pntr_app* app, SDL_JoystickID which) {
+    if (app == NULL || app->platform == NULL) {
+        return -1;
+    }
+
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
+        if (platform->gameControllers[i] != NULL && SDL_GetGamepadID(platform->gameControllers[i]) == which) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+/**
+ * Open the given gamepad into the first free slot, if there is one.
+ */
+void pntr_app_sdl_gamepad_add(pntr_app* app, SDL_JoystickID which) {
+    if (app == NULL || app->platform == NULL || pntr_app_sdl_gamepad_index(app, which) >= 0) {
+        return;
+    }
+
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
+        if (platform->gameControllers[i] == NULL) {
+            platform->gameControllers[i] = SDL_OpenGamepad(which);
+            return;
+        }
+    }
+}
+
+/**
+ * Close the given gamepad and clear the buttons it had held down.
+ */
+void pntr_app_sdl_gamepad_remove(pntr_app* app, SDL_JoystickID which) {
+    int gamepad = pntr_app_sdl_gamepad_index(app, which);
+    if (gamepad < 0) {
+        return;
+    }
+
+    pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
+    SDL_CloseGamepad(platform->gameControllers[gamepad]);
+    platform->gameControllers[gamepad] = NULL;
+    app->gamepadButtonState[gamepad] = 0;
+}
+
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[]) {
     // set up the application data
     pntr_app* app = SDL_malloc(sizeof(pntr_app));
@@ -92,9 +147,12 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event) {
         break;
 
         case SDL_EVENT_MOUSE_WHEEL:
-            pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-            pntrEvent.mouseWheel = event->wheel.y > 0 ? 1 : -1;
-            pntr_app_process_event(app, &pntrEvent);
+            // Ignore purely horizontal scrolling rather than reporting it as a scroll down.
+            if (event->wheel.y != 0) {
+                pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+                pntrEvent.mouseWheel = event->wheel.y > 0 ? 1 : -1;
+                pntr_app_process_event(app, &pntrEvent);
+            }
         break;
 
         case SDL_EVENT_MOUSE_BUTTON_DOWN:
@@ -109,13 +167,23 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event) {
         break;
 
         case SDL_EVENT_GAMEPAD_BUTTON_UP:
-        case SDL_EVENT_GAMEPAD_BUTTON_DOWN:
+        case SDL_EVENT_GAMEPAD_BUTTON_DOWN: {
+            int gamepad = pntr_app_sdl_gamepad_index(app, event->gbutton.which);
             pntrEvent.gamepadButton = pntr_app_sdl_gamepad_button(event->gbutton.button);
-            if (pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
+            if (gamepad >= 0 && pntrEvent.gamepadButton != PNTR_APP_GAMEPAD_BUTTON_UNKNOWN) {
                 pntrEvent.type = event->gbutton.down ? PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN : PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP;
-                pntrEvent.gamepad = event->gbutton.which;
+                pntrEvent.gamepad = gamepad;
                 pntr_app_process_event(app, &pntrEvent);
             }
+        }
+        break;
+
+        case SDL_EVENT_GAMEPAD_ADDED:
+            pntr_app_sdl_gamepad_add(app, event->gdevice.which);
+        break;
+
+        case SDL_EVENT_GAMEPAD_REMOVED:
+            pntr_app_sdl_gamepad_remove(app, event->gdevice.which);
         break;
 
         case SDL_EVENT_KEY_DOWN:
@@ -192,14 +260,9 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event) {
 SDL_AppResult SDL_AppIterate(void *appstate) {
     pntr_app* app = appstate;
 
-    // // Events
-    // pntr_app_pre_events(app);
-    // if (!pntr_app_platform_events(app)) {
-    //     return SDL_APP_SUCCESS;
-    // }
-
     // Update callback
     if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
+        pntr_app_update_fps(app);
         if (!app->update(app, app->screen)) {
             return SDL_APP_SUCCESS;
         }
@@ -210,12 +273,20 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
         return SDL_APP_SUCCESS;
     }
 
+    // Roll the input state over for the next frame. SDL_AppEvent() delivers events before
+    // SDL_AppIterate(), so this has to happen after update() has had a chance to see them,
+    // rather than before the events like the other platforms do.
+    pntr_app_pre_events(app);
+
     return SDL_APP_CONTINUE;
 }
 
 void SDL_AppQuit(void* appstate, SDL_AppResult result) {
     (void)result;
-    pntr_app_platform_close(appstate);
+    if (appstate != NULL) {
+        pntr_app_close((pntr_app*)appstate);
+        SDL_free(appstate);
+    }
 }
 
 /**
@@ -622,10 +693,13 @@ bool pntr_app_platform_init(pntr_app* app) {
     SDL_SetTextureScaleMode(platform->texture, SDL_SCALEMODE_NEAREST);
 
     // GamePads
-    for (int i = 0; i < 4; i++) {
-        if (SDL_IsGamepad(i)) {
-            platform->gameControllers[i] = SDL_OpenGamepad(i);
+    int gamepadCount = 0;
+    SDL_JoystickID* gamepadIds = SDL_GetGamepads(&gamepadCount);
+    if (gamepadIds != NULL) {
+        for (int i = 0; i < gamepadCount; i++) {
+            pntr_app_sdl_gamepad_add(app, gamepadIds[i]);
         }
+        SDL_free(gamepadIds);
     }
 
     // Start the tick counter for the delta time.
@@ -642,12 +716,10 @@ void pntr_app_platform_close(pntr_app* app) {
         pntr_app_sdl_platform* platform = (pntr_app_sdl_platform*)app->platform;
         if (platform != NULL) {
             // Close Gamepads
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < PNTR_APP_MAX_GAMEPADS; i++) {
                 if (platform->gameControllers[i] != NULL) {
-                    if (SDL_IsGamepad(i)) {
-                        SDL_CloseGamepad(platform->gameControllers[i]);
-                        platform->gameControllers[i] = NULL;
-                    }
+                    SDL_CloseGamepad(platform->gameControllers[i]);
+                    platform->gameControllers[i] = NULL;
                 }
             }
 
