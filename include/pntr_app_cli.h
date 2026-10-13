@@ -2,6 +2,11 @@
 #ifndef PNTR_APP_CLI_H__
 #define PNTR_APP_CLI_H__
 
+// Platform capabilities, reported by pntr_app_has_feature().
+// No gamepad, sound, clipboard, window title, icon, file drop, save state or cheats.
+#define PNTR_APP_HAS_KEYBOARD
+#define PNTR_APP_HAS_MOUSE
+
 typedef struct pntr_app_cli_platform {
     int mouseX;
     int mouseY;
@@ -23,9 +28,11 @@ typedef struct pntr_app_cli_platform {
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wimplicit-function-declaration"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
-#define tb_malloc  pntr_load_memory
+// Keep termbox2 on one allocator. pntr has no realloc, so mixing pntr_load_memory with libc
+// realloc/free breaks as soon as an application overrides PNTR_MALLOC and PNTR_FREE.
+#define tb_malloc  malloc
 #define tb_realloc realloc
-#define tb_free    pntr_unload_memory
+#define tb_free    free
 #define TB_OPT_EGC
 #define TB_IMPL
 #include "external/termbox2.h"
