@@ -332,7 +332,7 @@ typedef struct pntr_app_event {
     float mouseY;
     float mouseDeltaX;
     float mouseDeltaY;
-    int mouseWheel; /** When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be -1 when the mouse wheel is scrolling up, and 1 when scrolling down. */
+    int mouseWheel; /** When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be 1 when the mouse wheel is scrolling up, and -1 when scrolling down. */
 
     // Gamepad
     pntr_app_gamepad_button gamepadButton;
@@ -1153,6 +1153,38 @@ PNTR_APP_API void pntr_app_set_userdata(pntr_app* app, void* userData) {
 }
 
 PNTR_APP_API void pntr_app_process_event(pntr_app* app, pntr_app_event* event) {
+    if (app == NULL || event == NULL) {
+        return;
+    }
+
+    // The event indices address fixed size state arrays, so a platform that reports a raw
+    // scancode, button number or device id would otherwise write outside of pntr_app.
+    switch (event->type) {
+        case PNTR_APP_EVENTTYPE_KEY_DOWN:
+        case PNTR_APP_EVENTTYPE_KEY_UP:
+            if ((int)event->key < (int)PNTR_APP_KEY_FIRST || (int)event->key >= (int)PNTR_APP_KEY_LAST) {
+                return;
+            }
+            break;
+        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_DOWN:
+        case PNTR_APP_EVENTTYPE_GAMEPAD_BUTTON_UP:
+            if (event->gamepad < 0 || event->gamepad >= PNTR_APP_MAX_GAMEPADS) {
+                return;
+            }
+            if ((int)event->gamepadButton < (int)PNTR_APP_GAMEPAD_BUTTON_FIRST || (int)event->gamepadButton >= (int)PNTR_APP_GAMEPAD_BUTTON_LAST) {
+                return;
+            }
+            break;
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_DOWN:
+        case PNTR_APP_EVENTTYPE_MOUSE_BUTTON_UP:
+            if ((int)event->mouseButton < (int)PNTR_APP_MOUSE_BUTTON_FIRST || (int)event->mouseButton >= (int)PNTR_APP_MOUSE_BUTTON_LAST) {
+                return;
+            }
+            break;
+        default:
+            break;
+    }
+
     switch (event->type) {
         case PNTR_APP_EVENTTYPE_KEY_DOWN:
             app->keysDown[event->key] = true;
@@ -1758,10 +1790,10 @@ void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const 
         event->save = pntr_load_memory(event->save_size);
         pntr_app_process_event(app, event);
 
-        // Encode it
+        // Encode it. b64_encode() takes the length of the source data, not the destination.
         size_t encoded_size = b64_encoded_size(event->save_size);
         char* encoded = (char*)pntr_load_memory(encoded_size);
-        size_t result_size = b64_encode(encoded, (const unsigned char*)event->save, encoded_size);
+        size_t result_size = b64_encode(encoded, (const unsigned char*)event->save, (size_t)event->save_size);
 
         // Save
         pntr_save_file(fileName, encoded, (unsigned int)result_size);
