@@ -423,7 +423,11 @@ pntr_app_key pntr_app_emscripten_key_from_event(const struct EmscriptenKeyboardE
 
 EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent *keyEvent, void *userData) {
     pntr_app* app = (pntr_app*)userData;
-    if (app == NULL || app->event == NULL) {
+
+    // Deliberately not checking app->event here. pntr_app_process_event() is what maintains
+    // app->keysDown, so skipping it would leave the keyboard dead for an application that
+    // polls with pntr_app_key_down() instead of taking an event callback.
+    if (app == NULL) {
         return EM_FALSE;
     }
 

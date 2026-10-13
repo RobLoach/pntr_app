@@ -975,20 +975,31 @@ void pntr_app_emscripten_update_loop(void* application) {
 
     pntr_app* app = (pntr_app*)application;
 
-    // Poll Events
-    pntr_app_pre_events(app);
+    // Poll Events. Only gamepads are polled here; the browser delivers keyboard and mouse
+    // events asynchronously through the callbacks registered in pntr_app_platform_init().
     if (!pntr_app_platform_events(app)) {
         emscripten_cancel_main_loop();
         return;
     }
 
     // Run the update function.
-    if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
-        pntr_app_update_fps(app);
-        if (!app->update(app, app->screen)) {
-            emscripten_cancel_main_loop();
-            return;
+    if (pntr_app_platform_update_delta_time(app)) {
+        if (app->update != NULL) {
+            pntr_app_update_fps(app);
+            if (!app->update(app, app->screen)) {
+                emscripten_cancel_main_loop();
+                return;
+            }
         }
+
+        // Roll the input state over for the next frame, now that update() has had a chance to
+        // see it. Rolling over before the events, the way the platforms that poll their input
+        // do, would snapshot the same frame's keys into keysDownLast and hide every edge, so
+        // pntr_app_key_pressed() and pntr_app_key_released() would never report anything.
+        //
+        // This has to stay inside the delta time check: on the frames it skips, update() never
+        // ran, so rolling over would discard an edge the application hasn't seen yet.
+        pntr_app_pre_events(app);
     }
 
     // Render
