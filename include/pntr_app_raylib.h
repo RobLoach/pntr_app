@@ -477,7 +477,10 @@ bool pntr_app_platform_init(pntr_app* app) {
     platform->soundCapacity = 0;
 
     // Random Number Generator
-    pntr_app_random_set_seed(app, (uint64_t)GetRandomValue(0, PRAND_RAND_MAX));
+    // GetRandomValue() takes ints, so the seed is built out of two calls rather than asking for
+    // PRAND_RAND_MAX, which would overflow the parameter and always seed with the same value.
+    uint64_t seed = ((uint64_t)GetRandomValue(0, INT32_MAX) << 32) | (uint64_t)GetRandomValue(0, INT32_MAX);
+    pntr_app_random_set_seed(app, seed);
 
     return true;
 }
