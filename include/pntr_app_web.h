@@ -165,6 +165,20 @@ EM_JS(int, pntr_app_platform_get_width, (pntr_app* app), {
     return Module.canvas.width;
 })
 
+/**
+ * The displayed size of the canvas in CSS pixels, which is what mouse events are reported in.
+ *
+ * This is not the same as the canvas width and height, which is the size of the pixel buffer
+ * that's being scaled up into that displayed area.
+ */
+EM_JS(int, pntr_app_platform_get_client_width, (pntr_app* app), {
+    return Module.canvas.getBoundingClientRect().width || Module.canvas.width;
+})
+
+EM_JS(int, pntr_app_platform_get_client_height, (pntr_app* app), {
+    return Module.canvas.getBoundingClientRect().height || Module.canvas.height;
+})
+
 EM_JS(int, pntr_app_platform_get_height, (pntr_app* app), {
     return Module.canvas.height;
 })
@@ -302,8 +316,39 @@ bool pntr_app_platform_render(pntr_app* app) {
 
 pntr_app_key pntr_app_emscripten_key_from_event(const struct EmscriptenKeyboardEvent *keyEvent) {
     // TODO: emscripten: which/keyCode is deprecated? Do some string checkings instead.
+
+    // DOM_KEY_LOCATION_RIGHT tells the left and right modifiers apart, as they share a keyCode.
+    if (keyEvent->location == 2) {
+        switch (keyEvent->which) {
+            case 16: return PNTR_APP_KEY_RIGHT_SHIFT;
+            case 17: return PNTR_APP_KEY_RIGHT_CONTROL;
+            case 18: return PNTR_APP_KEY_RIGHT_ALT;
+            default: break;
+        }
+    }
+
+    // DOM_KEY_LOCATION_NUMPAD, so that the keypad Enter is distinct from the main one.
+    if (keyEvent->location == 3 && keyEvent->which == 13) {
+        return PNTR_APP_KEY_KP_ENTER;
+    }
+
     switch (keyEvent->which) {
         case 13: return PNTR_APP_KEY_ENTER;
+        case 8: return PNTR_APP_KEY_BACKSPACE;
+        case 27: return PNTR_APP_KEY_ESCAPE;
+        case 45: return PNTR_APP_KEY_INSERT;
+        case 46: return PNTR_APP_KEY_DELETE;
+        case 36: return PNTR_APP_KEY_HOME;
+        case 35: return PNTR_APP_KEY_END;
+        case 33: return PNTR_APP_KEY_PAGE_UP;
+        case 34: return PNTR_APP_KEY_PAGE_DOWN;
+        case 20: return PNTR_APP_KEY_CAPS_LOCK;
+        case 145: return PNTR_APP_KEY_SCROLL_LOCK;
+        case 19: return PNTR_APP_KEY_PAUSE;
+        case 44: return PNTR_APP_KEY_PRINT_SCREEN;
+        case 91: return PNTR_APP_KEY_LEFT_SUPER;
+        case 224: return PNTR_APP_KEY_LEFT_SUPER; // Firefox
+        case 92: return PNTR_APP_KEY_RIGHT_SUPER;
         case 39: return PNTR_APP_KEY_RIGHT;
         case 38: return PNTR_APP_KEY_UP;
         case 37: return PNTR_APP_KEY_LEFT;
@@ -323,8 +368,13 @@ pntr_app_key pntr_app_emscripten_key_from_event(const struct EmscriptenKeyboardE
         case 103: return PNTR_APP_KEY_KP_7;
         case 104: return PNTR_APP_KEY_KP_8;
         case 105: return PNTR_APP_KEY_KP_9;
+        // Firefox uses its own legacy codes for these three; everything else uses the 18x range.
         case 173: return PNTR_APP_KEY_MINUS;
+        case 189: return PNTR_APP_KEY_MINUS;
         case 61: return PNTR_APP_KEY_EQUAL;
+        case 187: return PNTR_APP_KEY_EQUAL;
+        case 59: return PNTR_APP_KEY_SEMICOLON;
+        case 186: return PNTR_APP_KEY_SEMICOLON;
         case 220: return PNTR_APP_KEY_BACKSLASH;
         case 219: return PNTR_APP_KEY_LEFT_BRACKET;
         case 221: return PNTR_APP_KEY_RIGHT_BRACKET;
@@ -353,7 +403,15 @@ pntr_app_key pntr_app_emscripten_key_from_event(const struct EmscriptenKeyboardE
         case 110: return PNTR_APP_KEY_KP_DECIMAL;
     }
 
-    return keyEvent->which;
+    // JavaScript key codes only line up with pntr_app_key for space, the digits and the letters.
+    // Anything else that isn't in the table above would land on an unrelated key.
+    if (keyEvent->which == 32 ||
+        (keyEvent->which >= 48 && keyEvent->which <= 57) ||
+        (keyEvent->which >= 65 && keyEvent->which <= 90)) {
+        return (pntr_app_key)keyEvent->which;
+    }
+
+    return PNTR_APP_KEY_INVALID;
 }
 
 EM_BOOL pntr_app_emscripten_key(int eventType, const struct EmscriptenKeyboardEvent *keyEvent, void *userData) {
@@ -402,7 +460,8 @@ EM_BOOL pntr_app_emscripten_mouse_wheel(int eventType, const struct EmscriptenWh
     pntr_app_event event = {0};
     event.app = app;
     event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-    event.mouseWheel = mouseEvent->deltaY > 0 ? 1 : -1;
+    // A positive deltaY is a scroll down, which pntr_app reports as -1.
+    event.mouseWheel = mouseEvent->deltaY > 0 ? -1 : 1;
     pntr_app_process_event(app, &event);
 
     return EM_TRUE;
@@ -440,8 +499,16 @@ EM_BOOL pntr_app_emscripten_mouse(int eventType, const struct EmscriptenMouseEve
         }
         break;
         case PNTR_APP_EVENTTYPE_MOUSE_MOVE: {
-            event.mouseX = (float)mouseEvent->targetX / (float)pntr_app_platform_get_width(app) * (float)app->width;
-            event.mouseY = (float)mouseEvent->targetY / (float)pntr_app_platform_get_height(app) * (float)app->height;
+            // targetX and targetY are in CSS pixels, so they're scaled by the displayed size of
+            // the canvas rather than by the size of the pixel buffer behind it.
+            int clientWidth = pntr_app_platform_get_client_width(app);
+            int clientHeight = pntr_app_platform_get_client_height(app);
+            if (clientWidth <= 0 || clientHeight <= 0) {
+                break;
+            }
+
+            event.mouseX = (float)mouseEvent->targetX / (float)clientWidth * (float)app->width;
+            event.mouseY = (float)mouseEvent->targetY / (float)clientHeight * (float)app->height;
             pntr_app_process_event(app, &event);
         }
         break;
