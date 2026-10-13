@@ -82,7 +82,11 @@ EM_JS(pntr_sound*, pntr_app_web_load_sound_from_memory, (pntr_app_sound_type typ
 
     const data = HEAPU8.slice(dataPtr, dataPtr + dataSize);
     const audio = new Audio();
-    audio.src = URL.createObjectURL(new Blob([data], { type }));
+
+    // Label the blob with mimeType, not type. type is the numeric pntr_app_sound_type, which
+    // would make the content type the string "1" or "2" and leave the browser to sniff the
+    // bytes. A wav survives that, but an ogg ends up with no duration to seek against.
+    audio.src = URL.createObjectURL(new Blob([data], { type: mimeType }));
     Module.pntr_sounds = Module.pntr_sounds || [];
     Module.pntr_sounds.push(audio);
 
@@ -94,7 +98,7 @@ EM_JS(pntr_sound*, pntr_app_web_load_sound_from_memory, (pntr_app_sound_type typ
 EM_JS(void, pntr_app_web_play_sound, (pntr_sound* sound, bool loop), {
     const audio = Module.pntr_sounds[sound - 1];
     if (!audio) {
-        console.log('play: sound not loaded', {sound, pntr_sounds: Module.pntr_sound});
+        console.log('play: sound not loaded', {sound, pntr_sounds: Module.pntr_sounds});
         return;
     }
 
@@ -111,6 +115,11 @@ EM_JS(void, pntr_app_web_play_sound, (pntr_sound* sound, bool loop), {
                     // TODO: Figure out a clean way to handle delayed sounds with currentTime.
                      pntr_app_web_play_sound(sound, loop);
                 }, 500);
+            }
+            else {
+                // Anything else was being swallowed, which made a sound that silently refused
+                // to play impossible to tell apart from one that played.
+                console.warn('play: sound failed to play', {sound, error: error.name, message: error.message});
             }
         });
     }
@@ -147,8 +156,14 @@ EM_JS(void, pntr_app_web_unload_sound, (pntr_sound* sound), {
     const audio = Module.pntr_sounds[sound - 1];
     if (audio) {
         audio.pause();
-        audio.currentTime = 0;
         URL.revokeObjectURL(audio.src);
+
+        // Drop the source and clear the slot. Leaving the element in place with a revoked blob
+        // url kept a dead sound reachable, so a later play() on the same handle would quietly
+        // fail against a source the browser can no longer fetch.
+        audio.removeAttribute('src');
+        audio.load();
+        Module.pntr_sounds[sound - 1] = null;
     }
 })
 
