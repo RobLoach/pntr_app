@@ -2,6 +2,13 @@
 #ifndef PNTR_APP_RAYLIB_H__
 #define PNTR_APP_RAYLIB_H__
 
+// Platform capabilities, reported by pntr_app_has_feature().
+#define PNTR_APP_HAS_KEYBOARD
+#define PNTR_APP_HAS_MOUSE
+#define PNTR_APP_HAS_GAMEPAD
+#define PNTR_APP_HAS_FILE_DROPPED
+#define PNTR_APP_HAS_SAVE_LOAD
+
 #ifndef PNTR_APP_RAYLIB_H
 #define PNTR_APP_RAYLIB_H "raylib.h"
 #endif
@@ -177,25 +184,8 @@ pntr_app_mouse_button pntr_app_raylib_mouse_button(int button) {
 }
 
 void pntr_app_raylib_destination_rect(pntr_app* app, Rectangle* outRect) {
-    // Find the aspect ratio.
-    float aspect = (float)app->screen->width / (float)app->screen->height;
-    if (aspect <= 0) {
-        aspect = (float)app->screen->height / (float)app->screen->width;
-    }
-
-    // Calculate the optimal width/height to display in the screen size.
-    float height = GetScreenHeight();
-    float width = height * aspect;
-    if (width > GetScreenWidth()) {
-        height = (float)GetScreenWidth() / aspect;
-        width = GetScreenWidth();
-    }
-
-    // Draw the texture in the middle of the screen.
-    outRect->x = (GetScreenWidth() - width) / 2;
-    outRect->y = (GetScreenHeight() - height) / 2;
-    outRect->width = width;
-    outRect->height = height;
+    pntr_app_letterbox(app->screen->width, app->screen->height, GetScreenWidth(), GetScreenHeight(),
+        &outRect->x, &outRect->y, &outRect->width, &outRect->height);
 }
 
 void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event, Vector2* mouseDelta) {
@@ -203,8 +193,11 @@ void pntr_app_raylib_fix_mouse_coordinates(pntr_app* app, pntr_app_event* event,
     pntr_app_raylib_destination_rect(app, &dstRect);
 
     if (!IsCursorHidden()) {
-        event->mouseX = (GetMouseX() - dstRect.x) * app->screen->width / dstRect.width;
-        event->mouseY = (GetMouseY() - dstRect.y) * app->screen->height / dstRect.height;
+        event->mouseX = (float)GetMouseX();
+        event->mouseY = (float)GetMouseY();
+        pntr_app_unproject_mouse(app->screen->width, app->screen->height,
+            dstRect.x, dstRect.y, dstRect.width, dstRect.height,
+            &event->mouseX, &event->mouseY);
     }
     else {
         event->mouseDeltaX = mouseDelta->x;

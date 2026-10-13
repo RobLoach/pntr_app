@@ -2,6 +2,13 @@
 #ifndef PNTR_APP_SDL_H__
 #define PNTR_APP_SDL_H__
 
+// Platform capabilities, reported by pntr_app_has_feature().
+#define PNTR_APP_HAS_KEYBOARD
+#define PNTR_APP_HAS_MOUSE
+#define PNTR_APP_HAS_GAMEPAD
+#define PNTR_APP_HAS_FILE_DROPPED
+#define PNTR_APP_HAS_SAVE_LOAD
+
 #ifndef PNTR_APP_NO_ENTRY
 #define PNTR_APP_NO_ENTRY
 #endif
@@ -508,29 +515,12 @@ pntr_app_key pntr_app_sdl_key(SDL_Keycode key) {
 }
 
 void pntr_app_platform_get_destination(pntr_image* screen, pntr_app_sdl_platform* platform, SDL_FRect* outRect) {
-    // Find the aspect ratio.
-    float aspect = (float)screen->width / (float)screen->height;
-    if (aspect <= 0) {
-        aspect = (float)screen->height / (float)screen->width;
-    }
-
     int windowWidth;
     int windowHeight;
     SDL_GetRenderOutputSize(platform->renderer, &windowWidth, &windowHeight);
 
-    // Calculate the optimal width/height to display in the screen size.
-    float height = (float)windowHeight;
-    float width = height * aspect;
-    if (width > windowWidth) {
-        height = (float)windowWidth / aspect;
-        width = windowWidth;
-    }
-
-    // Draw the texture in the middle of the screen.
-    outRect->x = ((float)windowWidth - width) / 2.0f;
-    outRect->y = ((float)windowHeight - height) / 2.0f;
-    outRect->w = width;
-    outRect->h = height;
+    pntr_app_letterbox(screen->width, screen->height, windowWidth, windowHeight,
+        &outRect->x, &outRect->y, &outRect->w, &outRect->h);
 }
 
 void pntr_app_platform_render_surface(pntr_app* app, pntr_app_sdl_platform* platform) {
@@ -587,22 +577,11 @@ void pntr_app_platform_fix_mouse_coordinates(pntr_app* app, pntr_app_event* even
         event->mouseDeltaY = (float)mouseMotion->yrel;
     }
     else {
-        if (mouseMotion->x < dstRect.x) {
-            mouseMotion->x = dstRect.x;
-        }
-        else if (mouseMotion->x > dstRect.x + dstRect.w) {
-            mouseMotion->x = dstRect.x + dstRect.w;
-        }
-
-        if (mouseMotion->y < dstRect.y) {
-            mouseMotion->y = dstRect.y;
-        }
-        else if (mouseMotion->y > dstRect.y + dstRect.h) {
-            mouseMotion->y = dstRect.y + dstRect.h;
-        }
-
-        event->mouseX = (mouseMotion->x - dstRect.x) * app->screen->width / dstRect.w;
-        event->mouseY = (mouseMotion->y - dstRect.y) * app->screen->height / dstRect.h;
+        event->mouseX = mouseMotion->x;
+        event->mouseY = mouseMotion->y;
+        pntr_app_unproject_mouse(app->screen->width, app->screen->height,
+            dstRect.x, dstRect.y, dstRect.w, dstRect.h,
+            &event->mouseX, &event->mouseY);
     }
 }
 
