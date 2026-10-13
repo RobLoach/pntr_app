@@ -1,0 +1,19 @@
+# pntr_app
+#
+# Provides the `pntr_app` INTERFACE target, which carries the pntr_app headers.
+#
+# pntr_app is header-only and requires pntr at compile time. pntr is
+# deliberately not re-exported as a package dependency: consumers are expected
+# to provide pntr themselves, for example by using the `Findpntr.cmake` module
+# from the pntr_app repository, by fetching pntr with FetchContent, or through
+# their own system package. Link against both `pntr` and `pntr_app`:
+#
+#     find_package(pntr REQUIRED)
+#     find_package(pntr_app REQUIRED)
+#     target_link_libraries(myapp PUBLIC pntr pntr_app)
+
+@PACKAGE_INIT@
+
+include("${CMAKE_CURRENT_LIST_DIR}/pntr_appTargets.cmake")
+
+check_required_components(pntr_app)
