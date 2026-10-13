@@ -912,17 +912,30 @@ bool pntr_app_platform_events(pntr_app* app) {
         bool down = pntr_app_esp32_touch_read(platform, &x, &y);
 
         if (down) {
+            // The panel can report a little outside of the screen, so keep the touch in range.
+            if (x < 0.0f) {
+                x = 0.0f;
+            }
+            else if (x > (float)(app->screen->width - 1)) {
+                x = (float)(app->screen->width - 1);
+            }
+            if (y < 0.0f) {
+                y = 0.0f;
+            }
+            else if (y > (float)(app->screen->height - 1)) {
+                y = (float)(app->screen->height - 1);
+            }
+
+            // Report the absolute position and leave mouseDelta at zero. A non-zero delta tells
+            // pntr_app_process_event() to treat this as relative movement, which would make
+            // app->mouseX an accumulator instead of the position being touched.
             event.mouseX = x;
             event.mouseY = y;
-            event.mouseDeltaX = x - platform->mouseX;
-            event.mouseDeltaY = y - platform->mouseY;
             platform->mouseX = x;
             platform->mouseY = y;
 
-            if (event.mouseDeltaX != 0.0f || event.mouseDeltaY != 0.0f) {
-                event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
-                pntr_app_process_event(app, &event);
-            }
+            event.type = PNTR_APP_EVENTTYPE_MOUSE_MOVE;
+            pntr_app_process_event(app, &event);
 
             if (!platform->touchDown) {
                 platform->touchDown = true;
@@ -1144,13 +1157,14 @@ PNTR_APP_API bool pntr_app_esp32_loop(void) {
         return false;
     }
 
-    if (pntr_app_platform_update_delta_time(app) && app->update != NULL) {
+    if (pntr_app_platform_update_delta_time(app)) {
         pntr_app_update_fps(app);
-        if (!app->update(app, app->screen)) {
+        if (app->update != NULL && !app->update(app, app->screen)) {
             return false;
         }
 
-        // Nothing has changed unless update() ran, so only redraw alongside it.
+        // Render on the frame tick rather than alongside update(), so that an application that
+        // only draws in init() and leaves update() unset still shows up on the panel.
         if (!pntr_app_platform_render(app)) {
             return false;
         }
