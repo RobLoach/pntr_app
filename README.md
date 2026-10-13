@@ -82,15 +82,18 @@ void pntr_app_set_userdata(pntr_app* app, void* userData);
 bool pntr_app_set_size(pntr_app* app, int width, int height);
 void pntr_app_set_icon(pntr_app* app, pntr_image* icon);
 float pntr_app_delta_time(pntr_app* app);
+int pntr_app_fps(pntr_app* app);
+void pntr_app_set_clipboard(pntr_app* app, const char* text, int len);
+const char* pntr_app_clipboard(pntr_app* app);
 
 // Input
 bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
 bool pntr_app_key_down(pntr_app* app, pntr_app_key key);
 bool pntr_app_key_released(pntr_app* app, pntr_app_key key);
 bool pntr_app_key_up(pntr_app* app, pntr_app_key key);
-bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
-bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
-bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button key);
+bool pntr_app_gamepad_button_pressed(pntr_app* app, int gamepad, pntr_app_gamepad_button button);
+bool pntr_app_gamepad_button_down(pntr_app* app, int gamepad, pntr_app_gamepad_button button);
+bool pntr_app_gamepad_button_released(pntr_app* app, int gamepad, pntr_app_gamepad_button button);
 float pntr_app_mouse_x(pntr_app* app);
 float pntr_app_mouse_y(pntr_app* app);
 float pntr_app_mouse_delta_x(pntr_app* app);
@@ -99,6 +102,8 @@ bool pntr_app_mouse_button_pressed(pntr_app* app, pntr_app_mouse_button button);
 bool pntr_app_mouse_button_down(pntr_app* app, pntr_app_mouse_button button);
 bool pntr_app_mouse_button_released(pntr_app* app, pntr_app_mouse_button button);
 bool pntr_app_mouse_button_up(pntr_app* app, pntr_app_mouse_button button);
+int pntr_app_mouse_wheel(pntr_app* app);
+bool pntr_app_show_mouse(pntr_app* app, bool toggle);
 
 // Utility
 int pntr_app_random(pntr_app* app, int min, int max);
@@ -106,6 +111,7 @@ float pntr_app_random_float(pntr_app* app, float min, float max);
 uint64_t pntr_app_random_seed(pntr_app* app);
 void pntr_app_random_set_seed(pntr_app* app, uint64_t seed);
 void pntr_app_log(pntr_app_log_type type, const char* message);
+void pntr_app_log_ex(pntr_app_log_type type, const char* message, ...);
 void* pntr_app_load_arg_file(pntr_app* app, unsigned int* size);
 
 // Sounds
@@ -116,6 +122,7 @@ void pntr_play_sound(pntr_sound* sound, bool loop);
 void pntr_stop_sound(pntr_sound* sound);
 void pntr_set_volume(pntr_sound* sound, float volume);
 bool pntr_sound_playing(pntr_sound* sound);
+pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName);
 ```
 
 ## Build
@@ -136,13 +143,6 @@ You can disable building some examples by using...
 ``` bash
 cmake -B build -DPNTR_APP_BUILD_EXAMPLE_SDL=false -DPNTR_APP_BUILD_EXAMPLE_RAYLIB=false
 cmake --build build
-```
-
-#### libretro WASM
-
-``` bash
-cd example
-emmake make platform=emscripten
 ```
 
 ### ESP32
