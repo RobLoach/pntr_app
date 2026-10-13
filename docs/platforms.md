@@ -173,9 +173,11 @@ falls back to the behaviour in the last column.
 
 Notes on the ones with contracts beyond the signature:
 
-- `PNTR_APP_LOAD_SOUND_FROM_MEMORY` takes ownership of `data` when it succeeds, and must release
-  it with `pntr_unload_file()` when the sound is unloaded. When it returns `NULL`,
-  `pntr_load_sound()` unloads the data itself, so do not free it on the failure path.
+- `PNTR_APP_LOAD_SOUND_FROM_MEMORY` takes ownership of `data` either way. On success it must
+  release it with `pntr_unload_file()` when the sound is unloaded, and on failure it must
+  release it before returning `NULL` — see `include/pntr_app_sdl.h` for both paths. The core
+  only cleans the data up itself on a platform that defines no hook at all, which is why
+  `pntr_load_sound_from_memory()` can also be handed a static buffer on those platforms.
   `pntr_sound` is an opaque `void`, so the backend returns a pointer to its own struct and casts
   it back in the other sound hooks.
 - `PNTR_APP_SET_CLIPBOARD` is called *after* the core has copied the text into `app->clipboard`,

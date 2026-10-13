@@ -487,7 +487,7 @@ PNTR_APP_API void pntr_unload_sound(pntr_sound* sound);
 /**
  * Play the given sound.
  *
- * TODO: Sounds: Add volume
+ * @see pntr_set_volume()
  *
  * @param sound The sound to play.
  * @param loop Whether or not to loop back to the beginning when the sound finishes.
@@ -1213,11 +1213,13 @@ PNTR_APP_API pntr_sound* pntr_load_sound(const char* fileName) {
     }
 
     pntr_sound* sound = pntr_load_sound_from_memory(type, data, bytesRead);
-    if (sound == NULL) {
-        // Ownership of the data only transfers when the sound is created, so a platform with
-        // no sound support, or a decoder that failed, leaves the file data to clean up here.
+
+    #ifndef PNTR_APP_LOAD_SOUND_FROM_MEMORY
+        // With no platform hook there was nothing to take ownership of the data, so clean it
+        // up rather than leak the whole file on every call. Platforms that do have a hook own
+        // the data from here, including on their own failure paths.
         pntr_unload_file(data);
-    }
+    #endif
 
     return sound;
 }
