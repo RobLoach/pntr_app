@@ -223,7 +223,7 @@ pntr_app_key pntr_app_libretro_key(int key) {
         case RETROK_TAB: return PNTR_APP_KEY_TAB;
         //case RETROK_CLEAR: return PNTR_APP_KEY_CLEAR;
         case RETROK_RETURN: return PNTR_APP_KEY_ENTER;
-        //case RETROK_PAUSE: return PNTR_APP_KEY_PAUSE;
+        case RETROK_PAUSE: return PNTR_APP_KEY_PAUSE;
         case RETROK_ESCAPE: return PNTR_APP_KEY_ESCAPE;
         case RETROK_SPACE: return PNTR_APP_KEY_SPACE;
         // case RETROK_EXCLAIM: return PNTR_APP_KEY_EXCLAIM;
@@ -231,7 +231,7 @@ pntr_app_key pntr_app_libretro_key(int key) {
         // case RETROK_HASH: return PNTR_APP_KEY_HASH;
         // case RETROK_DOLLAR: return PNTR_APP_KEY_DOLLAR;
         // case RETROK_AMPERSAND: return PNTR_APP_KEY_AMPERSAND;
-        // case RETROK_QUOTE: return PNTR_APP_KEY_QUOTE;
+        case RETROK_QUOTE: return PNTR_APP_KEY_APOSTROPHE;
         // case RETROK_LEFTPAREN: return PNTR_APP_KEY_LEFTPAREN;
         // case RETROK_RIGHTPAREN: return PNTR_APP_KEY_RIGHTPAREN;
         // case RETROK_ASTERISK: return PNTR_APP_KEY_ASTERISK;
@@ -262,7 +262,7 @@ pntr_app_key pntr_app_libretro_key(int key) {
         case RETROK_RIGHTBRACKET: return PNTR_APP_KEY_RIGHT_BRACKET;
         //case RETROK_CARET: return PNTR_APP_KEY_CARET;
         //case RETROK_UNDERSCORE: return PNTR_APP_KEY_UNDERSCORE;
-        //case RETROK_BACKQUOTE: return PNTR_APP_KEY_BACKQUOTE;
+        case RETROK_BACKQUOTE: return PNTR_APP_KEY_GRAVE_ACCENT;
         case RETROK_a: return PNTR_APP_KEY_A;
         case RETROK_b: return PNTR_APP_KEY_B;
         case RETROK_c: return PNTR_APP_KEY_C;
@@ -344,10 +344,12 @@ pntr_app_key pntr_app_libretro_key(int key) {
         case RETROK_LCTRL: return PNTR_APP_KEY_LEFT_CONTROL;
         case RETROK_RALT: return PNTR_APP_KEY_RIGHT_ALT;
         case RETROK_LALT: return PNTR_APP_KEY_LEFT_ALT;
-        // case RETROK_RMETA: return PNTR_APP_KEY_RMETA;
-        // case RETROK_LMETA: return PNTR_APP_KEY_LMETA;
-        // case RETROK_LSUPER: return PNTR_APP_KEY_LSUPER;
-        // case RETROK_RSUPER: return PNTR_APP_KEY_RSUPER;
+        case RETROK_RMETA: return PNTR_APP_KEY_RIGHT_SUPER;
+        case RETROK_LMETA: return PNTR_APP_KEY_LEFT_SUPER;
+        case RETROK_LSUPER: return PNTR_APP_KEY_LEFT_SUPER;
+        case RETROK_RSUPER: return PNTR_APP_KEY_RIGHT_SUPER;
+        case RETROK_PRINT: return PNTR_APP_KEY_PRINT_SCREEN;
+        case RETROK_MENU: return PNTR_APP_KEY_MENU;
     }
 
     return PNTR_APP_KEY_INVALID;
@@ -1107,7 +1109,8 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
     audio_mixer_sound_t* sound = NULL;
     switch (type) {
         case PNTR_APP_SOUND_TYPE_WAV:
-            sound = audio_mixer_load_wav(data, dataSize, "audio", RESAMPLER_QUALITY_DONTCARE);
+            // want_s16 is false, as the audio callback mixes with audio_mixer_mix() in float.
+            sound = audio_mixer_load_wav(data, dataSize, "audio", RESAMPLER_QUALITY_DONTCARE, false);
 
             // File data isn't required anymore for wavs.
             pntr_unload_file(data);
