@@ -46,6 +46,10 @@
 #ifndef PNTR_APP_ESP32_H__
 #define PNTR_APP_ESP32_H__
 
+// Platform capabilities, reported by pntr_app_has_feature().
+// Touch is reported as mouse input. No keyboard, gamepad or sound.
+#define PNTR_APP_HAS_MOUSE
+
 #include <stdint.h>
 
 #include "driver/spi_master.h"
@@ -57,6 +61,32 @@
 // Board profile. Default to the Cheap Yellow Display.
 #if !defined(PNTR_APP_ESP32_BOARD_CYD) && !defined(PNTR_APP_ESP32_BOARD_CUSTOM)
     #define PNTR_APP_ESP32_BOARD_CYD
+#endif
+
+// PNTR_APP_ESP32_BOARD_CUSTOM supplies no pin definitions of its own, so say which one is
+// missing rather than failing later with an undeclared identifier.
+#ifdef PNTR_APP_ESP32_BOARD_CUSTOM
+    #ifndef PNTR_APP_ESP32_LCD_SPI_HOST
+        #error "PNTR_APP_ESP32_BOARD_CUSTOM requires PNTR_APP_ESP32_LCD_SPI_HOST to be defined."
+    #endif
+    #ifndef PNTR_APP_ESP32_LCD_MOSI
+        #error "PNTR_APP_ESP32_BOARD_CUSTOM requires PNTR_APP_ESP32_LCD_MOSI to be defined."
+    #endif
+    #ifndef PNTR_APP_ESP32_LCD_SCLK
+        #error "PNTR_APP_ESP32_BOARD_CUSTOM requires PNTR_APP_ESP32_LCD_SCLK to be defined."
+    #endif
+    #ifndef PNTR_APP_ESP32_LCD_CS
+        #error "PNTR_APP_ESP32_BOARD_CUSTOM requires PNTR_APP_ESP32_LCD_CS to be defined."
+    #endif
+    #ifndef PNTR_APP_ESP32_LCD_DC
+        #error "PNTR_APP_ESP32_BOARD_CUSTOM requires PNTR_APP_ESP32_LCD_DC to be defined."
+    #endif
+    #ifndef PNTR_APP_ESP32_LCD_WIDTH
+        #error "PNTR_APP_ESP32_BOARD_CUSTOM requires PNTR_APP_ESP32_LCD_WIDTH to be defined."
+    #endif
+    #ifndef PNTR_APP_ESP32_LCD_HEIGHT
+        #error "PNTR_APP_ESP32_BOARD_CUSTOM requires PNTR_APP_ESP32_LCD_HEIGHT to be defined."
+    #endif
 #endif
 
 #ifdef PNTR_APP_ESP32_BOARD_CYD
