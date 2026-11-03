@@ -1,0 +1,42 @@
+name: Web
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BUILD_TYPE: Release
+  DEFINES: -DPNTR_APP_BUILD_TEST=false -DPNTR_APP_BUILD_EXAMPLE=true -DPNTR_APP_BUILD_EXAMPLE_WEB=true -DPNTR_APP_BUILD_EXAMPLE_RAYLIB=false -DPNTR_APP_BUILD_EXAMPLE_SDL=false -DPNTR_APP_BUILD_EXAMPLE_CLI=false -DPNTR_APP_BUILD_EXAMPLE_RETRO=false -DPNTR_APP_INSTALL=false
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: mymindstorm/setup-emsdk@v14
+
+    - name: Configure CMake
+      run: emcmake cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{env.DEFINES}}
+
+    - name: Build
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+    - name: Collect
+      run: |
+        mkdir -p ${{github.workspace}}/public
+        cp ${{github.workspace}}/build/example/index.{html,js,wasm,data} ${{github.workspace}}/public/
+
+    - name: Deploy
+      if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master'
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ${{github.workspace}}/public
