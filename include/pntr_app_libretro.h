@@ -715,7 +715,32 @@ bool pntr_app_platform_render(pntr_app* app) {
         return false;
     }
 
-    // TODO(RobLoach): Switch to retro_framebuffer via RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER.
+#ifdef RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER
+    // Prefer the frontend's own framebuffer, so it can present the frame without copying it again.
+    // The screen is kept as the render target, since applications may rely on its contents persisting between frames.
+    struct retro_framebuffer fb;
+    memset(&fb, 0, sizeof(fb));
+    fb.width = (unsigned)app->screen->width;
+    fb.height = (unsigned)app->screen->height;
+    fb.access_flags = RETRO_MEMORY_ACCESS_WRITE;
+    if (environ_cb(RETRO_ENVIRONMENT_GET_CURRENT_SOFTWARE_FRAMEBUFFER, &fb) &&
+            fb.data != NULL &&
+            fb.format == RETRO_PIXEL_FORMAT_XRGB8888 &&
+            fb.width == (unsigned)app->screen->width &&
+            fb.height == (unsigned)app->screen->height &&
+            fb.pitch >= (size_t)app->screen->width * sizeof(pntr_color)) {
+        size_t rowSize = (size_t)app->screen->width * sizeof(pntr_color);
+        unsigned char* dst = (unsigned char*)fb.data;
+        const unsigned char* src = (const unsigned char*)app->screen->data;
+        for (int y = 0; y < app->screen->height; y++) {
+            memcpy(dst + (size_t)y * fb.pitch, src + (size_t)y * (size_t)app->screen->pitch, rowSize);
+        }
+        video_cb(fb.data, fb.width, fb.height, fb.pitch);
+        return true;
+    }
+#endif
+
+    // Fall back to handing over the screen directly, for frontends without software framebuffer support.
     video_cb((void*)app->screen->data, app->screen->width, app->screen->height, app->screen->pitch);
 
     return true;
