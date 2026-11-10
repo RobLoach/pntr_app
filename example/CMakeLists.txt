@@ -103,6 +103,48 @@ if (PNTR_APP_BUILD_EXAMPLE_RAYLIB)
 
 endif()
 
+# RGFW
+if (PNTR_APP_BUILD_EXAMPLE_RGFW)
+    find_package(rgfw REQUIRED)
+    # find_package(rgfw QUIET)
+    add_executable(pntr_app_example_rgfw
+        pntr_app_example.c
+    )
+    target_compile_definitions(pntr_app_example_rgfw PUBLIC PNTR_APP_RGFW)
+
+    # Platform Updates
+    if (EMSCRIPTEN)
+        set_target_properties(pntr_app_example_rgfw PROPERTIES OUTPUT_NAME "index")
+        set_target_properties(pntr_app_example_rgfw PROPERTIES SUFFIX ".html")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s ASSERTIONS=1 -s WASM=1 -s ASYNCIFY --preload-file resources@/resources --shell-file ${CMAKE_SOURCE_DIR}/example/pntr_app_example.html")
+    else()
+        set_property(TARGET pntr_app_example_rgfw PROPERTY C_STANDARD 11)
+    endif()
+
+    if (NOT EMSCRIPTEN)
+        if (APPLE)
+            target_link_libraries(pntr_app_example_rgfw PUBLIC m "-framework Foundation" "-framework AppKit" "-framework OpenGL" "-framework CoreVideo")
+        elseif(WINDOWS)
+            target_link_libraries(pntr_app_example_rgfw PUBLIC opengl32 shell32 gdi32 winmm)
+        else()
+            target_link_libraries(pntr_app_example_rgfw PUBLIC m X11 GL Xrandr)
+        endif()
+    endif()
+
+    target_link_libraries(pntr_app_example_rgfw PUBLIC
+        pntr
+        pntr_app
+    )
+    
+    # Strict Warnings and Errors
+    # RGFW will fail this
+    # if(MSVC)
+    #     target_compile_options(pntr_app_example_rgfw PRIVATE /W4 /WX)
+    # else()
+    #     target_compile_options(pntr_app_example_rgfw PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    # endif()
+endif()
+
 # CLI
 if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
     add_executable(pntr_app_example_cli pntr_app_example.c)
