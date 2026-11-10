@@ -12,6 +12,7 @@
 *       PNTR_APP_SDL
 *       PNTR_APP_LIBRETRO
 *       PNTR_APP_RAYLIB
+*       PNTR_APP_RGFW
 *       PNTR_APP_WEB
 *
 *   LICENSE: zlib/libpng
