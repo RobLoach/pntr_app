@@ -103,6 +103,36 @@ if (PNTR_APP_BUILD_EXAMPLE_RAYLIB)
 
 endif()
 
+# RGFW
+if (PNTR_APP_BUILD_EXAMPLE_RGFW AND NOT EMSCRIPTEN)
+    find_package(rgfw REQUIRED)
+    add_executable(pntr_app_example_rgfw
+        pntr_app_example.c
+    )
+    target_compile_definitions(pntr_app_example_rgfw PUBLIC PNTR_APP_RGFW)
+    set_property(TARGET pntr_app_example_rgfw PROPERTY C_STANDARD 11)
+
+    if (APPLE)
+        target_link_libraries(pntr_app_example_rgfw PUBLIC "-framework CoreVideo" "-framework Cocoa" "-framework IOKit")
+    elseif (WIN32)
+        target_link_libraries(pntr_app_example_rgfw PUBLIC gdi32)
+    else()
+        target_link_libraries(pntr_app_example_rgfw PUBLIC X11 Xrandr ${CMAKE_DL_LIBS} m)
+    endif()
+
+    target_link_libraries(pntr_app_example_rgfw PUBLIC
+        pntr
+        pntr_app
+    )
+
+    # Strict Warnings and Errors
+    if(MSVC)
+        target_compile_options(pntr_app_example_rgfw PRIVATE /W4 /WX)
+    else()
+        target_compile_options(pntr_app_example_rgfw PRIVATE -Wall -Wextra -Wpedantic -Werror)
+    endif()
+endif()
+
 # CLI
 if (PNTR_APP_BUILD_EXAMPLE_CLI AND NOT EMSCRIPTEN)
     add_executable(pntr_app_example_cli pntr_app_example.c)

@@ -7,6 +7,7 @@
     !defined(PNTR_APP_LIBRETRO) && \
     !defined(PNTR_APP_RAYLIB) && \
     !defined(PNTR_APP_SDL) && \
+    !defined(PNTR_APP_RGFW) && \
     !defined(PNTR_APP_ESP32)
     // libretro
     #if defined(__LIBRETRO__)
@@ -27,6 +28,10 @@
     // Raylib
     #elif defined(RAYLIB_VERSION)
         #define PNTR_APP_RAYLIB
+
+    // RGFW
+    #elif defined(RGFW_HEADER)
+        #define PNTR_APP_RGFW
 
     #else
         // Fall back to the CLI
