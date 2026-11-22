@@ -12,6 +12,7 @@ typedef struct AppData {
 
 #include <stdio.h> // sprintf, fprintf
 #include <stdlib.h> // exit
+#include <string.h> // strcmp
 
 /**
  * Check a condition, reporting which one failed and where.
@@ -182,6 +183,42 @@ bool Init(pntr_app* app) {
         ASSERT(clipboard[2] == 'o');
         ASSERT(clipboard[3] == 'd');
         ASSERT(clipboard[4] == '\0');
+    }
+
+    // pntr_app_option()
+    {
+        // The default is the first of the values.
+        const char* value = pntr_app_option(app, "test_difficulty");
+        ASSERT(value != NULL);
+        ASSERT(strcmp(value, "normal") == 0);
+
+        // A single value is its own default.
+        value = pntr_app_option(app, "test_single");
+        ASSERT(value != NULL);
+        ASSERT(strcmp(value, "on") == 0);
+
+        // An empty or missing list of values defaults to an empty string.
+        value = pntr_app_option(app, "test_empty");
+        ASSERT(value != NULL);
+        ASSERT(value[0] == '\0');
+        value = pntr_app_option(app, "test_null");
+        ASSERT(value != NULL);
+        ASSERT(value[0] == '\0');
+
+        // Defaults are cached, so asking again returns the same memory.
+        ASSERT(pntr_app_option(app, "test_difficulty") == pntr_app_option(app, "test_difficulty"));
+        ASSERT(strcmp(pntr_app_option(app, "test_single"), "on") == 0);
+
+        // Unknown keys, and prefixes of known keys, aren't options.
+        ASSERT(pntr_app_option(app, "test_unknown") == NULL);
+        ASSERT(pntr_app_option(app, "test_diff") == NULL);
+        ASSERT(pntr_app_option(app, "test_difficultyy") == NULL);
+        ASSERT(pntr_app_option(app, NULL) == NULL);
+        ASSERT(pntr_app_option(NULL, "test_difficulty") == NULL);
+
+        // An application without options has none to report.
+        pntr_app empty = {0};
+        ASSERT(pntr_app_option(&empty, "test_difficulty") == NULL);
     }
 
     // pntr_app_mouse_x(), pntr_app_mouse_y(), pntr_app_mouse_delta_x(), pntr_app_mouse_delta_y()
@@ -670,6 +707,13 @@ void Close(pntr_app* app) {
     pntr_unload_memory(appData);
 }
 
+static const pntr_app_option_definition options[] = {
+    { "test_difficulty", "Difficulty", "normal|hard|easy" },
+    { "test_single", "Single", "on" },
+    { "test_empty", "Empty", "" },
+    { "test_null", "Null", NULL },
+};
+
 pntr_app Main(int argc, char* argv[]) {
     (void)argc;
     (void)argv;
@@ -681,6 +725,8 @@ pntr_app Main(int argc, char* argv[]) {
         .update = Update,
         .close = Close,
         .event = Event,
-        .fps = 5
+        .fps = 5,
+        .options = options,
+        .optionsCount = (int)(sizeof(options) / sizeof(options[0]))
     };
 }

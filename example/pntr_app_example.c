@@ -20,6 +20,21 @@ typedef struct AppDataSaveData {
     float velocity;
 } AppDataSaveData;
 
+/**
+ * Read the "Logo Speed" option, keeping the direction the logo is moving in.
+ */
+void UpdateSpeed(pntr_app* app, AppData* appData) {
+    const char* speed = pntr_app_option(app, "pntr_app_example_speed");
+    float magnitude = 30.0f;
+    if (speed != NULL && speed[0] == 'f') {
+        magnitude = 90.0f;
+    }
+    else if (speed != NULL && speed[0] == 's') {
+        magnitude = 10.0f;
+    }
+    appData->velocity = (appData->velocity < 0.0f) ? -magnitude : magnitude;
+}
+
 bool Init(pntr_app* app) {
     AppData* appData = pntr_load_memory(sizeof(AppData));
     pntr_app_set_userdata(app, appData);
@@ -33,6 +48,7 @@ bool Init(pntr_app* app) {
     appData->spacePressed = false;
     appData->x = 0;
     appData->velocity = 30.0f;
+    UpdateSpeed(app, appData);
     appData->sound = pntr_load_sound("resources/sound.wav");
     appData->music = pntr_load_sound("resources/music.ogg");
 
@@ -238,12 +254,22 @@ void Event(pntr_app* app, pntr_app_event* event) {
         }
         break;
 
+        case PNTR_APP_EVENTTYPE_OPTIONS_CHANGED: {
+            UpdateSpeed(app, appData);
+        }
+        break;
+
         default: {
             pntr_app_log_ex(PNTR_APP_LOG_INFO, "Unknown event: %d", event->type);
         }
         break;
     }
 }
+
+// Shown as core options in libretro. Elsewhere, pntr_app_option() reports the first value.
+static const pntr_app_option_definition options[] = {
+    { "pntr_app_example_speed", "Logo Speed", "normal|fast|slow" },
+};
 
 pntr_app Main(int argc, char* argv[]) {
     (void)argc;
@@ -256,6 +282,8 @@ pntr_app Main(int argc, char* argv[]) {
         .update = Update,
         .close = Close,
         .event = Event,
-        .fps = 0
+        .fps = 0,
+        .options = options,
+        .optionsCount = (int)(sizeof(options) / sizeof(options[0]))
     };
 }

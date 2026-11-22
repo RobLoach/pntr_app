@@ -504,6 +504,61 @@ void retro_get_system_av_info(struct retro_system_av_info *info) {
     };
 }
 
+/**
+ * Register the application's options with the frontend as core options.
+ *
+ * The frontend wants these from retro_set_environment(), before retro_load_game() calls Main()
+ * for real, so Main() is called here just to read pntr_app::options. Main() is already called
+ * the same way from retro_get_system_info().
+ *
+ * @see RETRO_ENVIRONMENT_SET_VARIABLES
+ */
+static void pntr_app_libretro_set_variables(retro_environment_t cb) {
+    char* argv[1];
+    argv[0] = "pntr_app";
+    pntr_app app = PNTR_APP_MAIN(1, argv);
+    if (app.options == NULL || app.optionsCount <= 0) {
+        return;
+    }
+
+    // One allocation for the NULL terminated variable list, followed by each "Description; a|b|c".
+    size_t count = (size_t)app.optionsCount;
+    size_t size = sizeof(struct retro_variable) * (count + 1);
+    for (size_t i = 0; i < count; i++) {
+        const pntr_app_option_definition* option = &app.options[i];
+        size += strlen(option->description != NULL ? option->description : option->key) + 2;
+        size += strlen(option->values != NULL ? option->values : "") + 1;
+    }
+
+    struct retro_variable* variables = (struct retro_variable*)pntr_load_memory(size);
+    if (variables == NULL) {
+        return;
+    }
+
+    char* text = (char*)(variables + count + 1);
+    for (size_t i = 0; i < count; i++) {
+        const pntr_app_option_definition* option = &app.options[i];
+        const char* description = option->description != NULL ? option->description : option->key;
+        const char* values = option->values != NULL ? option->values : "";
+        variables[i].key = option->key;
+        variables[i].value = text;
+        size_t length = strlen(description);
+        memcpy(text, description, length);
+        text += length;
+        *text++ = ';';
+        *text++ = ' ';
+        length = strlen(values) + 1;
+        memcpy(text, values, length);
+        text += length;
+    }
+    variables[count].key = NULL;
+    variables[count].value = NULL;
+
+    // The frontend copies the variables, so they don't need to stick around.
+    cb(RETRO_ENVIRONMENT_SET_VARIABLES, (void*)variables);
+    pntr_unload_memory(variables);
+}
+
 void retro_set_environment(retro_environment_t cb) {
     environ_cb = cb;
 
@@ -518,6 +573,9 @@ void retro_set_environment(retro_environment_t cb) {
     else {
         log_cb = fallback_log;
     }
+
+    // Register the core options.
+    pntr_app_libretro_set_variables(cb);
 }
 
 void retro_set_audio_sample(retro_audio_sample_t cb) {
@@ -544,8 +602,18 @@ void retro_reset(void) {
     // Nothing
 }
 
+/**
+ * Tell the application that the frontend changed its core options.
+ */
 static void check_variables(void) {
-     // Nothing.
+    if (pntr_app_libretro == NULL || pntr_app_libretro->options == NULL) {
+        return;
+    }
+
+    pntr_app_event event = {0};
+    event.app = pntr_app_libretro;
+    event.type = PNTR_APP_EVENTTYPE_OPTIONS_CHANGED;
+    pntr_app_process_event(pntr_app_libretro, &event);
 }
 
 /**
@@ -1022,8 +1090,7 @@ bool retro_load_game(const struct retro_game_info *info) {
     // Update the input button descriptions.
     pntr_app_libretro_init_descriptors();
 
-    // Update any core options.
-    check_variables();
+    // No check_variables() here, as Init() can read the current options with pntr_app_option().
 
     return true;
 }
@@ -1116,6 +1183,28 @@ void retro_cheat_set(unsigned index, bool enabled, const char *code) {
         return true;
     }
     #define PNTR_APP_SHOW_MOUSE pntr_app_platform_show_mouse
+#endif
+
+#ifndef PNTR_APP_OPTION
+#define PNTR_APP_OPTION pntr_app_libretro_option
+/**
+ * Get the value the user chose for a core option, or NULL to fall back to its default.
+ */
+const char* pntr_app_libretro_option(pntr_app* app, const char* key) {
+    (void)app;
+    if (environ_cb == NULL) {
+        return NULL;
+    }
+
+    struct retro_variable variable;
+    variable.key = key;
+    variable.value = NULL;
+    if (!environ_cb(RETRO_ENVIRONMENT_GET_VARIABLE, &variable)) {
+        return NULL;
+    }
+
+    return variable.value;
+}
 #endif
 
 #ifndef PNTR_APP_INIT_AUDIO
