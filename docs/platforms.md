@@ -556,7 +556,8 @@ Known gaps, so a new backend knows what it is allowed to leave out:
 
 - **CLI and ESP32 define no sound hooks at all.** Every sound call is a silent no-op there and
   `pntr_load_sound()` returns `NULL`.
-- **Cheats are libretro-only.** `PNTR_APP_EVENTTYPE_CHEAT` is pushed from
+- **Cheats and reset are libretro-only.** `PNTR_APP_EVENTTYPE_CHEAT`,
+  `PNTR_APP_EVENTTYPE_CHEAT_RESET` and `PNTR_APP_EVENTTYPE_RESET` are pushed from
   `include/pntr_app_libretro.h` and nowhere else.
 - **File drop is SDL, raylib and web only.**
 - **raylib and web have no `PNTR_APP_INIT_AUDIO`/`PNTR_APP_CLOSE_AUDIO`.** raylib calls

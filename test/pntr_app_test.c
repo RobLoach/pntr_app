@@ -34,6 +34,14 @@ static int loadCount = 0;
 static size_t loadSize = 0;
 static int loadMismatches = 0;
 
+// State recorded by Event() for the reset and cheat events.
+static int resetCount = 0;
+static int cheatResetCount = 0;
+static int cheatCount = 0;
+static int cheatIndex = -1;
+static bool cheatEnabled = false;
+static const char* cheatCode = NULL;
+
 // The byte that the save round trip expects to find at the given offset.
 static unsigned char SaveByte(size_t i) {
     return (unsigned char)((i * 7u + 13u) & 0xffu);
@@ -65,6 +73,18 @@ void Event(pntr_app* app, pntr_app_event* event) {
             }
             loadCount++;
         }
+        break;
+        case PNTR_APP_EVENTTYPE_RESET:
+            resetCount++;
+        break;
+        case PNTR_APP_EVENTTYPE_CHEAT_RESET:
+            cheatResetCount++;
+        break;
+        case PNTR_APP_EVENTTYPE_CHEAT:
+            cheatIndex = event->cheatIndex;
+            cheatEnabled = event->cheatEnabled;
+            cheatCode = event->cheat;
+            cheatCount++;
         break;
         default:
             // The input events are asserted on through the state functions instead.
@@ -503,6 +523,37 @@ bool Init(pntr_app* app) {
         ASSERT(!pntr_app_gamepad_button_down(app, 0, PNTR_APP_GAMEPAD_BUTTON_START));
 
         pntr_app_pre_events(app);
+    }
+
+    // PNTR_APP_EVENTTYPE_RESET, PNTR_APP_EVENTTYPE_CHEAT_RESET and PNTR_APP_EVENTTYPE_CHEAT
+    {
+        pntr_app_event e = {0};
+
+        e.type = PNTR_APP_EVENTTYPE_RESET;
+        pntr_app_process_event(app, &e);
+        ASSERT(resetCount == 1);
+
+        e.type = PNTR_APP_EVENTTYPE_CHEAT_RESET;
+        pntr_app_process_event(app, &e);
+        ASSERT(cheatResetCount == 1);
+
+        // The cheat index and enabled state reach the application untouched.
+        e.type = PNTR_APP_EVENTTYPE_CHEAT;
+        e.cheat = "ABCD-1234";
+        e.cheatIndex = 3;
+        e.cheatEnabled = true;
+        pntr_app_process_event(app, &e);
+        ASSERT(cheatCount == 1);
+        ASSERT(cheatIndex == 3);
+        ASSERT(cheatEnabled);
+        ASSERT(cheatCode != NULL && strcmp(cheatCode, "ABCD-1234") == 0);
+
+        // Disabling a cheat is passed through too.
+        e.cheatEnabled = false;
+        pntr_app_process_event(app, &e);
+        ASSERT(cheatCount == 2);
+        ASSERT(cheatIndex == 3);
+        ASSERT(!cheatEnabled);
     }
 
     // pntr_app_get_file_sound_type()

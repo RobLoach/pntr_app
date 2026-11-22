@@ -269,9 +269,11 @@ typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_FILE_DROPPED,
 
     /**
-     * Evoked when a cheat is entered into the application.
+     * Evoked when a cheat is entered into, or toggled in, the application.
      *
      * @see pntr_app_event::cheat
+     * @see pntr_app_event::cheatIndex
+     * @see pntr_app_event::cheatEnabled
      * TODO: Add cheat support to CLI, raylib, SDL, web.
      */
     PNTR_APP_EVENTTYPE_CHEAT,
@@ -295,6 +297,23 @@ typedef enum pntr_app_event_type {
      * @see pntr_app_event::save_size
      */
     PNTR_APP_EVENTTYPE_LOAD,
+
+    /**
+     * Evoked when the application is requested to reset, like pressing the reset button on a console.
+     *
+     * TODO: Add reset support to CLI, raylib, SDL, web.
+     */
+    PNTR_APP_EVENTTYPE_RESET,
+
+    /**
+     * Evoked when all active cheats are to be cleared.
+     *
+     * The frontend will follow up with a `PNTR_APP_EVENTTYPE_CHEAT` event for each cheat that should be re-applied.
+     *
+     * @see PNTR_APP_EVENTTYPE_CHEAT
+     * TODO: Add cheat support to CLI, raylib, SDL, web.
+     */
+    PNTR_APP_EVENTTYPE_CHEAT_RESET,
 
     /**
      * The last event type in the list.
@@ -352,6 +371,20 @@ typedef struct pntr_app_event {
      * @see PNTR_APP_EVENTTYPE_CHEAT
      */
     const char* cheat;
+
+    /**
+     * The index of the cheat, as identified by the frontend.
+     *
+     * @see PNTR_APP_EVENTTYPE_CHEAT
+     */
+    int cheatIndex;
+
+    /**
+     * Whether the cheat is being enabled, or disabled.
+     *
+     * @see PNTR_APP_EVENTTYPE_CHEAT
+     */
+    bool cheatEnabled;
 
     /**
      * The unserialized save data.
