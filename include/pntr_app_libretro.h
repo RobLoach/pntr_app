@@ -541,7 +541,13 @@ void retro_set_video_refresh(retro_video_refresh_t cb) {
 }
 
 void retro_reset(void) {
-    // Nothing
+    if (pntr_app_libretro == NULL) {
+        return;
+    }
+
+    pntr_app_event event = {0};
+    event.type = PNTR_APP_EVENTTYPE_RESET;
+    pntr_app_process_event(pntr_app_libretro, &event);
 }
 
 static void check_variables(void) {
@@ -1089,19 +1095,25 @@ size_t retro_get_memory_size(unsigned id) {
 }
 
 void retro_cheat_reset(void) {
-    // Nothing.
+    if (pntr_app_libretro == NULL) {
+        return;
+    }
+
+    pntr_app_event event = {0};
+    event.type = PNTR_APP_EVENTTYPE_CHEAT_RESET;
+    pntr_app_process_event(pntr_app_libretro, &event);
 }
 
 void retro_cheat_set(unsigned index, bool enabled, const char *code) {
-    (void)index;
-
-    if (!enabled || pntr_app_libretro == NULL) {
+    if (pntr_app_libretro == NULL || code == NULL) {
         return;
     }
 
     pntr_app_event event = {0};
     event.type = PNTR_APP_EVENTTYPE_CHEAT;
     event.cheat = code;
+    event.cheatIndex = (int)index;
+    event.cheatEnabled = enabled;
     pntr_app_process_event(pntr_app_libretro, &event);
 }
 

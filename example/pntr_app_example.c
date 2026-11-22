@@ -238,6 +238,21 @@ void Event(pntr_app* app, pntr_app_event* event) {
         }
         break;
 
+        case PNTR_APP_EVENTTYPE_RESET: {
+            pntr_app_log(PNTR_APP_LOG_INFO, "Reset");
+        }
+        break;
+
+        case PNTR_APP_EVENTTYPE_CHEAT_RESET: {
+            pntr_app_log(PNTR_APP_LOG_INFO, "Cheats reset");
+        }
+        break;
+
+        case PNTR_APP_EVENTTYPE_CHEAT: {
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Cheat %d %s: %s", event->cheatIndex, event->cheatEnabled ? "enabled" : "disabled", event->cheat);
+        }
+        break;
+
         default: {
             pntr_app_log_ex(PNTR_APP_LOG_INFO, "Unknown event: %d", event->type);
         }
