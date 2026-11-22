@@ -297,6 +297,17 @@ typedef enum pntr_app_event_type {
     PNTR_APP_EVENTTYPE_LOAD,
 
     /**
+     * Evoked when the user has changed one or more of the application's options.
+     *
+     * Read the new values with pntr_app_option(). Only platforms with a settings UI of their
+     * own, such as libretro, push this.
+     *
+     * @see pntr_app::options
+     * @see pntr_app_option()
+     */
+    PNTR_APP_EVENTTYPE_OPTIONS_CHANGED,
+
+    /**
      * The last event type in the list.
      */
     PNTR_APP_EVENTTYPE_LAST
@@ -321,6 +332,18 @@ typedef enum pntr_app_log_type {
 } pntr_app_log_type;
 
 typedef struct pntr_app pntr_app;
+
+/**
+ * An option the application exposes to the user, such as a libretro core option.
+ *
+ * @see pntr_app::options
+ * @see pntr_app_option()
+ */
+typedef struct pntr_app_option_definition {
+    const char* key; /** Unique identifier for the option. Example: "myapp_difficulty" */
+    const char* description; /** Human readable label. Example: "Difficulty" */
+    const char* values; /** Possible values, separated by a |. The first is the default. Example: "normal|hard|easy" */
+} pntr_app_option_definition;
 
 typedef struct pntr_app_event {
     pntr_app* app; /** The application associated with the event. */
@@ -450,6 +473,29 @@ struct pntr_app {
      * Can be NULL.
      */
     const char* extensions;
+
+    /**
+     * The options the application exposes to the user, which must outlive the application.
+     *
+     * Set these from Main(), as libretro registers them with the frontend before the
+     * application is initialized.
+     *
+     * @see pntr_app_option()
+     * @see PNTR_APP_EVENTTYPE_OPTIONS_CHANGED
+     */
+    const pntr_app_option_definition* options;
+
+    /**
+     * The number of entries in options.
+     */
+    int optionsCount;
+
+    /**
+     * Cached default values of the options, parsed from their values.
+     *
+     * @internal
+     */
+    char* optionDefaults;
 };
 
 typedef void pntr_sound;
@@ -658,6 +704,23 @@ PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int le
  * @return The clipboard text.
  */
 PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
+
+/**
+ * Get the current value of one of the application's options.
+ *
+ * On libretro, this is the value chosen in the frontend's core options. Elsewhere, it's the
+ * default, the first of the option's values.
+ *
+ * @param app The application to act on.
+ * @param key The key of the option, as declared in pntr_app::options.
+ *
+ * @return The value of the option, or NULL if there is no option with that key. Don't free it, and
+ *         copy it if it's needed after the next PNTR_APP_EVENTTYPE_OPTIONS_CHANGED.
+ *
+ * @see pntr_app::options
+ * @see PNTR_APP_EVENTTYPE_OPTIONS_CHANGED
+ */
+PNTR_APP_API const char* pntr_app_option(pntr_app* app, const char* key);
 
 /**
  * A feature that a platform may or may not support.
@@ -1191,6 +1254,10 @@ PNTR_APP_API void pntr_app_close(pntr_app* app) {
         pntr_unload_memory(app->clipboard);
         app->clipboard = NULL;
     }
+
+    // Clear the cached option defaults.
+    pntr_unload_memory(app->optionDefaults);
+    app->optionDefaults = NULL;
 
     pntr_app_platform_close(app);
 
@@ -1814,6 +1881,98 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
         }
     #endif
     return app->clipboard;
+}
+
+/**
+ * Build the cache of default option values, the first of each option's values.
+ *
+ * All the defaults share one allocation, each terminated with a '\0', in the order of
+ * app->options.
+ *
+ * @internal
+ */
+static bool pntr_app_load_option_defaults(pntr_app* app) {
+    size_t size = 0;
+    for (int i = 0; i < app->optionsCount; i++) {
+        const char* values = app->options[i].values;
+        size_t length = 0;
+        while (values != NULL && values[length] != '\0' && values[length] != '|') {
+            length++;
+        }
+        size += length + 1;
+    }
+
+    app->optionDefaults = (char*)pntr_load_memory(size);
+    if (app->optionDefaults == NULL) {
+        return false;
+    }
+
+    char* output = app->optionDefaults;
+    for (int i = 0; i < app->optionsCount; i++) {
+        const char* values = app->options[i].values;
+        while (values != NULL && *values != '\0' && *values != '|') {
+            *output++ = *values++;
+        }
+        *output++ = '\0';
+    }
+
+    return true;
+}
+
+/**
+ * Get the current value of one of the application's options.
+ *
+ * On the platform front, the `PNTR_APP_OPTION` macro can be defined to report the value the user
+ * chose. When it's undefined or returns NULL, the option's default value is used.
+ *
+ * @param app The application to act on.
+ * @param key The key of the option.
+ *
+ * @return The value of the option, or NULL if there is no option with that key.
+ */
+PNTR_APP_API const char* pntr_app_option(pntr_app* app, const char* key) {
+    if (app == NULL || app->options == NULL || key == NULL) {
+        return NULL;
+    }
+
+    for (int i = 0; i < app->optionsCount; i++) {
+        // Compare the keys.
+        const char* a = app->options[i].key;
+        const char* b = key;
+        if (a == NULL) {
+            continue;
+        }
+        while (*a != '\0' && *a == *b) {
+            a++;
+            b++;
+        }
+        if (*a != *b) {
+            continue;
+        }
+
+        #ifdef PNTR_APP_OPTION
+            const char* value = PNTR_APP_OPTION(app, key);
+            if (value != NULL) {
+                return value;
+            }
+        #endif
+
+        // Fall back to the default value.
+        if (app->optionDefaults == NULL && !pntr_app_load_option_defaults(app)) {
+            return NULL;
+        }
+
+        const char* output = app->optionDefaults;
+        for (int j = 0; j < i; j++) {
+            while (*output != '\0') {
+                output++;
+            }
+            output++;
+        }
+        return output;
+    }
+
+    return NULL;
 }
 
 PNTR_APP_API bool pntr_app_has_feature(pntr_app* app, pntr_app_feature feature) {

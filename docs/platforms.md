@@ -158,6 +158,7 @@ falls back to the behaviour in the last column.
 | `PNTR_APP_SHOW_MOUSE` | `bool (pntr_app* app, bool show)` | `pntr_app_show_mouse()` returns `false` |
 | `PNTR_APP_SET_CLIPBOARD` | `void (pntr_app* app, const char* text)` | Text is still copied into `app->clipboard`, but the system clipboard is untouched |
 | `PNTR_APP_CLIPBOARD` | `const char* (pntr_app* app)` | `pntr_app_clipboard()` returns whatever was last set on `app->clipboard` |
+| `PNTR_APP_OPTION` | `const char* (pntr_app* app, const char* key)` | `pntr_app_option()` returns the option's default, the first of its `values` |
 | `PNTR_APP_SET_TITLE` | `void (pntr_app* app, const char* title)` | `app->title` is updated, the window title is not |
 | `PNTR_APP_SET_ICON` | `void (pntr_app* app, pntr_image* icon)` | No-op |
 | `PNTR_APP_INIT_AUDIO` | `void (pntr_app* app)` | No audio system is started |
@@ -184,6 +185,9 @@ Notes on the ones with contracts beyond the signature:
   and is handed `app->clipboard` rather than the caller's string.
 - `PNTR_APP_CLIPBOARD` must return newly allocated memory that the core takes ownership of (it
   unloads the previous `app->clipboard`), or `NULL` to leave the cached value alone.
+- `PNTR_APP_OPTION` is only called for keys declared in `app->options`. Return memory the
+  platform keeps hold of, or `NULL` to fall back to the default. A backend with a settings UI
+  should also push `PNTR_APP_EVENTTYPE_OPTIONS_CHANGED` when the user changes one.
 - `PNTR_APP_SET_VOLUME` receives a volume the core has already clamped to `0.0f..1.0f`.
 - `PNTR_LOAD_FILE` and `PNTR_SAVE_FILE` belong to pntr, not pntr_app, so they have to be defined
   in the declaration block before `pntr.h` is included — see the top of `include/pntr_app_sdl.h`.
@@ -541,6 +545,7 @@ not.
 | `PNTR_APP_SET_ICON` | | yes | yes | yes | | |
 | `PNTR_APP_SET_CLIPBOARD` | | yes | yes | yes | | |
 | `PNTR_APP_CLIPBOARD` | | yes | yes | yes | | |
+| `PNTR_APP_OPTION` | | | | | yes | |
 | `PNTR_APP_INIT_AUDIO` | | yes | | | yes | |
 | `PNTR_APP_CLOSE_AUDIO` | | yes | | | yes | |
 | `PNTR_APP_LOAD_SOUND_FROM_MEMORY` | | yes | yes | yes | yes | |

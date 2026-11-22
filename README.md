@@ -54,6 +54,33 @@ pntr_app Main(int argc, char* argv[]) {
 }
 ```
 
+## Options
+
+Declare options on the `pntr_app` returned from `Main()`. The values are separated by a `|`, and
+the first one is the default. On libretro they're registered as core options, and
+`PNTR_APP_EVENTTYPE_OPTIONS_CHANGED` is pushed when the user changes one. Everywhere else,
+`pntr_app_option()` reports the default.
+
+``` c
+static const pntr_app_option_definition options[] = {
+    { "myapp_difficulty", "Difficulty", "normal|hard|easy" },
+};
+
+pntr_app Main(int argc, char* argv[]) {
+    return (pntr_app) {
+        // ...
+        .options = options,
+        .optionsCount = 1
+    };
+}
+
+// In Init(), or on PNTR_APP_EVENTTYPE_OPTIONS_CHANGED...
+const char* difficulty = pntr_app_option(app, "myapp_difficulty");
+```
+
+The array must outlive the application, as libretro calls `Main()` from
+`retro_set_environment()` to register the options before the content is loaded.
+
 ## Configuration
 
 When compiling, define one of the following to determine which platform you are targeting...
@@ -85,6 +112,7 @@ float pntr_app_delta_time(pntr_app* app);
 int pntr_app_fps(pntr_app* app);
 void pntr_app_set_clipboard(pntr_app* app, const char* text, int len);
 const char* pntr_app_clipboard(pntr_app* app);
+const char* pntr_app_option(pntr_app* app, const char* key);
 
 // Input
 bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
