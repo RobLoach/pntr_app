@@ -1046,33 +1046,63 @@ bool retro_load_game_special(unsigned type, const struct retro_game_info *info, 
     return retro_load_game(info);
 }
 
+/**
+ * The state is a pntr_app_save_header_write() header followed by up to pntr_app_save_size()
+ * bytes of application data.
+ */
 size_t retro_serialize_size(void) {
-    return PNTR_APP_SAVE_SIZE;
+    return PNTR_APP_SAVE_HEADER_SIZE + pntr_app_save_size(pntr_app_libretro);
 }
 
 bool retro_serialize(void *data, size_t size) {
-    if (pntr_app_libretro == NULL || size < retro_serialize_size()) {
+    if (pntr_app_libretro == NULL || data == NULL || size < retro_serialize_size()) {
         return false;
     }
 
+    // The header records the length as a uint32.
+    size_t capacity = pntr_app_save_size(pntr_app_libretro);
+    if (capacity > (size_t)UINT32_MAX) {
+        return false;
+    }
+
+    // Zero the state so that bytes the application doesn't write stay deterministic.
+    memset(data, 0, size);
+
     pntr_app_event event = {0};
     event.type = PNTR_APP_EVENTTYPE_SAVE;
-    event.save = data;
-    event.save_size = size;
+    event.save = (unsigned char*)data + PNTR_APP_SAVE_HEADER_SIZE;
+    event.save_size = capacity;
     pntr_app_process_event(pntr_app_libretro, &event);
+
+    // The application may report fewer bytes than it was given, but never more.
+    if (event.save_size > capacity) {
+        event.save_size = capacity;
+    }
+
+    pntr_app_save_header_write(data, (uint32_t)event.save_size);
 
     return true;
 }
 
 bool retro_unserialize(const void *data, size_t size) {
-    if (pntr_app_libretro == NULL || size < retro_serialize_size()) {
+    if (pntr_app_libretro == NULL || data == NULL || size == 0) {
         return false;
     }
 
     pntr_app_event event = {0};
     event.type = PNTR_APP_EVENTTYPE_LOAD;
-    event.save = (void*)data;
-    event.save_size = size;
+
+    size_t length;
+    if (pntr_app_save_header_read(data, size, &length)) {
+        event.save = (void*)((const unsigned char*)data + PNTR_APP_SAVE_HEADER_SIZE);
+        event.save_size = length;
+    }
+    else {
+        // A state from before the header was added: hand over the whole buffer.
+        event.save = (void*)data;
+        event.save_size = size;
+    }
+
     pntr_app_process_event(pntr_app_libretro, &event);
 
     return true;

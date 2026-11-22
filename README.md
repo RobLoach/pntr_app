@@ -85,6 +85,8 @@ float pntr_app_delta_time(pntr_app* app);
 int pntr_app_fps(pntr_app* app);
 void pntr_app_set_clipboard(pntr_app* app, const char* text, int len);
 const char* pntr_app_clipboard(pntr_app* app);
+void pntr_app_set_save_size(pntr_app* app, size_t size);
+size_t pntr_app_save_size(pntr_app* app);
 
 // Input
 bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);
@@ -124,6 +126,18 @@ void pntr_set_volume(pntr_sound* sound, float volume);
 bool pntr_sound_playing(pntr_sound* sound);
 pntr_app_sound_type pntr_app_get_file_sound_type(const char* fileName);
 ```
+
+### Save States
+
+On platforms with `PNTR_APP_FEATURE_SAVE_LOAD`, the event callback receives
+`PNTR_APP_EVENTTYPE_SAVE` with a zeroed buffer in `event->save` of `event->save_size` bytes,
+which defaults to `PNTR_APP_SAVE_SIZE` (4096) and can be changed with `pntr_app_set_save_size()`.
+Set `event->save_size` to the number of bytes written; left unchanged, the whole buffer is saved.
+`PNTR_APP_EVENTTYPE_LOAD` hands the same bytes back, with their length in `event->save_size`.
+
+libretro frontends expect the state size to stay the same while content runs, so call
+`pntr_app_set_save_size()` from the init callback. libretro states start with an 8 byte header
+recording the length. Older states without it are still loaded, as the whole buffer.
 
 ## Build
 
