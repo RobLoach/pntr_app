@@ -1021,7 +1021,10 @@ bool retro_load_game(const struct retro_game_info *info) {
 
     // Initialize the libretro platform.
     if (!pntr_app_init(app, argc, argv)) {
-        pntr_app_platform_close(app);
+        // pntr_app_init() closes the platform, and frees the app, when the init callback fails.
+        if (pntr_app_libretro != NULL) {
+            pntr_app_platform_close(app);
+        }
         return false;
     }
 
