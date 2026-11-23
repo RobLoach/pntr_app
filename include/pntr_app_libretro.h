@@ -90,18 +90,17 @@ typedef struct pntr_sound_libretro {
     audio_mixer_voice_t* voice;
     float volume;
     bool playing;
+    struct pntr_sound_libretro* next;
 } pntr_sound_libretro;
 
 /**
- * From audio_mixer.c. We include this here because the definition isn't in the .h file.
+ * The loaded sounds, so the mixer's stop callback can find the sound it stopped.
  *
- * @see https://github.com/libretro/libretro-common/blob/master/audio/audio_mixer.c#L76
+ * audio_mixer_sound_t is private to libretro-common, so its fields can't be used.
+ *
+ * @internal
  */
-struct audio_mixer_sound
-{
-   enum audio_mixer_type type;
-   void* user_data;
-};
+static pntr_sound_libretro* pntr_app_libretro_sounds = NULL;
 
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
@@ -1194,10 +1193,11 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
     }
 
     output->sound = sound;
-    sound->user_data = (void*)output;
     output->voice = NULL;
     output->volume = 1.0f;
     output->playing = false;
+    output->next = pntr_app_libretro_sounds;
+    pntr_app_libretro_sounds = output;
 
     return (pntr_sound*)output;
 }
@@ -1208,6 +1208,16 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
 void pntr_app_libretro_unload_sound(pntr_sound* sound) {
     pntr_sound_libretro* audio = (pntr_sound_libretro*)sound;
     pntr_stop_sound(sound);
+
+    // Remove it from the loaded sounds.
+    pntr_sound_libretro** link = &pntr_app_libretro_sounds;
+    while (*link != NULL && *link != audio) {
+        link = &(*link)->next;
+    }
+    if (*link != NULL) {
+        *link = audio->next;
+    }
+
     audio_mixer_destroy(audio->sound);
     audio->sound = NULL;
     audio->voice = NULL;
@@ -1218,10 +1228,13 @@ void pntr_app_libretro_unload_sound(pntr_sound* sound) {
 #ifndef PNTR_APP_PLAY_SOUND
 
 void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason) {
-    if (sound == NULL || sound->user_data == NULL) {
+    pntr_sound_libretro* currentsound = pntr_app_libretro_sounds;
+    while (currentsound != NULL && currentsound->sound != sound) {
+        currentsound = currentsound->next;
+    }
+    if (currentsound == NULL) {
         return;
     }
-    pntr_sound_libretro* currentsound = (pntr_sound_libretro*)sound->user_data;
     switch (reason) {
         case AUDIO_MIXER_SOUND_FINISHED:
         case AUDIO_MIXER_SOUND_STOPPED:
