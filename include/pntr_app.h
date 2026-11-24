@@ -1183,10 +1183,12 @@ PNTR_APP_API bool pntr_app_init(pntr_app* app, int argc, char* argv[]) {
             #ifdef PNTR_APP_CLOSE_AUDIO
                 PNTR_APP_CLOSE_AUDIO(app);
             #endif
-            pntr_app_platform_close(app);
             pntr_unload_image(app->screen);
             app->screen = NULL;
             sargs_shutdown();
+
+            // Some platforms free the app when closing, so it must be last.
+            pntr_app_platform_close(app);
             return false;
         }
     }
