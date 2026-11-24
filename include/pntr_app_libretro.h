@@ -39,6 +39,9 @@ typedef struct pntr_app_libretro_platform {
     int16_t* audioSamples2;
     int audioBufferSize;
     bool audioEnabled;
+
+    // The loaded sounds, so the mixer's stop callback can find the sound it stopped.
+    struct pntr_sound_libretro* sounds;
 } pntr_app_libretro_platform;
 
 /**
@@ -94,13 +97,18 @@ typedef struct pntr_sound_libretro {
 } pntr_sound_libretro;
 
 /**
- * The loaded sounds, so the mixer's stop callback can find the sound it stopped.
+ * Retrieves the running app's list of loaded sounds.
  *
- * audio_mixer_sound_t is private to libretro-common, so its fields can't be used.
+ * audio_mixer_sound_t is private to libretro-common, so sounds are found through this list instead.
  *
  * @internal
  */
-static pntr_sound_libretro* pntr_app_libretro_sounds = NULL;
+static pntr_sound_libretro** pntr_app_libretro_sounds(void) {
+    if (pntr_app_libretro == NULL || pntr_app_libretro->platform == NULL) {
+        return NULL;
+    }
+    return &((pntr_app_libretro_platform*)pntr_app_libretro->platform)->sounds;
+}
 
 static struct retro_log_callback logging;
 static retro_log_printf_t log_cb;
@@ -1196,8 +1204,12 @@ pntr_sound* pntr_app_platform_load_sound_from_memory(pntr_app_sound_type type, u
     output->voice = NULL;
     output->volume = 1.0f;
     output->playing = false;
-    output->next = pntr_app_libretro_sounds;
-    pntr_app_libretro_sounds = output;
+    output->next = NULL;
+    pntr_sound_libretro** sounds = pntr_app_libretro_sounds();
+    if (sounds != NULL) {
+        output->next = *sounds;
+        *sounds = output;
+    }
 
     return (pntr_sound*)output;
 }
@@ -1210,11 +1222,11 @@ void pntr_app_libretro_unload_sound(pntr_sound* sound) {
     pntr_stop_sound(sound);
 
     // Remove it from the loaded sounds.
-    pntr_sound_libretro** link = &pntr_app_libretro_sounds;
-    while (*link != NULL && *link != audio) {
+    pntr_sound_libretro** link = pntr_app_libretro_sounds();
+    while (link != NULL && *link != NULL && *link != audio) {
         link = &(*link)->next;
     }
-    if (*link != NULL) {
+    if (link != NULL && *link != NULL) {
         *link = audio->next;
     }
 
@@ -1228,7 +1240,8 @@ void pntr_app_libretro_unload_sound(pntr_sound* sound) {
 #ifndef PNTR_APP_PLAY_SOUND
 
 void pntr_app_libretro_sound_stop_cb(audio_mixer_sound_t* sound, unsigned reason) {
-    pntr_sound_libretro* currentsound = pntr_app_libretro_sounds;
+    pntr_sound_libretro** sounds = pntr_app_libretro_sounds();
+    pntr_sound_libretro* currentsound = sounds != NULL ? *sounds : NULL;
     while (currentsound != NULL && currentsound->sound != sound) {
         currentsound = currentsound->next;
     }
