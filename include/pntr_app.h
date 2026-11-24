@@ -352,7 +352,8 @@ typedef struct pntr_app_event {
     float mouseY;
     float mouseDeltaX;
     float mouseDeltaY;
-    int mouseWheel; /** When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be 1 when the mouse wheel is scrolling up, and -1 when scrolling down. */
+    int mouseWheel; /** When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheel will be 1 when the mouse wheel is scrolling up, -1 when scrolling down, and 0 when only scrolling horizontally. */
+    int mouseWheelX; /** When type is PNTR_APP_EVENTTYPE_MOUSE_WHEEL, mouseWheelX will be 1 when the mouse wheel is scrolling right, -1 when scrolling left, and 0 when only scrolling vertically. */
 
     // Gamepad
     pntr_app_gamepad_button gamepadButton;

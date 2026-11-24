@@ -479,15 +479,16 @@ int pntr_app_emscripten_mouse_button_from_emscripten(unsigned short button) {
 EM_BOOL pntr_app_emscripten_mouse_wheel(int eventType, const struct EmscriptenWheelEvent *mouseEvent, void *userData) {
     (void)eventType;
     pntr_app* app = (pntr_app*)userData;
-    if (app == NULL || mouseEvent->deltaY == 0) {
+    if (app == NULL || (mouseEvent->deltaY == 0 && mouseEvent->deltaX == 0)) {
         return EM_FALSE;
     }
 
     pntr_app_event event = {0};
     event.app = app;
     event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-    // A positive deltaY is a scroll down, which pntr_app reports as -1.
-    event.mouseWheel = mouseEvent->deltaY > 0 ? -1 : 1;
+    // A positive deltaY is a scroll down, which pntr_app reports as -1. A positive deltaX is a scroll right.
+    event.mouseWheel = (mouseEvent->deltaY < 0) - (mouseEvent->deltaY > 0);
+    event.mouseWheelX = (mouseEvent->deltaX > 0) - (mouseEvent->deltaX < 0);
     pntr_app_process_event(app, &event);
 
     return EM_TRUE;

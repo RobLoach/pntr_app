@@ -337,9 +337,11 @@ bool pntr_app_platform_events(pntr_app* app) {
     }
 
     Vector2 mouseWheel = GetMouseWheelMoveV();
-    if (mouseWheel.y != 0) {
+    if (mouseWheel.y != 0 || mouseWheel.x != 0) {
         event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-        event.mouseWheel = (mouseWheel.y > 0) ? 1 : -1;
+        event.mouseWheel = (mouseWheel.y > 0) - (mouseWheel.y < 0);
+        // A positive x is a scroll left, which pntr_app reports as -1.
+        event.mouseWheelX = (mouseWheel.x < 0) - (mouseWheel.x > 0);
         pntr_app_process_event(app, &event);
     }
 

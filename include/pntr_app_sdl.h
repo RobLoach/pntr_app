@@ -154,10 +154,10 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event) {
         break;
 
         case SDL_EVENT_MOUSE_WHEEL:
-            // Ignore purely horizontal scrolling rather than reporting it as a scroll down.
-            if (event->wheel.y != 0) {
+            if (event->wheel.y != 0 || event->wheel.x != 0) {
                 pntrEvent.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-                pntrEvent.mouseWheel = event->wheel.y > 0 ? 1 : -1;
+                pntrEvent.mouseWheel = (event->wheel.y > 0) - (event->wheel.y < 0);
+                pntrEvent.mouseWheelX = (event->wheel.x > 0) - (event->wheel.x < 0);
                 pntr_app_process_event(app, &pntrEvent);
             }
         break;

@@ -221,11 +221,13 @@ bool pntr_app_platform_events(pntr_app* app) {
             }
 
             case RGFW_mouseScroll: {
-                if (rgfwEvent.delta.y == 0.0f) {
+                if (rgfwEvent.delta.y == 0.0f && rgfwEvent.delta.x == 0.0f) {
                     break;
                 }
                 event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-                event.mouseWheel = (rgfwEvent.delta.y > 0.0f) ? 1 : -1;
+                event.mouseWheel = (rgfwEvent.delta.y > 0.0f) - (rgfwEvent.delta.y < 0.0f);
+                // A positive x is a scroll left, which pntr_app reports as -1.
+                event.mouseWheelX = (rgfwEvent.delta.x < 0.0f) - (rgfwEvent.delta.x > 0.0f);
                 pntr_app_process_event(app, &event);
                 break;
             }

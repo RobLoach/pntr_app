@@ -170,7 +170,7 @@ void Event(pntr_app* app, pntr_app_event* event) {
         break;
 
         case PNTR_APP_EVENTTYPE_MOUSE_WHEEL: {
-            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Wheel: %d", event->mouseWheel);
+            pntr_app_log_ex(PNTR_APP_LOG_INFO, "Wheel: %d, %d", event->mouseWheelX, event->mouseWheel);
         }
         break;
 

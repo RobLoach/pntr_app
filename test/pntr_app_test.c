@@ -329,6 +329,13 @@ bool Init(pntr_app* app) {
 
         pntr_app_pre_events(app);
         ASSERT(pntr_app_mouse_wheel(app) == 0);
+        // Scrolling only horizontally isn't a vertical scroll.
+        e.mouseWheel = 0;
+        e.mouseWheelX = 1;
+        pntr_app_process_event(app, &e);
+        ASSERT(pntr_app_mouse_wheel(app) == 0);
+
+        pntr_app_pre_events(app);
     }
 
     // pntr_app_mouse_button_pressed(), pntr_app_mouse_button_down(), pntr_app_mouse_button_released(), pntr_app_mouse_button_up()

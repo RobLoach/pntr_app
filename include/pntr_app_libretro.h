@@ -655,20 +655,26 @@ bool pntr_app_platform_events(pntr_app* app) {
         }
     }
 
-    // Mouse Wheel
-    int16_t mouseWheelUp = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELUP);
-    if (mouseWheelUp > 0) {
-        event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-        event.mouseWheel = 1;
-        pntr_app_process_event(app, &event);
+    // Mouse Wheel. RetroArch's HORIZ_WHEELUP is scrolling right.
+    int wheelY = 0;
+    if (input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELUP) > 0) {
+        wheelY = 1;
     }
-    else {
-        int16_t mouseWheelDown = input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELDOWN);
-        if (mouseWheelDown > 0) {
-            event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
-            event.mouseWheel = -1;
-            pntr_app_process_event(app, &event);
-        }
+    else if (input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_WHEELDOWN) > 0) {
+        wheelY = -1;
+    }
+    int wheelX = 0;
+    if (input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_HORIZ_WHEELUP) > 0) {
+        wheelX = 1;
+    }
+    else if (input_state_cb(0, RETRO_DEVICE_MOUSE, 0, RETRO_DEVICE_ID_MOUSE_HORIZ_WHEELDOWN) > 0) {
+        wheelX = -1;
+    }
+    if (wheelY != 0 || wheelX != 0) {
+        event.type = PNTR_APP_EVENTTYPE_MOUSE_WHEEL;
+        event.mouseWheel = wheelY;
+        event.mouseWheelX = wheelX;
+        pntr_app_process_event(app, &event);
     }
 
     // Mouse Buttons
