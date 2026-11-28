@@ -85,6 +85,8 @@ float pntr_app_delta_time(pntr_app* app);
 int pntr_app_fps(pntr_app* app);
 void pntr_app_set_clipboard(pntr_app* app, const char* text, int len);
 const char* pntr_app_clipboard(pntr_app* app);
+void pntr_app_set_save_size(pntr_app* app, size_t size);
+size_t pntr_app_save_size(pntr_app* app);
 
 // Input
 bool pntr_app_key_pressed(pntr_app* app, pntr_app_key key);

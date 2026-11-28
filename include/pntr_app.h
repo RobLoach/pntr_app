@@ -281,9 +281,13 @@ typedef enum pntr_app_event_type {
     /**
      * Evoked when the application is requested to save its current state.
      *
-     * The `pntr_app_event::save` `void*` variable will point to a memory bucket where the sta
+     * The `pntr_app_event::save` `void*` variable will point to a zeroed memory bucket where the
+     * state is to be written, and `pntr_app_event::save_size` holds its capacity. Set
+     * `pntr_app_event::save_size` to the number of bytes actually written. Left unchanged, the
+     * whole buffer is saved.
      *
      * @see pntr_app_event::save
+     * @see pntr_app_set_save_size()
      * @see pntr_app_event::save_size
      */
     PNTR_APP_EVENTTYPE_SAVE,
@@ -291,7 +295,9 @@ typedef enum pntr_app_event_type {
     /**
      * The application requests to load the active state from the from the `pntr_app_event::save` variable.
      *
-     * The `pntr_app_event::save` `void*` variable will point to the memory bucket where the save data is to be loaded from.
+     * The `pntr_app_event::save` `void*` variable will point to the memory bucket where the save data is to be loaded from,
+     * and `pntr_app_event::save_size` holds the number of bytes that were saved. States written before the
+     * length was recorded report the whole buffer instead.
      *
      * @see pntr_app_event::save
      * @see pntr_app_event::save_size
@@ -398,6 +404,9 @@ typedef struct pntr_app_event {
     /**
      * The size of the save data.
      *
+     * On save, the capacity of the buffer, which the application may lower to the number of bytes it
+     * wrote. On load, the number of bytes available.
+     *
      * @see PNTR_APP_EVENTTYPE_SAVE
      * @see PNTR_APP_EVENTTYPE_LOAD
      */
@@ -484,6 +493,14 @@ struct pntr_app {
      * Can be NULL.
      */
     const char* extensions;
+
+    /**
+     * The size of the save state buffer, in bytes. 0 uses PNTR_APP_SAVE_SIZE.
+     *
+     * @see pntr_app_set_save_size()
+     * @see pntr_app_save_size()
+     */
+    size_t saveSize;
 };
 
 typedef void pntr_sound;
@@ -694,6 +711,34 @@ PNTR_APP_API void pntr_app_set_clipboard(pntr_app* app, const char* text, int le
 PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
 
 /**
+ * Set the size of the buffer handed to PNTR_APP_EVENTTYPE_SAVE.
+ *
+ * Only used on platforms with PNTR_APP_FEATURE_SAVE_LOAD. Defaults to PNTR_APP_SAVE_SIZE (4096).
+ *
+ * libretro frontends ask for the state size once content is loaded and expect it to stay the
+ * same while it runs, so set it from the init callback and leave it alone afterwards. libretro
+ * states start with a PNTR_APP_SAVE_HEADER_SIZE (8) byte header recording the length; older
+ * states without it are still loaded, as the whole buffer.
+ *
+ * @param app The application to act on.
+ * @param size The size of the save buffer in bytes. Use 0 to go back to PNTR_APP_SAVE_SIZE.
+ *
+ * @see pntr_app_save_size()
+ */
+PNTR_APP_API void pntr_app_set_save_size(pntr_app* app, size_t size);
+
+/**
+ * Get the size of the buffer handed to PNTR_APP_EVENTTYPE_SAVE.
+ *
+ * @param app The application to act on. May be NULL, which reports PNTR_APP_SAVE_SIZE.
+ *
+ * @return The size of the save buffer in bytes.
+ *
+ * @see pntr_app_set_save_size()
+ */
+PNTR_APP_API size_t pntr_app_save_size(pntr_app* app);
+
+/**
  * A feature that a platform may or may not support.
  *
  * @see pntr_app_has_feature()
@@ -864,6 +909,35 @@ PNTR_APP_API void pntr_app_update_fps(pntr_app* app);
  * @internal
  */
 PNTR_APP_API void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* event, const char* fileName);
+
+/**
+ * The size of the header written by pntr_app_save_header_write(): the "PNTR" magic, then the
+ * payload length as a little-endian uint32.
+ */
+#define PNTR_APP_SAVE_HEADER_SIZE 8
+
+/**
+ * Write a save state header recording the length of the payload that follows it.
+ *
+ * @param data Where to write the header. Must have room for PNTR_APP_SAVE_HEADER_SIZE bytes.
+ * @param length The number of payload bytes that follow the header.
+ *
+ * @internal
+ */
+PNTR_APP_API void pntr_app_save_header_write(void* data, uint32_t length);
+
+/**
+ * Read a save state header written by pntr_app_save_header_write().
+ *
+ * @param data The save state, starting with the header.
+ * @param size The size of the save state, including the header.
+ * @param length Set to the payload length when a valid header was found.
+ *
+ * @return True when the magic is there and the length fits in the state, false otherwise.
+ *
+ * @internal
+ */
+PNTR_APP_API bool pntr_app_save_header_read(const void* data, size_t size, size_t* length);
 
 #define PNTR_APP_HEADER_ONLY
 #include "pntr_app_cli.h"
@@ -1852,6 +1926,20 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app) {
     return app->clipboard;
 }
 
+PNTR_APP_API void pntr_app_set_save_size(pntr_app* app, size_t size) {
+    if (app == NULL) {
+        return;
+    }
+    app->saveSize = size;
+}
+
+PNTR_APP_API size_t pntr_app_save_size(pntr_app* app) {
+    if (app == NULL || app->saveSize == 0) {
+        return PNTR_APP_SAVE_SIZE;
+    }
+    return app->saveSize;
+}
+
 PNTR_APP_API bool pntr_app_has_feature(pntr_app* app, pntr_app_feature feature) {
     (void)app;
 
@@ -2119,7 +2207,8 @@ PNTR_APP_API void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* 
     }
     else if (event->type == PNTR_APP_EVENTTYPE_SAVE) {
         // Load the memory
-        event->save_size = PNTR_APP_SAVE_SIZE;
+        size_t capacity = pntr_app_save_size(app);
+        event->save_size = capacity;
         event->save = pntr_load_memory(event->save_size);
         if (event->save == NULL) {
             event->save_size = 0;
@@ -2133,6 +2222,11 @@ PNTR_APP_API void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* 
         }
 
         pntr_app_process_event(app, event);
+
+        // The application may report fewer bytes than it was given, but never more.
+        if (event->save_size > capacity) {
+            event->save_size = capacity;
+        }
 
         // Encode it. b64_encode() takes the length of the source data, not the destination.
         size_t encoded_size = b64_encoded_size(event->save_size);
@@ -2157,6 +2251,46 @@ PNTR_APP_API void pntr_app_manual_save_load_data(pntr_app* app, pntr_app_event* 
         event->save = NULL;
         event->save_size = 0;
     }
+}
+
+PNTR_APP_API void pntr_app_save_header_write(void* data, uint32_t length) {
+    if (data == NULL) {
+        return;
+    }
+
+    unsigned char* header = (unsigned char*)data;
+    header[0] = 'P';
+    header[1] = 'N';
+    header[2] = 'T';
+    header[3] = 'R';
+    header[4] = (unsigned char)(length & 0xffu);
+    header[5] = (unsigned char)((length >> 8) & 0xffu);
+    header[6] = (unsigned char)((length >> 16) & 0xffu);
+    header[7] = (unsigned char)((length >> 24) & 0xffu);
+}
+
+PNTR_APP_API bool pntr_app_save_header_read(const void* data, size_t size, size_t* length) {
+    if (data == NULL || length == NULL || size < PNTR_APP_SAVE_HEADER_SIZE) {
+        return false;
+    }
+
+    const unsigned char* header = (const unsigned char*)data;
+    if (header[0] != 'P' || header[1] != 'N' || header[2] != 'T' || header[3] != 'R') {
+        return false;
+    }
+
+    uint32_t value = (uint32_t)header[4]
+        | ((uint32_t)header[5] << 8)
+        | ((uint32_t)header[6] << 16)
+        | ((uint32_t)header[7] << 24);
+
+    // A length that runs past the end isn't a header we wrote.
+    if ((size_t)value > size - PNTR_APP_SAVE_HEADER_SIZE) {
+        return false;
+    }
+
+    *length = (size_t)value;
+    return true;
 }
 
 #ifdef __cplusplus

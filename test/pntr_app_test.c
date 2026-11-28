@@ -33,6 +33,7 @@ static size_t saveSize = 0;
 static int loadCount = 0;
 static size_t loadSize = 0;
 static int loadMismatches = 0;
+static size_t saveWritten = 0; // When non-zero, Event() reports writing only this many bytes.
 
 // State recorded by Event() for the reset and cheat events.
 static int resetCount = 0;
@@ -58,6 +59,9 @@ void Event(pntr_app* app, pntr_app_event* event) {
                 save[i] = SaveByte(i);
             }
             saveSize = event->save_size;
+            if (saveWritten != 0) {
+                event->save_size = saveWritten;
+            }
             saveCount++;
         }
         break;
@@ -652,6 +656,76 @@ bool Init(pntr_app* app) {
         ASSERT(remove(saveFileName) == 0);
         pntr_app_manual_save_load_data(app, &e, saveFileName);
         ASSERT(loadCount == 1);
+
+        // pntr_app_set_save_size(): a bigger buffer, of which only part is written.
+        ASSERT(pntr_app_save_size(NULL) == (size_t)PNTR_APP_SAVE_SIZE);
+        ASSERT(pntr_app_save_size(app) == (size_t)PNTR_APP_SAVE_SIZE);
+        pntr_app_set_save_size(app, 10000);
+        ASSERT(pntr_app_save_size(app) == 10000);
+
+        saveWritten = 123;
+        e.type = PNTR_APP_EVENTTYPE_SAVE;
+        pntr_app_manual_save_load_data(app, &e, saveFileName);
+        ASSERT(saveCount == 2);
+        ASSERT(saveSize == 10000);
+
+        // Only the bytes that were written come back.
+        e.type = PNTR_APP_EVENTTYPE_LOAD;
+        pntr_app_manual_save_load_data(app, &e, saveFileName);
+        ASSERT(loadCount == 2);
+        ASSERT(loadSize == 123);
+        ASSERT(loadMismatches == 0);
+        ASSERT(remove(saveFileName) == 0);
+
+        // Reporting more than the buffer holds is clamped to the buffer.
+        saveWritten = 20000;
+        e.type = PNTR_APP_EVENTTYPE_SAVE;
+        pntr_app_manual_save_load_data(app, &e, saveFileName);
+        e.type = PNTR_APP_EVENTTYPE_LOAD;
+        pntr_app_manual_save_load_data(app, &e, saveFileName);
+        ASSERT(loadSize == 10000);
+        ASSERT(loadMismatches == 0);
+        ASSERT(remove(saveFileName) == 0);
+
+        saveWritten = 0;
+        pntr_app_set_save_size(app, 0);
+        ASSERT(pntr_app_save_size(app) == (size_t)PNTR_APP_SAVE_SIZE);
+    }
+
+    // pntr_app_save_header_write(), pntr_app_save_header_read()
+    {
+        unsigned char state[PNTR_APP_SAVE_HEADER_SIZE + 16] = {0};
+        size_t length = 0;
+
+        // The magic, then the length as little-endian, regardless of the host.
+        pntr_app_save_header_write(state, 0x01020304u);
+        ASSERT(state[0] == 'P' && state[1] == 'N' && state[2] == 'T' && state[3] == 'R');
+        ASSERT(state[4] == 0x04 && state[5] == 0x03 && state[6] == 0x02 && state[7] == 0x01);
+
+        // A length past the end of the state isn't a valid header.
+        ASSERT(!pntr_app_save_header_read(state, sizeof(state), &length));
+
+        // Round trip, including the full and empty payloads.
+        pntr_app_save_header_write(state, 5);
+        ASSERT(pntr_app_save_header_read(state, sizeof(state), &length));
+        ASSERT(length == 5);
+        pntr_app_save_header_write(state, 16);
+        ASSERT(pntr_app_save_header_read(state, sizeof(state), &length));
+        ASSERT(length == 16);
+        ASSERT(!pntr_app_save_header_read(state, sizeof(state) - 1, &length));
+        pntr_app_save_header_write(state, 0);
+        ASSERT(pntr_app_save_header_read(state, PNTR_APP_SAVE_HEADER_SIZE, &length));
+        ASSERT(length == 0);
+
+        // Legacy states without the magic, and states too short to hold a header.
+        length = 99;
+        state[0] = 'X';
+        ASSERT(!pntr_app_save_header_read(state, sizeof(state), &length));
+        ASSERT(length == 99);
+        pntr_app_save_header_write(state, 0);
+        ASSERT(!pntr_app_save_header_read(state, PNTR_APP_SAVE_HEADER_SIZE - 1, &length));
+        ASSERT(!pntr_app_save_header_read(NULL, sizeof(state), &length));
+        ASSERT(!pntr_app_save_header_read(state, sizeof(state), NULL));
     }
 
     // pntr_app_update_fps(), pntr_app_fps()
