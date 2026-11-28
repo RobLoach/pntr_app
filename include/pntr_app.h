@@ -679,8 +679,12 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
 /**
  * Set the size of the buffer handed to PNTR_APP_EVENTTYPE_SAVE.
  *
+ * Only used on platforms with PNTR_APP_FEATURE_SAVE_LOAD. Defaults to PNTR_APP_SAVE_SIZE (4096).
+ *
  * libretro frontends ask for the state size once content is loaded and expect it to stay the
- * same while it runs, so set it from the init callback and leave it alone afterwards.
+ * same while it runs, so set it from the init callback and leave it alone afterwards. libretro
+ * states start with a PNTR_APP_SAVE_HEADER_SIZE (8) byte header recording the length; older
+ * states without it are still loaded, as the whole buffer.
  *
  * @param app The application to act on.
  * @param size The size of the save buffer in bytes. Use 0 to go back to PNTR_APP_SAVE_SIZE.
