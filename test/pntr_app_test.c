@@ -221,6 +221,31 @@ bool Init(pntr_app* app) {
         ASSERT(pntr_app_option(&empty, "test_difficulty") == NULL);
     }
 
+    // pntr_app_option_int(), pntr_app_option_float(), pntr_app_option_bool()
+    {
+        ASSERT(pntr_app_option_int(app, "test_int") == 3);
+        ASSERT(pntr_app_option_int(app, "test_int_negative") == -12);
+        ASSERT(pntr_app_option_int(app, "test_float") == 0);
+        ASSERT(pntr_app_option_int(app, "test_difficulty") == 0);
+        ASSERT(pntr_app_option_int(app, "test_unknown") == 0);
+        ASSERT(pntr_app_option_int(NULL, "test_int") == 0);
+
+        ASSERT(pntr_app_option_float(app, "test_float") > 0.499f);
+        ASSERT(pntr_app_option_float(app, "test_float") < 0.501f);
+        ASSERT(pntr_app_option_float(app, "test_float_negative") < -2.249f);
+        ASSERT(pntr_app_option_float(app, "test_float_negative") > -2.251f);
+        ASSERT(pntr_app_option_float(app, "test_int") == 3.0f);
+        ASSERT(pntr_app_option_float(app, "test_unknown") == 0.0f);
+
+        ASSERT(pntr_app_option_bool(app, "test_bool") == true);
+        ASSERT(pntr_app_option_bool(app, "test_bool_upper") == true);
+        ASSERT(pntr_app_option_bool(app, "test_bool_disabled") == false);
+        ASSERT(pntr_app_option_bool(app, "test_single") == true);
+        ASSERT(pntr_app_option_bool(app, "test_difficulty") == false);
+        ASSERT(pntr_app_option_bool(app, "test_empty") == false);
+        ASSERT(pntr_app_option_bool(app, "test_unknown") == false);
+    }
+
     // pntr_app_mouse_x(), pntr_app_mouse_y(), pntr_app_mouse_delta_x(), pntr_app_mouse_delta_y()
     {
         pntr_app_event e = {0};
@@ -712,6 +737,13 @@ static const pntr_app_option_definition options[] = {
     { "test_single", "Single", "on" },
     { "test_empty", "Empty", "" },
     { "test_null", "Null", NULL },
+    { "test_int", "Int", "3|1|2" },
+    { "test_int_negative", "Negative Int", "-12|0" },
+    { "test_float", "Float", "0.5|1.0" },
+    { "test_float_negative", "Negative Float", "-2.25|0" },
+    { "test_bool", "Bool", "enabled|disabled" },
+    { "test_bool_upper", "Upper Bool", "TRUE|false" },
+    { "test_bool_disabled", "Disabled Bool", "disabled|enabled" },
 };
 
 pntr_app Main(int argc, char* argv[]) {

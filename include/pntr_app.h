@@ -723,6 +723,47 @@ PNTR_APP_API const char* pntr_app_clipboard(pntr_app* app);
 PNTR_APP_API const char* pntr_app_option(pntr_app* app, const char* key);
 
 /**
+ * Get the current value of one of the application's options as an integer.
+ *
+ * Parses an optional sign followed by digits, stopping at the first other character, like atoi().
+ *
+ * @param app The application to act on.
+ * @param key The key of the option, as declared in pntr_app::options.
+ *
+ * @return The value of the option as an integer, or 0 if there is no option with that key.
+ *
+ * @see pntr_app_option()
+ */
+PNTR_APP_API int pntr_app_option_int(pntr_app* app, const char* key);
+
+/**
+ * Get the current value of one of the application's options as a float.
+ *
+ * Parses an optional sign, digits and a decimal point, stopping at the first other character.
+ *
+ * @param app The application to act on.
+ * @param key The key of the option, as declared in pntr_app::options.
+ *
+ * @return The value of the option as a float, or 0.0f if there is no option with that key.
+ *
+ * @see pntr_app_option()
+ */
+PNTR_APP_API float pntr_app_option_float(pntr_app* app, const char* key);
+
+/**
+ * Get the current value of one of the application's options as a boolean.
+ *
+ * @param app The application to act on.
+ * @param key The key of the option, as declared in pntr_app::options.
+ *
+ * @return True if the value is "true", "enabled", "on", "yes" or "1", ignoring case. False
+ *         otherwise, or if there is no option with that key.
+ *
+ * @see pntr_app_option()
+ */
+PNTR_APP_API bool pntr_app_option_bool(pntr_app* app, const char* key);
+
+/**
  * A feature that a platform may or may not support.
  *
  * @see pntr_app_has_feature()
@@ -1973,6 +2014,105 @@ PNTR_APP_API const char* pntr_app_option(pntr_app* app, const char* key) {
     }
 
     return NULL;
+}
+
+/**
+ * Get the current value of one of the application's options as an integer.
+ *
+ * @param app The application to act on.
+ * @param key The key of the option.
+ *
+ * @return The value of the option as an integer, or 0 if there is no option with that key.
+ */
+PNTR_APP_API int pntr_app_option_int(pntr_app* app, const char* key) {
+    const char* value = pntr_app_option(app, key);
+    if (value == NULL) {
+        return 0;
+    }
+
+    int sign = 1;
+    if (*value == '-' || *value == '+') {
+        sign = (*value == '-') ? -1 : 1;
+        value++;
+    }
+
+    int output = 0;
+    while (*value >= '0' && *value <= '9') {
+        output = output * 10 + (*value - '0');
+        value++;
+    }
+
+    return sign * output;
+}
+
+/**
+ * Get the current value of one of the application's options as a float.
+ *
+ * @param app The application to act on.
+ * @param key The key of the option.
+ *
+ * @return The value of the option as a float, or 0.0f if there is no option with that key.
+ */
+PNTR_APP_API float pntr_app_option_float(pntr_app* app, const char* key) {
+    const char* value = pntr_app_option(app, key);
+    if (value == NULL) {
+        return 0.0f;
+    }
+
+    float sign = 1.0f;
+    if (*value == '-' || *value == '+') {
+        sign = (*value == '-') ? -1.0f : 1.0f;
+        value++;
+    }
+
+    float output = 0.0f;
+    while (*value >= '0' && *value <= '9') {
+        output = output * 10.0f + (float)(*value - '0');
+        value++;
+    }
+
+    if (*value == '.') {
+        value++;
+        float scale = 0.1f;
+        while (*value >= '0' && *value <= '9') {
+            output += (float)(*value - '0') * scale;
+            scale *= 0.1f;
+            value++;
+        }
+    }
+
+    return sign * output;
+}
+
+/**
+ * Get the current value of one of the application's options as a boolean.
+ *
+ * @param app The application to act on.
+ * @param key The key of the option.
+ *
+ * @return True if the value is "true", "enabled", "on", "yes" or "1", ignoring case.
+ */
+PNTR_APP_API bool pntr_app_option_bool(pntr_app* app, const char* key) {
+    const char* value = pntr_app_option(app, key);
+    if (value == NULL) {
+        return false;
+    }
+
+    const char* truthy[] = { "true", "enabled", "on", "yes", "1" };
+    for (size_t i = 0; i < sizeof(truthy) / sizeof(truthy[0]); i++) {
+        // Compare, ignoring case.
+        const char* a = truthy[i];
+        const char* b = value;
+        while (*a != '\0' && (*b == *a || (*a >= 'a' && *a <= 'z' && *b == *a - 'a' + 'A'))) {
+            a++;
+            b++;
+        }
+        if (*a == '\0' && *b == '\0') {
+            return true;
+        }
+    }
+
+    return false;
 }
 
 PNTR_APP_API bool pntr_app_has_feature(pntr_app* app, pntr_app_feature feature) {
